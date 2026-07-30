@@ -178,7 +178,7 @@
     decorateVehicleLabels();
   }
   const observer=new MutationObserver(bindRows);
-  if (cargoBody) observer.observe(cargoBody,{childList:true,subtree:true});
+  if (cargoBody) observer.observe(cargoBody,{childList:true});
   const vehicleObserver=new MutationObserver(decorateVehicleLabels);
   if ($('#vehicle-id')) vehicleObserver.observe($('#vehicle-id'),{childList:true});
   if ($('#selected-vehicle-summary')) vehicleObserver.observe($('#selected-vehicle-summary'),{childList:true,subtree:true});

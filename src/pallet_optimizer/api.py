@@ -24,7 +24,8 @@ from .route_optimization import (
     optimise as route_optimise,
 )
 from .service import OptimizationService
-from .total_optimization import TotalOptimizationError, optimise_total
+from .total_optimization import TotalOptimizationError
+from .total_preprocessing import optimise_total_prepared
 
 
 PACKAGE_ROOT = Path(__file__).resolve().parent
@@ -128,7 +129,7 @@ def create_app(data_dir: str | Path | None = None) -> FastAPI:
     @app.post("/api/total/optimize")
     def total_optimize(payload: dict[str, Any], tenant_id: str = Depends(web_tenant)) -> dict[str, Any]:
         try:
-            return optimise_total(payload, registry.list_vehicles(tenant_id))
+            return optimise_total_prepared(payload, registry.list_vehicles(tenant_id))
         except TotalOptimizationError as exc:
             raise HTTPException(422, str(exc)) from exc
         except Exception as exc:

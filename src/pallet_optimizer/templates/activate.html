@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="fr" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Activation · AxioLoad</title>
+  <link rel="icon" type="image/svg+xml" href="/static/brand/favicon.svg">
+  <link rel="stylesheet" href="/static/app.css?v={{ app_version }}">
+  <style>
+    body{min-height:100vh;display:grid;place-items:center;padding:24px;background:var(--surface-2)}
+    .activation-shell{width:min(760px,100%);padding:28px;border:1px solid var(--line);border-radius:20px;background:var(--paper);box-shadow:var(--shadow)}
+    .activation-logo{width:min(280px,70%);margin-bottom:22px}.activation-step{display:none}.activation-step.active{display:block}.activation-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.activation-grid .full{grid-column:1/-1}.activation-actions{display:flex;gap:10px;align-items:center;margin-top:18px}.activation-note{padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2);margin:12px 0}.activation-success{background:#e8f7ef;border-color:#9dd8ba;color:#176942}@media(max-width:640px){.activation-grid{grid-template-columns:1fr}.activation-grid .full{grid-column:auto}.activation-shell{padding:20px}}
+  </style>
+</head>
+<body>
+  <main class="activation-shell">
+    <img class="activation-logo" src="/static/brand/axioload-horizontal-dark.svg" alt="AxioLoad">
+    <section id="activation-loading" class="activation-step active"><h1>Vérification de l’invitation</h1><p>AxioLoad contrôle le lien sécurisé.</p></section>
+    <section id="activation-password" class="activation-step">
+      <div class="eyebrow">Invitation sécurisée</div><h1>Activez votre compte</h1><p id="activation-recipient"></p><div class="activation-note">Le lien est valable 24 heures et ne peut être utilisé qu’une seule fois.</div>
+      <form id="activation-password-form"><div class="activation-grid"><label class="full">Mot de passe<input id="activation-password-input" type="password" minlength="10" autocomplete="new-password" required></label><label class="full">Confirmer le mot de passe<input id="activation-password-confirm" type="password" minlength="10" autocomplete="new-password" required></label></div><div class="activation-actions"><button class="primary" type="submit">Activer mon compte</button></div></form>
+    </section>
+    <section id="activation-profile" class="activation-step">
+      <div class="eyebrow">Fiche entreprise</div><h1>Complétez les informations de votre entreprise</h1><p>Le SIRET est facultatif. Les autres champs sont nécessaires avant validation par le super administrateur.</p>
+      <form id="activation-profile-form"><div class="activation-grid"><label class="full">Raison sociale<input name="legal_name" required></label><label class="full">SIRET facultatif<input name="siret"></label><label class="full">Adresse complète<textarea name="address" rows="3" required></textarea></label><label>Pays<input name="country" value="France" required></label><label>Téléphone<input name="phone" required></label><label>Prénom du contact principal<input name="contact_first_name" required></label><label>Nom du contact principal<input name="contact_last_name" required></label><label class="full">E-mail de contact<input name="contact_email" type="email" required></label></div><div class="activation-actions"><button class="primary" type="submit">Soumettre la fiche</button></div></form>
+    </section>
+    <section id="activation-success" class="activation-step"><div class="activation-note activation-success"><strong>Votre demande a bien été transmise.</strong><p>La fiche est en attente de validation par le super administrateur. Vous recevrez l’accès aux fonctionnalités dès son approbation.</p></div></section>
+    <section id="activation-error" class="activation-step"><h1>Activation impossible</h1><div id="activation-error-message" class="message error"></div></section>
+  </main>
+  <script src="/static/activate.js?v={{ app_version }}"></script>
+</body>
+</html>

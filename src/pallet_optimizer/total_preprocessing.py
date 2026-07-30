@@ -11,6 +11,7 @@ from .normalization import normalize_payload
 from .optimization_methods import METHOD_BY_CODE, pack_with_method
 from .packing import estimate_vehicle_lower_bound, partition_items
 from .total_optimization import TotalOptimizationError, optimise_total
+from .total_route_sequence import clear_sequence_cache, install_wave_routing
 from .validation import (
     calculate_weight,
     has_errors,
@@ -316,7 +317,16 @@ def optimise_total_prepared(
     catalog: tuple[VehicleVersion, ...],
 ) -> dict[str, Any]:
     prepared, split_summary = prepare_total_payload(payload, catalog)
+    clear_sequence_cache()
+    install_wave_routing()
     result = optimise_total(prepared, catalog)
+    routing_note = (
+        " Les points d’enlèvement et de livraison sont utilisés comme des arrêts physiques distincts. "
+        "Chaque tournée est découpée en vagues LIFO optimisées : le camion peut charger un groupe, le livrer, "
+        "puis effectuer un nouveau chargement lorsque cette séquence réduit la distance."
+    )
+    result["model_note"] = str(result.get("model_note") or "") + routing_note
+
     if not split_summary:
         return result
 

@@ -5,6 +5,8 @@ services:
       - "8000:8000"
     environment:
       PLO_DATA_DIR: /app/data
+      PLO_SUPER_ADMIN_TOKEN: ${PLO_SUPER_ADMIN_TOKEN:-}
+      PLO_SUPER_ADMIN_EMAIL: ${PLO_SUPER_ADMIN_EMAIL:-superadmin@axioload.local}
     volumes:
       - plo_data:/app/data
     restart: unless-stopped

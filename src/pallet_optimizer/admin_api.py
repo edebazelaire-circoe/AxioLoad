@@ -134,7 +134,7 @@ def register_admin_routes(app: FastAPI, admin: AdminRepository, templates: Jinja
         date_to: str | None = Query(None, alias="to"),
     ) -> dict[str, Any]:
         del actor
-        resolved = admin.super_admin_actor(x_axioload_super_admin or authorization)
+        resolved = admin_actor(x_axioload_super_admin, authorization)
         return {
             "actor": resolved,
             "permissions": list(PERMISSION_CATALOG),
@@ -155,7 +155,7 @@ def register_admin_routes(app: FastAPI, admin: AdminRepository, templates: Jinja
         authorization: Annotated[str | None, Header()] = None,
     ) -> dict[str, Any]:
         del actor
-        admin.super_admin_actor(x_axioload_super_admin or authorization)
+        admin_actor(x_axioload_super_admin, authorization)
         user_ids = [value for value in (users or "").split(",") if value]
         return admin.dashboard(tenant_id=tenant_id, start=date_from, end=date_to, user_ids=user_ids)
 
@@ -168,7 +168,7 @@ def register_admin_routes(app: FastAPI, admin: AdminRepository, templates: Jinja
         authorization: Annotated[str | None, Header()] = None,
     ) -> dict[str, Any]:
         del actor
-        resolved = admin.super_admin_actor(x_axioload_super_admin or authorization)
+        resolved = admin_actor(x_axioload_super_admin, authorization)
         try:
             return admin.create_company_invitation(
                 str(payload.get("company_name") or ""),
@@ -188,7 +188,7 @@ def register_admin_routes(app: FastAPI, admin: AdminRepository, templates: Jinja
         x_axioload_super_admin: Annotated[str | None, Header()] = None,
         authorization: Annotated[str | None, Header()] = None,
     ) -> dict[str, Any]:
-        admin.super_admin_actor(x_axioload_super_admin or authorization)
+        admin_actor(x_axioload_super_admin, authorization)
         try:
             return {
                 "company": admin.get_company(tenant_id),
@@ -207,7 +207,7 @@ def register_admin_routes(app: FastAPI, admin: AdminRepository, templates: Jinja
         x_axioload_super_admin: Annotated[str | None, Header()] = None,
         authorization: Annotated[str | None, Header()] = None,
     ) -> dict[str, bool]:
-        actor = admin.super_admin_actor(x_axioload_super_admin or authorization)
+        actor = admin_actor(x_axioload_super_admin, authorization)
         try:
             return admin.set_company_permissions(tenant_id, payload, actor=actor)
         except (ValueError, KeyError) as exc:
@@ -220,7 +220,7 @@ def register_admin_routes(app: FastAPI, admin: AdminRepository, templates: Jinja
         x_axioload_super_admin: Annotated[str | None, Header()] = None,
         authorization: Annotated[str | None, Header()] = None,
     ) -> dict[str, Any]:
-        actor = admin.super_admin_actor(x_axioload_super_admin or authorization)
+        actor = admin_actor(x_axioload_super_admin, authorization)
         try:
             return admin.update_company_status(
                 tenant_id,
@@ -239,7 +239,7 @@ def register_admin_routes(app: FastAPI, admin: AdminRepository, templates: Jinja
         x_axioload_super_admin: Annotated[str | None, Header()] = None,
         authorization: Annotated[str | None, Header()] = None,
     ) -> dict[str, Any]:
-        actor = admin.super_admin_actor(x_axioload_super_admin or authorization)
+        actor = admin_actor(x_axioload_super_admin, authorization)
         try:
             return admin.decide_profile(
                 tenant_id,
@@ -258,7 +258,7 @@ def register_admin_routes(app: FastAPI, admin: AdminRepository, templates: Jinja
         x_axioload_super_admin: Annotated[str | None, Header()] = None,
         authorization: Annotated[str | None, Header()] = None,
     ) -> dict[str, Any]:
-        actor = admin.super_admin_actor(x_axioload_super_admin or authorization)
+        actor = admin_actor(x_axioload_super_admin, authorization)
         try:
             return admin.invite_user(
                 tenant_id,
@@ -280,7 +280,7 @@ def register_admin_routes(app: FastAPI, admin: AdminRepository, templates: Jinja
         x_axioload_super_admin: Annotated[str | None, Header()] = None,
         authorization: Annotated[str | None, Header()] = None,
     ) -> dict[str, str]:
-        actor = admin.super_admin_actor(x_axioload_super_admin or authorization)
+        actor = admin_actor(x_axioload_super_admin, authorization)
         try:
             user = admin.get_user(user_id)
             if user["tenant_id"] != tenant_id:
@@ -297,7 +297,7 @@ def register_admin_routes(app: FastAPI, admin: AdminRepository, templates: Jinja
         x_axioload_super_admin: Annotated[str | None, Header()] = None,
         authorization: Annotated[str | None, Header()] = None,
     ) -> dict[str, Any]:
-        actor = admin.super_admin_actor(x_axioload_super_admin or authorization)
+        actor = admin_actor(x_axioload_super_admin, authorization)
         try:
             return admin.disable_user(tenant_id, user_id, actor, payload.get("transfer_to_user_id"))
         except (ValueError, KeyError) as exc:
@@ -311,7 +311,7 @@ def register_admin_routes(app: FastAPI, admin: AdminRepository, templates: Jinja
         x_axioload_super_admin: Annotated[str | None, Header()] = None,
         authorization: Annotated[str | None, Header()] = None,
     ) -> dict[str, Any]:
-        actor = admin.super_admin_actor(x_axioload_super_admin or authorization)
+        actor = admin_actor(x_axioload_super_admin, authorization)
         try:
             return admin.resend_invitation(tenant_id, user_id, actor, str(request.base_url))
         except (ValueError, KeyError) as exc:
@@ -324,7 +324,7 @@ def register_admin_routes(app: FastAPI, admin: AdminRepository, templates: Jinja
         x_axioload_super_admin: Annotated[str | None, Header()] = None,
         authorization: Annotated[str | None, Header()] = None,
     ) -> dict[str, Any]:
-        actor = admin.super_admin_actor(x_axioload_super_admin or authorization)
+        actor = admin_actor(x_axioload_super_admin, authorization)
         try:
             return admin.create_api_key(
                 tenant_id,
@@ -343,7 +343,7 @@ def register_admin_routes(app: FastAPI, admin: AdminRepository, templates: Jinja
         x_axioload_super_admin: Annotated[str | None, Header()] = None,
         authorization: Annotated[str | None, Header()] = None,
     ) -> Response:
-        actor = admin.super_admin_actor(x_axioload_super_admin or authorization)
+        actor = admin_actor(x_axioload_super_admin, authorization)
         try:
             admin.revoke_api_key(tenant_id, key_id, actor)
         except KeyError as exc:
@@ -356,7 +356,7 @@ def register_admin_routes(app: FastAPI, admin: AdminRepository, templates: Jinja
         x_axioload_super_admin: Annotated[str | None, Header()] = None,
         authorization: Annotated[str | None, Header()] = None,
     ) -> JSONResponse:
-        actor = admin.super_admin_actor(x_axioload_super_admin or authorization)
+        actor = admin_actor(x_axioload_super_admin, authorization)
         try:
             token = admin.start_assistance(tenant_id, actor)
         except KeyError as exc:
@@ -381,5 +381,5 @@ def register_admin_routes(app: FastAPI, admin: AdminRepository, templates: Jinja
         x_axioload_super_admin: Annotated[str | None, Header()] = None,
         authorization: Annotated[str | None, Header()] = None,
     ) -> list[dict[str, Any]]:
-        admin.super_admin_actor(x_axioload_super_admin or authorization)
+        admin_actor(x_axioload_super_admin, authorization)
         return admin.list_audit(tenant_id, limit)

@@ -43,6 +43,77 @@
     if (!state.colors.has(key)) state.colors.set(key, colors[state.colors.size % colors.length]);
     return state.colors.get(key);
   }
+  function vehicleIcon(modelId='', name='') {
+    const value=`${modelId} ${name}`.toLowerCase();
+    if (value.includes('container_20') || value.includes('20 pieds') || value.includes("20'")) return '📦';
+    if (value.includes('container_40') || value.includes('40 pieds') || value.includes("40'")) return '📦';
+    if (value.includes('semi')) return '🚛';
+    if (value.includes('rigid') || value.includes('porteur')) return '🚚';
+    return '🚐';
+  }
+  function decorateVehicleLabels() {
+    const select=$('#vehicle-id');
+    select?.querySelectorAll('option').forEach(option=>{
+      if (option.dataset.vehicleIcon === '1') return;
+      const vehicle=(window.PLO_VEHICLES || []).find(entry=>entry.model_id===option.value);
+      option.textContent=`${vehicleIcon(option.value,vehicle?.name || option.textContent)} ${option.textContent}`;
+      option.dataset.vehicleIcon='1';
+    });
+    const summary=$('#selected-vehicle-summary strong');
+    if (summary && summary.dataset.vehicleIcon !== '1') {
+      const selected=(window.PLO_VEHICLES || []).find(entry=>entry.model_id===select?.value);
+      summary.textContent=`${vehicleIcon(select?.value,selected?.name || summary.textContent)} ${summary.textContent}`;
+      summary.dataset.vehicleIcon='1';
+    }
+  }
+  function configureInterface() {
+    const nav=$('.tabs');
+    const labels={vehicles:'Véhicules',data:'Données',results:'Chargement',route:'Itinéraire',total:'Optimisation totale',history:'Historique'};
+    ['vehicles','data','results','route','total','history'].forEach((name,index)=>{
+      const button=$(`.tab[data-tab="${name}"]`);
+      if (!button) return;
+      button.textContent=`${index}. ${labels[name]}`;
+      nav?.append(button);
+    });
+
+    const budgetLabel=$('#budget-seconds')?.closest('label')?.querySelector('.field-label');
+    if (budgetLabel) budgetLabel.textContent='Temps de calcul';
+    const routeBudgetLabel=$('#route-time-limit')?.closest('label')?.querySelector('span');
+    if (routeBudgetLabel) routeBudgetLabel.textContent='Temps de calcul';
+
+    const seedLabel=$('#seed')?.closest('label');
+    if (seedLabel) seedLabel.hidden=true;
+
+    const marginLabel=$('#default-margin')?.closest('label')?.querySelector('.field-label');
+    if (marginLabel && !marginLabel.querySelector('.help-tip')) {
+      marginLabel.append(' ');
+      const help=document.createElement('button');
+      help.type='button';
+      help.className='help-tip small-tip';
+      help.dataset.tooltip='Espace libre ajouté autour de chaque marchandise pour tenir compte des jeux de manutention, protections et tolérances. Cette valeur réduit les dimensions réellement utilisables.';
+      help.setAttribute('aria-label','Définition de la marge de sécurité');
+      help.textContent='?';
+      marginLabel.append(help);
+      if (typeof bindHelpTips === 'function') bindHelpTips(marginLabel);
+    }
+
+    const settings=$('.total-route-settings');
+    if (settings && !$('#total-available-vehicles')) {
+      const field=document.createElement('label');
+      field.className='total-fleet-field';
+      field.innerHTML='<span>Nombre de camions disponibles <button type="button" class="help-tip small-tip" data-tooltip="Nombre maximal de camions que l’optimisation totale peut utiliser pour construire les tournées et leurs plans de chargement." aria-label="Définition du nombre de camions disponibles">?</button></span><input id="total-available-vehicles" type="number" min="1" max="50" value="5">';
+      const current=Number($('#max-vehicles')?.value || 5);
+      field.querySelector('input').value=String(Math.max(1,current));
+      settings.insertBefore(field, settings.children[1] || null);
+      if (typeof bindHelpTips === 'function') bindHelpTips(field);
+    }
+
+    const description=checkbox?.closest('.total-mode-toggle')?.querySelector('small');
+    if (description) description.textContent='Couple le nombre de camions disponibles, le rangement LIFO et les distances de tournée. Les produits d’un même client restent toujours dans le même camion.';
+    decorateVehicleLabels();
+  }
+  configureInterface();
+
   function parseCoordinates(value) {
     const match=String(value || '').trim().match(/^\s*(-?\d{1,2}(?:[.,]\d+)?)\s*[,;]\s*(-?\d{1,3}(?:[.,]\d+)?)\s*$/);
     if (!match) return null;
@@ -79,19 +150,38 @@
     updateRowStatus(row);
   }
   function bindRow(row) {
-    if (row.dataset.totalBound === '1') return;
-    row.dataset.totalBound='1';
-    ['pickup','delivery'].forEach(type => {
-      const input=row.querySelector(`[data-total="${type}_address"]`);
-      const button=row.querySelector(`[data-total-location="${type}"]`);
-      input?.addEventListener('input',()=>invalidate(row,type));
-      button?.addEventListener('click',()=>locateRow(row,type,button));
-    });
+    if (row.dataset.totalBound !== '1') {
+      row.dataset.totalBound='1';
+      ['pickup','delivery'].forEach(type => {
+        const input=row.querySelector(`[data-total="${type}_address"]`);
+        const button=row.querySelector(`[data-total-location="${type}"]`);
+        input?.addEventListener('input',()=>invalidate(row,type));
+        button?.addEventListener('click',()=>locateRow(row,type,button));
+      });
+    }
     updateRowStatus(row);
   }
-  function bindRows() { $$('#cargo-table tbody tr').forEach(bindRow); }
+  function toggleOrderColumn(active) {
+    const heading=$('#cargo-table thead .col-order');
+    if (heading) heading.hidden=active;
+    $$('#cargo-table tbody [data-k="delivery_order"]').forEach(input=>{
+      const cell=input.closest('td');
+      if (cell) cell.hidden=active;
+      input.disabled=active;
+    });
+    const hint=$$('.hint').find(element=>element.textContent.includes('Ordre de livraison'));
+    if (hint) hint.hidden=active;
+  }
+  function bindRows() {
+    $$('#cargo-table tbody tr').forEach(bindRow);
+    toggleOrderColumn(Boolean(checkbox?.checked));
+    decorateVehicleLabels();
+  }
   const observer=new MutationObserver(bindRows);
-  if (cargoBody) observer.observe(cargoBody,{childList:true});
+  if (cargoBody) observer.observe(cargoBody,{childList:true,subtree:true});
+  const vehicleObserver=new MutationObserver(decorateVehicleLabels);
+  if ($('#vehicle-id')) vehicleObserver.observe($('#vehicle-id'),{childList:true});
+  if ($('#selected-vehicle-summary')) vehicleObserver.observe($('#selected-vehicle-summary'),{childList:true,subtree:true});
   bindRows();
 
   async function locateRow(row,type,button) {
@@ -152,6 +242,7 @@
     inputsPanel?.classList.toggle('hidden',!active);
     const button=$('#optimize');
     if (button && !button.disabled) button.textContent=active ? 'Lancer l’optimisation totale' : 'Optimiser le chargement';
+    toggleOrderColumn(active);
     bindRows();
   }
   checkbox?.addEventListener('change',applyMode);
@@ -166,28 +257,54 @@
     const input=row.querySelector(`[data-k="${key}"]`);
     return input?.type === 'number' ? Number(input.value) : input?.value?.trim();
   }
+  function samePoint(left,right) {
+    return Math.abs(left.lat-right.lat) < 1e-7 && Math.abs(left.lon-right.lon) < 1e-7;
+  }
   function buildTotalPayload(loadingPayload) {
     if (!state.depot) throw new Error('Localisez le lieu actuel du camion.');
-    const jobs=$$('#cargo-table tbody tr').map((row,index)=>{
+    const availableVehicles=Number($('#total-available-vehicles')?.value || 0);
+    if (!Number.isInteger(availableVehicles) || availableVehicles < 1) throw new Error('Indiquez un nombre de camions disponibles supérieur ou égal à 1.');
+
+    const groupedJobs=new Map();
+    $$('#cargo-table tbody tr').forEach((row,index)=>{
       if (!rowReady(row)) throw new Error(`Localisez l’enlèvement et la livraison de la ligne ${index+1}.`);
       const id=rowValue(row,'id'), quantity=Number(rowValue(row,'quantity') || 1), shape=rowValue(row,'shape'), client=rowValue(row,'destination') || id;
-      return {
-        id:`JOB-${index+1}-${id}`,
+      const pickup={lat:Number(row.dataset.totalPickupLat),lon:Number(row.dataset.totalPickupLon),label:row.dataset.totalPickupLabel || row.querySelector('[data-total="pickup_address"]').value};
+      const delivery={lat:Number(row.dataset.totalDeliveryLat),lon:Number(row.dataset.totalDeliveryLon),label:row.dataset.totalDeliveryLabel || row.querySelector('[data-total="delivery_address"]').value};
+      const key=String(client).trim().toLocaleLowerCase('fr-FR');
+      const unitType=shapeUnit(shape,quantity);
+      const existing=groupedJobs.get(key);
+      if (existing) {
+        if (!samePoint(existing.pickup,pickup) || !samePoint(existing.delivery,delivery)) {
+          throw new Error(`Toutes les marchandises du client « ${client} » doivent utiliser les mêmes points d’enlèvement et de livraison afin de rester dans un seul camion.`);
+        }
+        existing.item_ids.push(id);
+        existing.reference=existing.item_ids.join(', ');
+        existing.quantity+=quantity;
+        existing.weight_kg+=Number(rowValue(row,'weight') || 0) * quantity;
+        if (existing.unit_type !== unitType) existing.unit_type='unités mixtes';
+        return;
+      }
+      groupedJobs.set(key,{
+        id:`JOB-${groupedJobs.size+1}-${id}`,
         client,
         reference:id,
         item_ids:[id],
         quantity,
-        unit_type:shapeUnit(shape,quantity),
+        unit_type:unitType,
         weight_kg:Number(rowValue(row,'weight') || 0) * quantity,
-        pickup:{lat:Number(row.dataset.totalPickupLat),lon:Number(row.dataset.totalPickupLon),label:row.dataset.totalPickupLabel || row.querySelector('[data-total="pickup_address"]').value},
-        delivery:{lat:Number(row.dataset.totalDeliveryLat),lon:Number(row.dataset.totalDeliveryLon),label:row.dataset.totalDeliveryLabel || row.querySelector('[data-total="delivery_address"]').value},
-      };
+        pickup,
+        delivery,
+      });
     });
+
+    const loading=JSON.parse(JSON.stringify(loadingPayload));
+    loading.vehicle_policy={...(loading.vehicle_policy || {}),max_vehicles:availableVehicles};
     return {
-      loading:loadingPayload,
-      route:{depot:state.depot,jobs,return_to_depot:$('#total-return-depot').checked,_fetch_geometry:true},
-      time_limit_s:Number(loadingPayload.budget_seconds || 30),
-      seed:Number(loadingPayload.seed || 1),
+      loading,
+      route:{depot:state.depot,jobs:[...groupedJobs.values()],return_to_depot:$('#total-return-depot').checked,_fetch_geometry:true},
+      time_limit_s:Number(loading.budget_seconds || 30),
+      seed:Number(loading.seed || 1),
     };
   }
 

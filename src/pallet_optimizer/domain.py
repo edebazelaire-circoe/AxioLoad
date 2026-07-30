@@ -108,17 +108,35 @@ class VehicleVersion:
     door_width_mm: int
     door_height_mm: int
     axles: tuple[AxleSpec, ...]
+    exterior_length_mm: int | None = None
+    exterior_width_mm: int | None = None
+    exterior_height_mm: int | None = None
     obstacles: tuple[Rect, ...] = ()
     zones: tuple[ZoneSpec, ...] = ()
     source_note: str = ""
 
     def __post_init__(self) -> None:
-        dimensions = (self.interior_length_mm, self.interior_width_mm, self.interior_height_mm,
-                      self.linear_meter_width_mm, self.door_width_mm, self.door_height_mm)
+        dimensions = (
+            self.interior_length_mm,
+            self.interior_width_mm,
+            self.interior_height_mm,
+            self.linear_meter_width_mm,
+            self.door_width_mm,
+            self.door_height_mm,
+        )
         if any(v <= 0 for v in dimensions) or self.payload_kg <= 0:
             raise DomainError(Diagnostic("INVALID_VEHICLE", f"Invalid vehicle version {self.model_id}@{self.version}"))
         if self.door_width_mm > self.interior_width_mm or self.door_height_mm > self.interior_height_mm:
             raise DomainError(Diagnostic("INVALID_OPENING", "Door opening cannot exceed interior dimensions"))
+        exterior = (self.exterior_length_mm, self.exterior_width_mm, self.exterior_height_mm)
+        if any(value is not None and value <= 0 for value in exterior):
+            raise DomainError(Diagnostic("INVALID_EXTERIOR_DIMENSION", "Exterior dimensions must be positive"))
+        if self.exterior_length_mm is not None and self.exterior_length_mm < self.interior_length_mm:
+            raise DomainError(Diagnostic("INVALID_EXTERIOR_LENGTH", "Exterior length cannot be smaller than interior length"))
+        if self.exterior_width_mm is not None and self.exterior_width_mm < self.interior_width_mm:
+            raise DomainError(Diagnostic("INVALID_EXTERIOR_WIDTH", "Exterior width cannot be smaller than interior width"))
+        if self.exterior_height_mm is not None and self.exterior_height_mm < self.interior_height_mm:
+            raise DomainError(Diagnostic("INVALID_EXTERIOR_HEIGHT", "Exterior height cannot be smaller than interior height"))
         if len(self.axles) not in (0, 2):
             raise DomainError(Diagnostic("AXLE_MODEL_UNSUPPORTED", "V1 supports zero or two axle support points"))
         if len(self.axles) == 2 and self.axles[0].position_mm >= self.axles[1].position_mm:
@@ -142,6 +160,7 @@ class CargoItem:
     destination: str
     delivery_order: int
     rotation_allowed: bool = True
+    stackable: bool = False
     margins: Margins = Margins()
     compatibility_tags: tuple[str, ...] = ()
     incompatible_tags: tuple[str, ...] = ()
@@ -159,6 +178,8 @@ class CargoItem:
             raise DomainError(Diagnostic("INVALID_WEIGHT", f"Item {self.id} weight must be positive"))
         if self.delivery_order < 0 or self.input_index < 0 or self.separation_mm < 0:
             raise DomainError(Diagnostic("INVALID_ORDER_OR_SEPARATION", f"Item {self.id} has invalid ordering data"))
+        if self.stackable and self.shape != Shape.PALLET:
+            raise DomainError(Diagnostic("STACKABLE_NON_PALLET", f"Item {self.id}: only pallets can be marked stackable"))
 
     def oriented_dimensions(self, orientation_deg: int) -> tuple[int, int, int, int]:
         if orientation_deg not in (0, 90):
@@ -230,8 +251,14 @@ class Placement:
 
     @property
     def rect(self) -> Rect:
-        return Rect(self.x_mm, self.y_mm, self.envelope_width_mm, self.envelope_length_mm,
-                    self.actual_height_mm, self.item_id)
+        return Rect(
+            self.x_mm,
+            self.y_mm,
+            self.envelope_width_mm,
+            self.envelope_length_mm,
+            self.actual_height_mm,
+            self.item_id,
+        )
 
 
 @dataclass(frozen=True, slots=True)

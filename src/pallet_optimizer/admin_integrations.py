@@ -242,7 +242,7 @@ class AdminIntegrationsMixin:
                     "origin": origin,
                     "owner_user_id": owner,
                     "base_model_id": str(meta["base_model_id"]) if meta and meta["base_model_id"] else None,
-                    "can_edit": context.is_super_admin or origin == "custom" and (owner in {None, context.actor_id}),
+                    "can_edit": context.is_super_admin or origin == "custom" and owner == context.actor_id,
                     "can_delete": context.is_super_admin or origin == "custom" and owner == context.actor_id,
                 }
             )
@@ -261,7 +261,7 @@ class AdminIntegrationsMixin:
             ).fetchone()
         if meta and meta["origin"] == "global":
             raise PermissionError("Les véhicules globaux sont verrouillés. Dupliquez le modèle pour le personnaliser")
-        if meta and not context.is_super_admin and meta["owner_user_id"] not in {None, context.actor_id}:
+        if meta and not context.is_super_admin and meta["owner_user_id"] != context.actor_id:
             raise PermissionError("Seul le créateur ou le super administrateur peut modifier ce véhicule")
         vehicle = self.registry.save_vehicle(context.tenant_id, payload, actor=context.actor_label)
         with _connect(self.registry.registry_path) as db:
@@ -315,23 +315,37 @@ class AdminIntegrationsMixin:
             )
         self.audit(context.tenant_id, context.actor_label, "vehicle.deleted", model_id, snapshot, {})
 
-    def vehicle_snapshot(self, context: WebContext, request_payload: Mapping[str, Any]) -> list[dict[str, Any]]:
+    @staticmethod
+    def _vehicle_ids(value: Any) -> set[str]:
         ids: set[str] = set()
-        policy = request_payload.get("vehicle_policy")
-        if isinstance(policy, Mapping) and policy.get("forced_vehicle_id"):
-            ids.add(str(policy["forced_vehicle_id"]))
-        loading = request_payload.get("loading")
-        if isinstance(loading, Mapping):
-            nested = loading.get("vehicle_policy")
-            if isinstance(nested, Mapping) and nested.get("forced_vehicle_id"):
-                ids.add(str(nested["forced_vehicle_id"]))
+        if isinstance(value, Mapping):
+            for key, nested in value.items():
+                if key in {"forced_vehicle_id", "vehicle_version_id", "vehicle_model_id", "vehicle_id"} and isinstance(nested, str):
+                    ids.add(nested.rsplit("@", 1)[0])
+                ids.update(AdminIntegrationsMixin._vehicle_ids(nested))
+        elif isinstance(value, (list, tuple)):
+            for nested in value:
+                ids.update(AdminIntegrationsMixin._vehicle_ids(nested))
+        return ids
+
+    def vehicle_snapshot(
+        self,
+        context: WebContext,
+        request_payload: Mapping[str, Any],
+        result_payload: Mapping[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
+        ids = self._vehicle_ids(request_payload)
+        if result_payload:
+            ids.update(self._vehicle_ids(result_payload))
         vehicles = {item["model_id"]: item for item in self.list_vehicles(context)}
         return [vehicles[model_id] for model_id in sorted(ids) if model_id in vehicles]
 
     def annotate_run(self, context: WebContext, run_id: str, request_payload: Mapping[str, Any]) -> None:
         self._ensure_history_columns(context.tenant_id)
-        snapshot = self.vehicle_snapshot(context, request_payload)
         with _connect(self.registry.tenant_path(context.tenant_id)) as db:
+            row = db.execute("SELECT result_json FROM optimization_runs WHERE id=?", (run_id,)).fetchone()
+            result_payload = self._loads(row["result_json"], {}) if row else {}
+            snapshot = self.vehicle_snapshot(context, request_payload, result_payload)
             result = db.execute(
                 """UPDATE optimization_runs SET created_by_type=?,created_by_id=?,created_by=?,vehicle_snapshot_json=?,
                    admin_touched_at=CASE WHEN ?='super_admin' THEN ? ELSE admin_touched_at END,
@@ -370,4 +384,3 @@ class AdminIntegrationsMixin:
                 "INSERT INTO activity_events(id,tenant_id,user_id,event_type,active_seconds,created_at) VALUES (?,?,?,?,?,?)",
                 (str(uuid.uuid4()), tenant_id, user_id, event_type, seconds, utc_now()),
             )
-

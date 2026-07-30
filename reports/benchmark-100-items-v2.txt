@@ -1,0 +1,7 @@
+status=completed_with_time_limit
+engine_elapsed_seconds=1.052342
+wall_seconds=1.053523
+solutions=1
+placements=100
+time_limit_reached=True
+occupied_length_m=1.8

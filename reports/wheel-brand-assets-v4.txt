@@ -1,0 +1,13 @@
+    65454  2026-07-29 15:18   pallet_optimizer/static/brand/axioload-compact.png
+     1177  2026-07-29 15:18   pallet_optimizer/static/brand/axioload-compact.svg
+    42155  2026-07-29 15:18   pallet_optimizer/static/brand/axioload-horizontal-dark.png
+     1166  2026-07-29 15:18   pallet_optimizer/static/brand/axioload-horizontal-dark.svg
+    44308  2026-07-29 15:18   pallet_optimizer/static/brand/axioload-horizontal.png
+     1165  2026-07-29 15:18   pallet_optimizer/static/brand/axioload-horizontal.svg
+    28291  2026-07-29 15:18   pallet_optimizer/static/brand/axioload-icon.png
+      888  2026-07-29 15:18   pallet_optimizer/static/brand/axioload-icon.svg
+     4814  2026-07-29 15:18   pallet_optimizer/static/brand/favicon-192.png
+     1047  2026-07-29 15:18   pallet_optimizer/static/brand/favicon-32.png
+    12670  2026-07-29 15:18   pallet_optimizer/static/brand/favicon-512.png
+    25038  2026-07-29 15:18   pallet_optimizer/static/brand/favicon.ico
+      888  2026-07-29 15:18   pallet_optimizer/static/brand/favicon.svg

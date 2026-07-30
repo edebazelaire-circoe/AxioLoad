@@ -1,0 +1,137 @@
+{
+  "status": "passed",
+  "results": [
+    {
+      "method": "HGS / PyVRP",
+      "engine": "HGS intégré (génétique + recherche locale + décodeur pickup-delivery)",
+      "delivery_order": [
+        "A",
+        "B",
+        "C"
+      ],
+      "distance_km": 40.0,
+      "duration_min": 53.333333333333336,
+      "iterations": 3359,
+      "stops": [
+        {
+          "sequence": 0,
+          "type": "start",
+          "job_id": null,
+          "load_after_kg": null
+        },
+        {
+          "sequence": 1,
+          "type": "pickup",
+          "job_id": "A",
+          "load_after_kg": 500.0
+        },
+        {
+          "sequence": 2,
+          "type": "pickup",
+          "job_id": "B",
+          "load_after_kg": 1000.0
+        },
+        {
+          "sequence": 3,
+          "type": "delivery",
+          "job_id": "A",
+          "load_after_kg": 500.0
+        },
+        {
+          "sequence": 4,
+          "type": "pickup",
+          "job_id": "C",
+          "load_after_kg": 900.0
+        },
+        {
+          "sequence": 5,
+          "type": "delivery",
+          "job_id": "B",
+          "load_after_kg": 400.0
+        },
+        {
+          "sequence": 6,
+          "type": "delivery",
+          "job_id": "C",
+          "load_after_kg": 0.0
+        },
+        {
+          "sequence": 7,
+          "type": "return",
+          "job_id": null,
+          "load_after_kg": 0.0
+        }
+      ],
+      "precedence_ok": true,
+      "capacity_ok": true,
+      "warnings": [
+        "PyVRP n’est pas disponible dans cet environnement. Le moteur HGS intégré prend le relais (ModuleNotFoundError)."
+      ]
+    },
+    {
+      "method": "ALNS",
+      "engine": "ALNS adaptatif pickup-delivery",
+      "delivery_order": [
+        "A",
+        "C",
+        "B"
+      ],
+      "distance_km": 40.0,
+      "duration_min": 53.333333333333336,
+      "iterations": 3209,
+      "stops": [
+        {
+          "sequence": 0,
+          "type": "start",
+          "job_id": null,
+          "load_after_kg": null
+        },
+        {
+          "sequence": 1,
+          "type": "pickup",
+          "job_id": "A",
+          "load_after_kg": 500.0
+        },
+        {
+          "sequence": 2,
+          "type": "pickup",
+          "job_id": "B",
+          "load_after_kg": 1000.0
+        },
+        {
+          "sequence": 3,
+          "type": "delivery",
+          "job_id": "A",
+          "load_after_kg": 500.0
+        },
+        {
+          "sequence": 4,
+          "type": "pickup",
+          "job_id": "C",
+          "load_after_kg": 900.0
+        },
+        {
+          "sequence": 5,
+          "type": "delivery",
+          "job_id": "C",
+          "load_after_kg": 500.0
+        },
+        {
+          "sequence": 6,
+          "type": "delivery",
+          "job_id": "B",
+          "load_after_kg": 0.0
+        },
+        {
+          "sequence": 7,
+          "type": "return",
+          "job_id": null,
+          "load_after_kg": 0.0
+        }
+      ],
+      "precedence_ok": true,
+      "capacity_ok": true,
+      "warnings": []
+    }
+  ]
+}

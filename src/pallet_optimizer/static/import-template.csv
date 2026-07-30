@@ -1,0 +1,3 @@
+id;quantity;shape;length;width;height;weight;destination;delivery_order;rotation_allowed
+PAL-001;2;pallet;1200;800;1400;500;Client A;2;oui
+PAL-002;1;roll;1000;1000;1200;350;Client B;1;non

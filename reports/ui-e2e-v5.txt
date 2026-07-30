@@ -1,0 +1,1 @@
+UI E2E OK: /mnt/data/axioload_v05_work/pallet_loading_optimizer/reports/vehicle-screen-v5.png, /mnt/data/axioload_v05_work/pallet_loading_optimizer/reports/settings-dark-v5.png, /mnt/data/axioload_v05_work/pallet_loading_optimizer/reports/ui-results-v5.png, /mnt/data/axioload_v05_work/pallet_loading_optimizer/reports/mobile-dark-v5.png

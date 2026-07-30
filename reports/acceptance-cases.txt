@@ -1,0 +1,20 @@
+CASE 1 - reported input / default semi
+status= completed
+placements= 3
+occupied_length_m= 1.2
+linear_meters= 1.2
+max_x_mm= 2400
+max_y_mm= 1200
+
+CASE 2 - same pallets / vehicle width changed to 1600 mm
+vehicle_version= semi_trailer@2
+saved_version= 2
+status= completed
+occupied_length_m= 2.4
+max_x_mm= 1200
+max_y_mm= 2400
+
+CASE 3 - dimensions deliberately too small
+status= infeasible
+diagnostic_codes= ITEM_DOES_NOT_FIT,TOTAL_FLOOR_AREA_EXCEEDED
+diagnostic_message= PAL-001 ne peut entrer dans aucun véhicule sélectionné avec ses dimensions, sa hauteur, son poids et la rotation autorisée.

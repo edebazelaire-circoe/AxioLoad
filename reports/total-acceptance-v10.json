@@ -1,0 +1,41 @@
+{
+  "http_status": 200,
+  "status": "completed",
+  "engine_version": "0.10.0",
+  "best_method": "coupled_alns_3d_oracle",
+  "history_after_total_optimization": [],
+  "solutions": [
+    {
+      "method": "coupled_alns_3d_oracle",
+      "method_name": "ALNS couplé + oracle de chargement LIFO",
+      "vehicle_count": 1,
+      "total_distance_km": 79.159,
+      "total_linear_meters": 4.2,
+      "oracle_calls": 15,
+      "oracle_cache_hits": 429701,
+      "clients": [
+        "A",
+        "C",
+        "B"
+      ],
+      "ROT_orientation_deg": 90,
+      "all_routes_have_loading_plan": true
+    },
+    {
+      "method": "bilevel_genetic_3l_cvrp",
+      "method_name": "Co-évolution génétique bi-niveau 3L-CVRP",
+      "vehicle_count": 1,
+      "total_distance_km": 79.308,
+      "total_linear_meters": 4.2,
+      "oracle_calls": 32,
+      "oracle_cache_hits": 23,
+      "clients": [
+        "A",
+        "B",
+        "C"
+      ],
+      "ROT_orientation_deg": 90,
+      "all_routes_have_loading_plan": true
+    }
+  ]
+}

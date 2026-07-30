@@ -1,0 +1,9 @@
+Original vs modified bundled SQLite checksums
+src/pallet_optimizer/data/registry.sqlite
+  original: f469ee9cc3c2e648db784408e69059e3c4bf1516fc2c8668c73494a79f83bc3c
+  current : f469ee9cc3c2e648db784408e69059e3c4bf1516fc2c8668c73494a79f83bc3c
+  identical: yes
+src/pallet_optimizer/data/tenants/local.sqlite
+  original: 5e80fdde5bc8c4635445fb7a4924004c12b76c99f11d65785672bd8babe973d6
+  current : 5e80fdde5bc8c4635445fb7a4924004c12b76c99f11d65785672bd8babe973d6
+  identical: yes

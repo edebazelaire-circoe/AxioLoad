@@ -1,0 +1,19 @@
+Metadata-Version: 2.4
+Name: pallet-loading-optimizer
+Version: 0.10.0
+Summary: AxioLoad deterministic transport loading optimizer
+Requires-Python: >=3.12
+Requires-Dist: fastapi<1,>=0.128
+Requires-Dist: pydantic<3,>=2.13
+Requires-Dist: uvicorn<1,>=0.48
+Requires-Dist: jinja2<4,>=3.1
+Requires-Dist: openpyxl<4,>=3.1
+Requires-Dist: reportlab<5,>=4.4
+Requires-Dist: python-multipart<1,>=0.0.29
+Provides-Extra: dev
+Requires-Dist: pytest<10,>=9; extra == "dev"
+Requires-Dist: httpx<1,>=0.28; extra == "dev"
+Provides-Extra: solver
+Requires-Dist: ortools<10,>=9.12; extra == "solver"
+Provides-Extra: routing
+Requires-Dist: pyvrp<0.14,>=0.13; extra == "routing"

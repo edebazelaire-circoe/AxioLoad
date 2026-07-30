@@ -1,0 +1,2 @@
+JavaScript: OK
+Python compileall: OK

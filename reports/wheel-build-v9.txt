@@ -1,0 +1,11 @@
+WARNING: The directory '/home/oai/.cache/pip' or its parent directory is not owned or is not writable by the current user. The cache has been disabled. Check the permissions and owner of that directory. If executing pip with sudo, you should use sudo's -H flag.
+Looking in indexes: https://reader:****@packages.applied-caas-gateway1.internal.api.openai.org/artifactory/api/pypi/pypi-public/simple
+Processing /mnt/data/axioload_v09_work/pallet_loading_optimizer
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Building wheels for collected packages: pallet-loading-optimizer
+  Building wheel for pallet-loading-optimizer (pyproject.toml): started
+  Building wheel for pallet-loading-optimizer (pyproject.toml): finished with status 'done'
+  Created wheel for pallet-loading-optimizer: filename=pallet_loading_optimizer-0.9.0-py3-none-any.whl size=314624 sha256=942da51ca367599a8cc732d06abba263bd195e2b1b9ea8290f1ab954839bbde5
+  Stored in directory: /tmp/pip-ephem-wheel-cache-087qcexu/wheels/b2/58/10/808b6385d342f31de679a4839aa01272f9080392d8176952eb
+Successfully built pallet-loading-optimizer

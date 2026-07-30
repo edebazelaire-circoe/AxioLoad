@@ -1,0 +1,96 @@
+.route-page{max-width:none}
+.route-heading-actions,.route-method-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.route-settings-card,.route-jobs-card,.route-methods-card,.route-results{margin-top:18px;padding:20px;border:1px solid var(--line);border-radius:18px;background:var(--surface-2)}
+.route-settings-grid{display:grid;grid-template-columns:minmax(360px,2fr) repeat(3,minmax(150px,.7fr)) minmax(180px,.7fr);gap:14px;align-items:end}
+.route-depot-field{min-width:0}
+.route-address-control{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:end}
+.route-location-status{display:block;margin-top:6px;color:var(--muted);font-weight:600}
+.route-location-status.located{color:var(--success)}
+.route-location-status.error{color:var(--danger)}
+.route-checkbox{display:flex;align-items:center;gap:10px;padding:10px 12px;min-height:44px;border:1px solid var(--line);border-radius:10px;background:var(--field)}
+.route-checkbox input{width:auto;margin:0}
+.route-jobs-heading{align-items:end}
+.route-table-wrap table{min-width:1440px}
+.route-col-client{min-width:160px}.route-col-reference{min-width:130px}.route-col-address{min-width:300px}.route-col-weight{min-width:110px}.route-col-status{min-width:170px}
+.route-job-address{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;align-items:center}
+.route-job-address button{padding:7px 9px;white-space:nowrap}
+.route-row-status{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:750;color:var(--muted)}
+.route-row-status::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--line-strong)}
+.route-row-status.ready{color:var(--success)}.route-row-status.ready::before{background:var(--success)}
+.route-row-status.partial{color:var(--warning)}.route-row-status.partial::before{background:var(--warning)}
+.route-row-status.error{color:var(--danger)}.route-row-status.error::before{background:var(--danger)}
+.route-methods-card{display:flex;justify-content:space-between;gap:20px;align-items:end}
+.route-compare-button{border-color:var(--teal-500);color:var(--accent)}
+.route-result-heading{display:flex;justify-content:space-between;gap:18px;align-items:start}
+.route-source-note{color:var(--muted);font-size:12px;text-align:right;max-width:440px}
+.route-result-cards{display:grid;grid-template-columns:repeat(2,minmax(250px,1fr));gap:14px;margin:16px 0}
+.route-result-card{position:relative;text-align:left;padding:18px;border:1px solid var(--line);border-radius:16px;background:var(--field);color:var(--ink);cursor:pointer;transition:.16s ease}
+.route-result-card:hover{transform:translateY(-1px);border-color:var(--cyan-600)}
+.route-result-card.active{border-color:var(--cyan-600);box-shadow:0 0 0 2px rgba(0,168,191,.17)}
+.route-result-card.best::before{content:"TRAJET LE PLUS COURT";position:absolute;right:14px;top:14px;padding:4px 7px;border-radius:7px;background:var(--success-bg);border:1px solid var(--success-border);color:var(--success);font-size:10px;font-weight:850;letter-spacing:.04em}
+.route-result-method{display:flex;align-items:center;gap:8px;padding-right:120px}
+.route-method-help{width:18px;height:18px;border-radius:50%;border:1px solid var(--line-strong);background:var(--surface-3);color:var(--accent);font-size:11px;font-weight:850;padding:0;cursor:help}
+.route-result-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:15px}
+.route-result-metric{display:grid;gap:3px;padding:11px;border:1px solid var(--line);border-radius:11px;background:var(--surface-2)}
+.route-result-metric span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}.route-result-metric strong{font-size:18px}
+.route-result-engine{margin-top:10px;color:var(--muted);font-size:12px}
+.route-result-warning{margin-top:10px;padding:8px 10px;border-radius:9px;background:var(--warning-bg);color:var(--warning);font-size:12px}
+.route-map-layout{display:grid;grid-template-columns:minmax(0,2fr) minmax(290px,.75fr);gap:16px}
+.route-map-card,.route-summary-card{border:1px solid var(--line);border-radius:16px;background:var(--field);overflow:hidden}
+.route-map-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 15px;border-bottom:1px solid var(--line)}
+.route-map-toolbar strong,.route-map-toolbar span{display:block}.route-map-toolbar span{margin-top:2px;color:var(--muted);font-size:12px}
+#route-map{display:block;width:100%;height:auto;min-height:460px;background:var(--canvas-start);cursor:grab;touch-action:none}
+#route-map:active{cursor:grabbing}
+.route-map-legend{display:flex;gap:18px;flex-wrap:wrap;padding:10px 14px;border-top:1px solid var(--line);color:var(--muted);font-size:12px}
+.route-dot{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:5px}.route-dot.start{background:#063B5B;border:2px solid #fff}.route-dot.pickup{background:#F19B5C}.route-dot.delivery{background:#16B8B0}
+.route-summary-card{padding:16px;max-height:670px;overflow:auto}.route-summary-card h3{margin-top:0}
+.route-stop-list{display:grid;gap:8px}
+.route-stop{display:grid;grid-template-columns:30px 1fr;gap:9px;padding:10px;border:1px solid var(--line);border-radius:11px;background:var(--surface-2)}
+.route-stop-number{display:flex;align-items:center;justify-content:center;width:27px;height:27px;border-radius:50%;background:var(--navy-900);color:#fff;font-size:12px;font-weight:850}
+.route-stop.pickup .route-stop-number{background:#C96D2B}.route-stop.delivery .route-stop-number{background:#087C76}
+.route-stop strong,.route-stop small{display:block}.route-stop small{margin-top:2px;color:var(--muted)}
+.route-stop-leg{margin-top:5px;color:var(--muted);font-size:11px}
+.route-map-tooltip{position:fixed;z-index:1200;max-width:360px;padding:10px 12px;border:1px solid var(--line-strong);border-radius:9px;background:var(--paper);color:var(--ink);box-shadow:0 12px 34px var(--overlay);font-size:12px;line-height:1.45;pointer-events:none}
+@media(max-width:1180px){.route-settings-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.route-depot-field{grid-column:1/-1}.route-methods-card{display:block}.route-method-actions{margin-top:14px}.route-map-layout{grid-template-columns:1fr}.route-summary-card{max-height:none}.route-result-method{padding-right:0}.route-result-card.best::before{position:static;display:inline-block;margin-bottom:9px}}
+@media(max-width:720px){.route-settings-grid,.route-result-cards{grid-template-columns:1fr}.route-depot-field{grid-column:auto}.route-address-control{grid-template-columns:1fr}.route-heading-actions,.route-method-actions{align-items:stretch}.route-heading-actions button,.route-method-actions button{width:100%}.route-result-metrics{grid-template-columns:1fr}.route-result-heading{display:block}.route-source-note{text-align:left;margin-top:8px}.route-map-toolbar{align-items:flex-start}.route-map-toolbar button{flex:none}#route-map{min-height:360px}}
+
+/* AxioLoad 0.9.0 - fond cartographique, couleurs clients et récapitulatif */
+.route-table-wrap table{min-width:1740px}
+.route-col-color{width:76px;min-width:76px;text-align:center}
+.route-col-quantity{width:88px;min-width:88px;text-align:right}
+.route-col-unit{width:128px;min-width:128px}
+.route-color-cell{text-align:center}
+.route-client-swatch,.route-inline-swatch,.route-client-legend{
+  --client-color:#087FA2;
+  display:inline-block;
+  width:18px;
+  height:18px;
+  border-radius:50%;
+  background:var(--client-color);
+  border:3px solid rgba(255,255,255,.92);
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--client-color) 75%,#102A3A);
+  vertical-align:middle;
+}
+.route-inline-swatch{width:12px;height:12px;border-width:2px;margin-right:7px}
+.route-client-legend{width:12px;height:12px;border-width:2px;margin-right:5px}
+.route-stop{border-left:5px solid var(--client-color,#063B5B)}
+.route-stop.start,.route-stop.return{border-left-color:#063B5B}
+#route-map{background:#E8F1F4}
+.route-map-attribution{padding:6px 12px;border-top:1px solid var(--line);color:var(--muted);font-size:10px;text-align:right;background:var(--surface-2)}
+.route-map-attribution a{color:var(--accent)}
+.route-map-legend strong{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--navy-900);color:#fff;font-size:10px;margin-right:4px}
+.route-recap-card{margin-top:18px;padding:20px;border:1px solid var(--line);border-radius:18px;background:var(--surface-2)}
+.route-recap-heading{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:12px}
+.route-recap-heading h3{margin:0}
+.route-recap-wrap{border-radius:14px}
+#route-recap-table{min-width:1260px}
+#route-recap-table th,#route-recap-table td{vertical-align:top}
+#route-recap-table td:nth-child(3),#route-recap-table td:nth-child(4){min-width:270px;max-width:360px;white-space:normal}
+#route-recap-table td small{display:block;margin-top:3px;color:var(--muted)}
+#route-recap-table tfoot th{background:var(--surface-3);font-size:13px;color:var(--ink);text-transform:none;letter-spacing:0;border-top:2px solid var(--line-strong)}
+.route-recap-color{text-align:center;width:64px}
+.route-recap-number{text-align:right;white-space:nowrap}
+@media(max-width:720px){
+  .route-recap-card{padding:14px}
+  .route-map-attribution{text-align:left}
+}

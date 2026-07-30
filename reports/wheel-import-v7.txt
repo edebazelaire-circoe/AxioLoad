@@ -1,0 +1,2 @@
+version 0.7.0
+methods ['extreme_points', 'skyline_blf', 'block_layers', 'brkga_hybrid', 'cp_sat']

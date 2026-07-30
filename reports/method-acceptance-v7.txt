@@ -1,0 +1,9 @@
+status=completed
+solutions=5
+rank=1; method=block_layers; name=Blocs et couches; vehicles=1; occupied_m=2.200; ldm=2.200; orientations=[0, 90]
+rank=2; method=cp_sat; name=Résolveur par contraintes CP-SAT; vehicles=1; occupied_m=2.200; ldm=2.200; orientations=[0, 90]
+rank=3; method=extreme_points; name=MaxRects / Points extrêmes; vehicles=1; occupied_m=2.400; ldm=2.400; orientations=[0]
+rank=4; method=skyline_blf; name=Skyline Bottom-Left-Fill; vehicles=1; occupied_m=2.600; ldm=2.600; orientations=[90]
+rank=5; method=brkga_hybrid; name=BRKGA hybride; vehicles=1; occupied_m=4.400; ldm=4.400; orientations=[90]
+all_methods= True
+ortools_runtime=not_available_in_test_environment; internal_constraint_fallback_tested

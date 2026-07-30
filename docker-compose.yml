@@ -1,0 +1,12 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      PLO_DATA_DIR: /app/data
+    volumes:
+      - plo_data:/app/data
+    restart: unless-stopped
+volumes:
+  plo_data:

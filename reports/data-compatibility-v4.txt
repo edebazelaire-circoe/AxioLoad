@@ -1,0 +1,2 @@
+Existing SQLite data opened successfully; vehicle count: 2
+Database files preserved: ['registry.sqlite', 'tenants/local.sqlite']

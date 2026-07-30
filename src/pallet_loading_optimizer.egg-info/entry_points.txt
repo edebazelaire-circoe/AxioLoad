@@ -1,0 +1,2 @@
+[console_scripts]
+pallet-optimizer = pallet_optimizer.cli:main

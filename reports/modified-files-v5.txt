@@ -1,0 +1,35 @@
+Files modified for AxioLoad 0.5.0
+
+Application UI
+- src/pallet_optimizer/templates/index.html
+- src/pallet_optimizer/static/app.css
+- src/pallet_optimizer/static/app.js
+
+Version metadata only
+- pyproject.toml
+- src/pallet_optimizer/__init__.py
+- src/pallet_optimizer/api.py
+- src/pallet_optimizer/domain.py
+- src/pallet_optimizer/engine.py
+
+Documentation and rollback
+- README.md
+- rollback/README.txt
+- rollback/AxioLoad_0.4.0_original.zip
+
+Tests and evidence
+- scripts/ui_e2e.py
+- tests/test_ui_settings.py
+- reports/final-implementation-report-v5.md
+- reports/test-results-v5.txt
+- reports/smoke-test-v5.txt
+- reports/syntax-checks-v5.txt
+- reports/ui-e2e-v5.txt
+- reports/data-compatibility-v5.txt
+- reports/wheel-build-v5.txt
+- reports/wheel-assets-v5.txt
+- reports/wheel-install-v5.txt
+- reports/vehicle-screen-v5.png
+- reports/settings-dark-v5.png
+- reports/ui-results-v5.png
+- reports/mobile-dark-v5.png

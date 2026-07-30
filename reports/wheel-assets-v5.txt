@@ -1,0 +1,8 @@
+    18572  2026-07-29 20:48   pallet_optimizer/static/app.css
+    41781  2026-07-29 20:50   pallet_optimizer/static/app.js
+    42155  2026-07-29 15:18   pallet_optimizer/static/brand/axioload-horizontal-dark.png
+     1166  2026-07-29 15:18   pallet_optimizer/static/brand/axioload-horizontal-dark.svg
+    44308  2026-07-29 15:18   pallet_optimizer/static/brand/axioload-horizontal.png
+     1165  2026-07-29 15:18   pallet_optimizer/static/brand/axioload-horizontal.svg
+    24652  2026-07-29 20:47   pallet_optimizer/templates/index.html
+      499  2026-07-29 20:56   pallet_loading_optimizer-0.5.0.dist-info/METADATA

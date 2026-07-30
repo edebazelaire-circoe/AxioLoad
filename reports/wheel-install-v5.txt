@@ -1,0 +1,5 @@
+Looking in indexes: https://reader:****@packages.applied-caas-gateway1.internal.api.openai.org/artifactory/api/pypi/pypi-public/simple
+Processing ./dist/pallet_loading_optimizer-0.5.0-py3-none-any.whl
+Installing collected packages: pallet-loading-optimizer
+Successfully installed pallet-loading-optimizer-0.5.0
+wheel import OK 0.5.0

@@ -1,0 +1,8 @@
+AxioLoad 0.9.0 - recette navigateur de l'onglet Itinéraire
+- 2 missions saisies et localisées par coordonnées
+- comparaison HGS / ALNS simulée avec une réponse déterministe
+- 18 tuiles de fond de carte demandées pour la zone visible
+- 2 couleurs clients distinctes reprises dans les marqueurs, la liste et le récapitulatif
+- 2 lignes présentes dans le tableau récapitulatif
+- total affiché : 318,4 km et 1 700 kg
+- aucune erreur JavaScript de page

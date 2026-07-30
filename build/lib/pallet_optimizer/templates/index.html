@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="fr" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AxioLoad · Optimisation de chargement</title>
+  <meta name="theme-color" content="#063B5B">
+  <link rel="icon" type="image/svg+xml" href="/static/brand/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/brand/favicon-32.png">
+  <script>
+    (function () {
+      try {
+        const saved = JSON.parse(localStorage.getItem('axioload.settings.v1') || '{}');
+        document.documentElement.dataset.theme = saved.theme === 'dark' ? 'dark' : 'light';
+      } catch (_) {
+        document.documentElement.dataset.theme = 'light';
+      }
+    }());
+  </script>
+  <link rel="stylesheet" href="/static/app.css?v={{ app_version }}">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand-lockup">
+      <img src="/static/brand/axioload-horizontal-dark.svg" alt="AxioLoad" class="brand-logo">
+      <div>
+        <div class="eyebrow">Logiciel d’optimisation de transport</div>
+        <p>Optimisation physique du chargement, métrage linéaire et contrôle d’accessibilité.</p>
+      </div>
+    </div>
+    <button id="open-settings" class="settings-access" type="button" aria-controls="tab-settings" aria-label="Ouvrir les paramètres">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.4 13a7.7 7.7 0 0 0 .1-1 7.7 7.7 0 0 0-.1-1l2.1-1.6-2-3.4-2.5 1a7.3 7.3 0 0 0-1.7-1L15 3.3h-4L10.6 6a7.3 7.3 0 0 0-1.7 1L6.4 6l-2 3.4L6.5 11a7.7 7.7 0 0 0-.1 1 7.7 7.7 0 0 0 .1 1l-2.1 1.6 2 3.4 2.5-1a7.3 7.3 0 0 0 1.7 1l.4 2.7h4l.4-2.7a7.3 7.3 0 0 0 1.7-1l2.5 1 2-3.4L19.4 13ZM13 15.5A3.5 3.5 0 1 1 13 8a3.5 3.5 0 0 1 0 7.5Z"/></svg>
+      <span>Paramètres</span>
+    </button>
+  </header>
+
+  <nav class="tabs" aria-label="Navigation principale">
+    <button class="tab active" data-tab="vehicles">0. Véhicules</button>
+    <button class="tab" data-tab="data">1. Données</button>
+    <button class="tab" data-tab="results">2. Résultats</button>
+    <button class="tab" data-tab="history">3. Historique</button>
+  </nav>
+
+  <main>
+    <section id="tab-vehicles" class="panel tab-panel active">
+      <div class="panel-heading">
+        <div>
+          <div class="eyebrow">Catalogue de flotte</div>
+          <h2>Configurer les dimensions intérieures des véhicules</h2>
+          <p class="section-intro">Cette section définit l’espace réellement disponible dans chaque type de véhicule. Les dimensions enregistrées sont utilisées par toutes les optimisations suivantes.</p>
+        </div>
+        <div class="import-box">
+          <button id="add-vehicle" class="secondary">+ Ajouter un véhicule</button>
+          <button id="reset-vehicles" class="secondary">Restaurer les modèles de démonstration</button>
+        </div>
+      </div>
+
+      <div class="table-wrap vehicle-table-wrap">
+        <table id="vehicle-table" class="wide-table">
+          <thead><tr>
+            <th class="col-id">Identifiant <button type="button" class="help-tip small-tip" data-tooltip="Code technique unique du véhicule. Il ne peut plus être modifié après le premier enregistrement." aria-label="Aide identifiant véhicule">?</button></th>
+            <th class="col-name">Nom <button type="button" class="help-tip small-tip" data-tooltip="Nom lisible affiché dans la liste des véhicules." aria-label="Aide nom véhicule">?</button></th>
+            <th class="col-num">Longueur int. (mm) <button type="button" class="help-tip small-tip" data-tooltip="Distance intérieure utile dans le sens longitudinal, de la porte arrière vers l’avant du véhicule." aria-label="Aide longueur intérieure">?</button></th>
+            <th class="col-num">Largeur int. (mm) <button type="button" class="help-tip small-tip" data-tooltip="Largeur intérieure réellement disponible entre les parois." aria-label="Aide largeur intérieure">?</button></th>
+            <th class="col-num">Hauteur int. (mm) <button type="button" class="help-tip small-tip" data-tooltip="Hauteur verticale intérieure maximale utilisable." aria-label="Aide hauteur intérieure">?</button></th>
+            <th class="col-num">Largeur LDM (mm) <button type="button" class="help-tip small-tip" data-tooltip="Largeur de référence utilisée pour le calcul des mètres linéaires." aria-label="Aide largeur LDM">?</button></th>
+            <th class="col-num">Charge utile (kg) <button type="button" class="help-tip small-tip" data-tooltip="Poids total maximal des marchandises pouvant être chargé dans le véhicule." aria-label="Aide charge utile">?</button></th>
+            <th class="col-num">Ouverture l. (mm) <button type="button" class="help-tip small-tip" data-tooltip="Largeur disponible au passage de la porte arrière." aria-label="Aide largeur ouverture">?</button></th>
+            <th class="col-num">Ouverture H. (mm) <button type="button" class="help-tip small-tip" data-tooltip="Hauteur disponible au passage de la porte arrière." aria-label="Aide hauteur ouverture">?</button></th>
+            <th class="col-version">Version <button type="button" class="help-tip small-tip" data-tooltip="Numéro de version conservé pour garantir la traçabilité des anciens calculs." aria-label="Aide version véhicule">?</button></th>
+            <th class="col-action"></th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="form-actions">
+        <button id="save-vehicles" class="primary">Enregistrer les véhicules</button>
+      </div>
+      <div id="vehicle-message" class="message hidden" role="status" aria-live="polite"></div>
+    </section>
+
+    <section id="tab-data" class="panel tab-panel">
+      <div class="panel-heading">
+        <div>
+          <div class="eyebrow">Chargement</div>
+          <h2>Préparer le cas à optimiser</h2>
+          <p class="section-intro">Renseignez le contexte du calcul, puis décrivez les objets à charger. L’outil utilise ces informations pour vérifier la faisabilité, rechercher plusieurs plans et comparer les résultats.</p>
+        </div>
+        <div class="import-box">
+          <label class="file-button">Importer CSV/XLSX<input id="import-file" type="file" accept=".csv,.xlsx"></label>
+          <a href="/static/import-template.csv" download>Modèle CSV</a>
+        </div>
+      </div>
+
+      <div class="section-title-row">
+        <div>
+          <h3>1. Paramètres du calcul</h3>
+          <p class="section-description">Cette section permet de choisir le véhicule, le temps alloué au moteur et les règles globales. Ces paramètres pilotent la recherche de solutions sans modifier les dimensions des objets.</p>
+        </div>
+      </div>
+      <div class="settings-grid">
+        <label><span class="field-label">Véhicule</span>
+          <select id="vehicle-id"></select>
+        </label>
+        <label><span class="field-label">Budget de calcul</span>
+          <select id="budget-seconds"><option value="5">5 s</option><option value="15">15 s</option><option value="30" selected>30 s</option></select>
+        </label>
+        <label><span class="field-label">Nombre maximal de véhicules</span>
+          <input id="max-vehicles" type="number" min="1" max="10" value="5">
+        </label>
+        <label><span class="field-label">Graine déterministe</span>
+          <input id="seed" type="number" value="1">
+        </label>
+        <label><span class="field-label">Marge de sécurité globale (mm)</span>
+          <input id="default-margin" type="number" min="0" value="0">
+        </label>
+      </div>
+
+      <div id="selected-vehicle-summary" class="vehicle-summary"></div>
+      <div class="hint"><strong>Ordre de livraison :</strong> un nombre plus élevé signifie un déchargement plus tôt. Sans consigne particulière, les objets les plus urgents doivent donc rester les plus accessibles depuis la porte arrière.</div>
+
+      <div class="section-title-row cargo-section-title">
+        <div>
+          <h3>2. Marchandises à charger</h3>
+          <p class="section-description">Ajoutez une ligne par référence. Chaque ligne décrit un type d’objet, sa quantité, ses dimensions, son poids et les contraintes qui orienteront le placement dans le véhicule.</p>
+        </div>
+      </div>
+      <div class="table-wrap cargo-table-wrap">
+        <table id="cargo-table" class="wide-table">
+          <thead><tr>
+            <th class="col-select"></th>
+            <th class="col-name">Référence <button type="button" class="help-tip small-tip" data-tooltip="Code ou nom qui permettra d’identifier l’objet dans les résultats, la vue 3D et les exports." aria-label="Aide référence">?</button></th>
+            <th class="col-qty">Qté <button type="button" class="help-tip small-tip" data-tooltip="Nombre d’unités identiques à placer." aria-label="Aide quantité">?</button></th>
+            <th class="col-shape">Forme <button type="button" class="help-tip small-tip" data-tooltip="Type géométrique de la marchandise. Le moteur utilise son enveloppe extérieure pour le rangement." aria-label="Aide forme">?</button></th>
+            <th class="col-num">L (mm) <button type="button" class="help-tip small-tip" data-tooltip="Longueur extérieure de l’objet avant rotation." aria-label="Aide longueur objet">?</button></th>
+            <th class="col-num">l (mm) <button type="button" class="help-tip small-tip" data-tooltip="Largeur extérieure de l’objet avant rotation." aria-label="Aide largeur objet">?</button></th>
+            <th class="col-num">H (mm) <button type="button" class="help-tip small-tip" data-tooltip="Hauteur verticale de l’objet." aria-label="Aide hauteur objet">?</button></th>
+            <th class="col-num">Poids (kg) <button type="button" class="help-tip small-tip" data-tooltip="Poids d’une seule unité. Il sert au contrôle de la charge utile et à l’inspection." aria-label="Aide poids">?</button></th>
+            <th class="col-destination">Destination <button type="button" class="help-tip small-tip" data-tooltip="Lieu ou client de livraison. Cette information aide à comprendre et contrôler l’ordre de déchargement." aria-label="Aide destination">?</button></th>
+            <th class="col-order">Ordre <button type="button" class="help-tip small-tip" data-tooltip="Priorité de déchargement. Plus le nombre est élevé, plus l’objet doit rester accessible près de la porte arrière." aria-label="Aide ordre de livraison">?</button></th>
+            <th class="col-bool">Rotation <button type="button" class="help-tip small-tip" data-tooltip="Autorise une rotation de 90° sur le plancher. La hauteur reste verticale." aria-label="Aide rotation">?</button></th>
+            <th class="col-group">Rester ensemble <button type="button" class="help-tip small-tip" data-tooltip="Code de groupe, par exemple G1. Les références portant le même code doivent être regroupées autant que possible." aria-label="Aide groupe rester ensemble">?</button></th>
+            <th class="col-group">Séparer <button type="button" class="help-tip small-tip" data-tooltip="Code de séparation, par exemple S1. Les références portant le même code doivent être éloignées." aria-label="Aide groupe séparer">?</button></th>
+            <th class="col-tags">Tags <button type="button" class="help-tip small-tip" data-tooltip="Catégories séparées par des virgules, par exemple alimentaire, fragile. Elles servent aux contrôles de compatibilité." aria-label="Aide tags">?</button></th>
+            <th class="col-tags">Incompatibles <button type="button" class="help-tip small-tip" data-tooltip="Tags avec lesquels l’objet ne doit pas être placé à proximité, par exemple chimique." aria-label="Aide incompatibilités">?</button></th>
+            <th class="col-num">Écart (mm) <button type="button" class="help-tip small-tip" data-tooltip="Distance minimale spécifique à conserver autour de cette référence, en plus de la marge globale." aria-label="Aide écart">?</button></th>
+            <th class="col-action"></th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="form-actions">
+        <button id="add-row" class="secondary">+ Ajouter une ligne</button>
+        <button id="duplicate-row" class="secondary">Dupliquer la dernière</button>
+        <button id="optimize" class="primary">Optimiser le chargement</button>
+      </div>
+      <div id="data-errors" class="message error hidden" role="alert"></div>
+    </section>
+
+    <section id="tab-results" class="panel tab-panel">
+      <div class="panel-heading">
+        <div>
+          <div class="eyebrow">Comparaison</div>
+          <h2>Solutions de chargement</h2>
+          <p class="section-intro">Comparez les solutions proposées, choisissez celle à retenir puis inspectez les objets dans une vue 3D plus technique. La décision finale est enregistrée dans l’historique du cas.</p>
+        </div>
+        <div id="run-meta" class="run-meta"></div>
+      </div>
+      <div id="empty-results" class="empty-state">Lancez une optimisation pour faire apparaître les plans.</div>
+      <div id="results-content" class="hidden">
+        <div id="solution-cards" class="solution-cards"></div>
+        <section class="decision-panel" aria-labelledby="decision-title">
+          <div>
+            <h3 id="decision-title">Décision utilisateur</h3>
+            <p class="section-description">Sélectionnez une solution, puis indiquez si elle est validée ou si le cas doit être déclaré en échec. Une seule solution peut être retenue par cas.</p>
+          </div>
+          <div id="decision-status" class="decision-status">Aucune décision finale n’a encore été enregistrée pour ce cas.</div>
+          <div class="decision-grid">
+            <label class="decision-field">
+              <span>Raison de l’échec (optionnelle)</span>
+              <select id="failure-reason">
+                <option value="">Choisir une raison</option>
+                <option value="aucune solution exploitable">Aucune solution exploitable</option>
+                <option value="dépassement des dimensions">Dépassement des dimensions</option>
+                <option value="dépassement du poids">Dépassement du poids</option>
+                <option value="mauvaise répartition des objets">Mauvaise répartition des objets</option>
+                <option value="résultat visuel incorrect">Résultat visuel incorrect</option>
+                <option value="problème technique">Problème technique</option>
+                <option value="autre raison">Autre raison</option>
+              </select>
+            </label>
+            <label class="decision-field decision-comment">
+              <span>Commentaire (optionnel)</span>
+              <textarea id="failure-comment" rows="3" placeholder="Précisez si nécessaire le motif de la validation ou de l’échec."></textarea>
+            </label>
+          </div>
+          <div class="decision-actions">
+            <button id="validate-optimization" class="primary" type="button" disabled>Valider l’optimisation</button>
+            <button id="declare-failure" class="danger" type="button">Déclarer un échec</button>
+          </div>
+          <div id="decision-message" class="message hidden" role="status" aria-live="polite"></div>
+        </section>
+        <div class="viewer-grid">
+          <div class="viewer-card">
+            <div class="viewer-toolbar">
+              <div><strong id="viewer-title">Plan 3D</strong><span id="viewer-subtitle"></span></div>
+              <div class="viewer-actions">
+                <select id="viewer-vehicle" aria-label="Véhicule affiché"></select>
+                <button id="reset-view" class="secondary small">Réinitialiser la vue</button>
+              </div>
+            </div>
+            <canvas id="viewer" width="1000" height="620" aria-label="Visualisation 3D du chargement"></canvas>
+            <div class="viewer-help">Glisser pour tourner · Maj + glisser pour déplacer la caméra · molette pour zoomer · cliquer sur un objet pour l’inspecter</div>
+            <div class="axis-legend" aria-label="Repère 3D"><span class="axis length-axis">Longueur</span><span class="axis width-axis">Largeur</span><span class="axis height-axis">Hauteur</span></div>
+          </div>
+          <aside class="inspection-card">
+            <h3>Inspection de l’objet</h3>
+            <div id="inspection">Cliquez sur un objet dans la scène.</div>
+            <h3>Diagnostics</h3>
+            <div id="diagnostics"></div>
+            <h3>Exports opérationnels</h3>
+            <div id="exports" class="export-links"></div>
+            <p class="export-note">Le PDF opérationnel reprend la vue 3D affichée, les références, les orientations et les dimensions du véhicule.</p>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-history" class="panel tab-panel">
+      <div class="panel-heading">
+        <div>
+          <div class="eyebrow">Traçabilité</div>
+          <h2>Historique des calculs</h2>
+          <p class="section-intro">Retrouvez les optimisations déjà enregistrées, filtrez-les par statut et rechargez un cas pour le réutiliser ou le comparer.</p>
+        </div>
+        <button id="refresh-history" class="secondary">Actualiser</button>
+      </div>
+      <section class="history-filters" aria-labelledby="history-filters-title">
+        <h3 id="history-filters-title">Filtres</h3>
+        <div class="history-filter-grid">
+          <label><span>Statut</span>
+            <select id="history-filter-status">
+              <option value="all">Tous</option>
+              <option value="pending">Non enregistré</option>
+              <option value="validated">Validé</option>
+              <option value="failed">Échec</option>
+            </select>
+          </label>
+          <label><span>Utilisateur</span>
+            <input id="history-filter-user" type="text" placeholder="Nom d’utilisateur">
+          </label>
+          <label><span>Type d’optimisation</span>
+            <input id="history-filter-type" type="text" placeholder="Véhicule, forme ou mot-clé">
+          </label>
+          <label><span>Nom / identifiant du cas</span>
+            <input id="history-filter-case" type="text" placeholder="Ex. PAL-001">
+          </label>
+          <label><span>Date du</span>
+            <input id="history-filter-from" type="date">
+          </label>
+          <label><span>au</span>
+            <input id="history-filter-to" type="date">
+          </label>
+        </div>
+      </section>
+      <div id="history-list" class="history-list"></div>
+    </section>
+
+    <section id="tab-settings" class="panel tab-panel settings-page" aria-labelledby="settings-title">
+      <div class="panel-heading settings-heading">
+        <div>
+          <div class="eyebrow">Préférences</div>
+          <h2 id="settings-title">Paramètres de l’application</h2>
+          <p class="section-intro">Personnalisez l’apparence, préparez les futures connexions API et consultez les indicateurs d’utilisation de l’outil.</p>
+        </div>
+        <button id="close-settings" class="secondary">Retour à l’application</button>
+      </div>
+
+      <div class="settings-sections">
+        <section class="settings-card" aria-labelledby="account-settings-title">
+          <div class="settings-card-heading">
+            <div class="settings-icon" aria-hidden="true">U</div>
+            <div>
+              <h3 id="account-settings-title">Compte utilisateur</h3>
+              <p>Gérez le nom affiché et le mot de passe local du navigateur. Ces informations restent stockées localement dans cette première version.</p>
+            </div>
+          </div>
+          <div class="notice neutral-notice"><strong>Portée actuelle :</strong> le profil reste local à ce navigateur. Aucun compte n’est envoyé à un serveur et aucune étape d’authentification distante n’est imposée.</div>
+          <form id="account-form" class="settings-form" novalidate>
+            <label>Nom d’utilisateur actuel
+              <input id="current-username" type="text" readonly aria-readonly="true">
+            </label>
+            <label>Nouveau nom d’utilisateur
+              <input id="new-username" type="text" autocomplete="username" maxlength="80" required>
+            </label>
+            <label>Mot de passe actuel
+              <span class="password-field"><input id="current-password" type="password" autocomplete="current-password"><button type="button" class="password-toggle" data-target="current-password" aria-label="Afficher le mot de passe actuel">Afficher</button></span>
+            </label>
+            <label>Nouveau mot de passe
+              <span class="password-field"><input id="new-password" type="password" autocomplete="new-password" minlength="8"><button type="button" class="password-toggle" data-target="new-password" aria-label="Afficher le nouveau mot de passe">Afficher</button></span>
+            </label>
+            <label>Confirmation du nouveau mot de passe
+              <span class="password-field"><input id="confirm-password" type="password" autocomplete="new-password" minlength="8"><button type="button" class="password-toggle" data-target="confirm-password" aria-label="Afficher la confirmation du mot de passe">Afficher</button></span>
+            </label>
+            <div class="settings-actions"><button class="primary" type="submit">Enregistrer le compte</button></div>
+          </form>
+          <div id="account-message" class="message hidden" role="status" aria-live="polite"></div>
+        </section>
+
+        <section class="settings-card" aria-labelledby="appearance-settings-title">
+          <div class="settings-card-heading">
+            <div class="settings-icon" aria-hidden="true">◐</div>
+            <div>
+              <h3 id="appearance-settings-title">Apparence de l’interface</h3>
+              <p>Choisissez le thème visuel le plus confortable. Le changement est appliqué immédiatement et conservé dans ce navigateur.</p>
+            </div>
+          </div>
+          <div class="theme-options" role="radiogroup" aria-label="Thème de l’application">
+            <label class="theme-choice">
+              <input type="radio" name="theme" value="light">
+              <span class="theme-preview light-preview"><i></i><b></b><em></em></span>
+              <span><strong>Mode clair</strong><small>Fond lumineux et contrastes doux.</small></span>
+            </label>
+            <label class="theme-choice">
+              <input type="radio" name="theme" value="dark">
+              <span class="theme-preview dark-preview"><i></i><b></b><em></em></span>
+              <span><strong>Mode sombre</strong><small>Surfaces foncées adaptées aux environnements peu éclairés.</small></span>
+            </label>
+          </div>
+          <div class="settings-actions"><button id="save-appearance" class="primary" type="button">Enregistrer l’apparence</button></div>
+          <div id="appearance-message" class="message hidden" role="status" aria-live="polite"></div>
+        </section>
+
+        <section class="settings-card full-width" aria-labelledby="dashboard-title">
+          <div class="settings-card-heading">
+            <div class="settings-icon" aria-hidden="true">◫</div>
+            <div>
+              <h3 id="dashboard-title">Dashboard</h3>
+              <p>Suivez l’utilisation générale de l’outil à partir des données réellement enregistrées dans l’application et des sessions locales ouvertes dans ce navigateur.</p>
+            </div>
+          </div>
+          <div id="dashboard-cards" class="dashboard-cards"></div>
+          <div class="dashboard-grid">
+            <section class="chart-card">
+              <div class="chart-card-heading">
+                <h4>Répartition des résultats</h4>
+                <p>Statuts des optimisations présentes dans l’historique.</p>
+              </div>
+              <div class="status-chart-layout">
+                <div id="status-donut" class="status-donut" aria-hidden="true"></div>
+                <div id="status-legend" class="status-legend"></div>
+              </div>
+            </section>
+            <section class="chart-card">
+              <div class="chart-card-heading">
+                <h4>Évolution de l’activité</h4>
+                <p>Visualisez l’évolution des optimisations et des décisions selon la période choisie.</p>
+              </div>
+              <div class="dashboard-toolbar">
+                <label>Période
+                  <select id="dashboard-period">
+                    <option value="today">Aujourd’hui</option>
+                    <option value="7days" selected>7 derniers jours</option>
+                    <option value="30days">30 derniers jours</option>
+                    <option value="custom">Période personnalisée</option>
+                  </select>
+                </label>
+                <label class="dashboard-custom-range">Du
+                  <input id="dashboard-from" type="date">
+                </label>
+                <label class="dashboard-custom-range">Au
+                  <input id="dashboard-to" type="date">
+                </label>
+              </div>
+              <div id="activity-chart" class="activity-chart"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="settings-card full-width" aria-labelledby="api-settings-title">
+          <div class="settings-card-heading api-heading">
+            <div class="settings-icon" aria-hidden="true">{ }</div>
+            <div>
+              <h3 id="api-settings-title">Gestion des clés API</h3>
+              <p>Préparez les identifiants de services qui pourront être connectés dans une future version.</p>
+            </div>
+            <button id="add-api-key" type="button" class="secondary">+ Ajouter un service</button>
+          </div>
+          <div class="notice warning-notice"><strong>Important :</strong> les clés saisies dans cette version sont enregistrées localement dans ce navigateur et ne sont jamais utilisées par AxioLoad. Aucune requête externe n’est exécutée et aucun calcul ne dépend d’une clé API.</div>
+          <p class="api-explanation">Une clé API permet de connecter une application à un service externe. Elle doit rester confidentielle et ne doit jamais être communiquée à une autre personne.</p>
+          <div id="api-key-list" class="api-key-list"></div>
+          <div id="api-message" class="message hidden" role="status" aria-live="polite"></div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <div id="global-tooltip" class="tooltip-popover" role="tooltip" hidden></div>
+  <footer><strong>AxioLoad</strong> · Les dimensions doivent être validées sur les fiches techniques, cartes grises et carrosseries réellement utilisées.</footer>
+  <script>window.PLO_VEHICLES = {{ vehicles | tojson }};</script>
+  <script src="/static/app.js?v={{ app_version }}"></script>
+</body>
+</html>

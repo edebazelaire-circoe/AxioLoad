@@ -1,0 +1,17 @@
+fastapi<1,>=0.128
+pydantic<3,>=2.13
+uvicorn<1,>=0.48
+jinja2<4,>=3.1
+openpyxl<4,>=3.1
+reportlab<5,>=4.4
+python-multipart<1,>=0.0.29
+
+[dev]
+pytest<10,>=9
+httpx<1,>=0.28
+
+[routing]
+pyvrp<0.14,>=0.13
+
+[solver]
+ortools<10,>=9.12

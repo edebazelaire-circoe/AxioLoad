@@ -1,0 +1,33 @@
+{
+  "method": "HGS / PyVRP",
+  "total_distance_km": 22.0,
+  "total_weight_kg": 1700.0,
+  "total_handling_units": 8,
+  "jobs_summary": [
+    {
+      "job_id": "A",
+      "client": "Client A",
+      "reference": "PAL-A",
+      "pickup_label": "Enlèvement A",
+      "delivery_label": "Livraison A",
+      "quantity": 3,
+      "unit_type": "palette",
+      "weight_kg": 1100.0,
+      "direct_distance_km": 1.0,
+      "direct_duration_min": 1.3333333333333333
+    },
+    {
+      "job_id": "B",
+      "client": "Client B",
+      "reference": "COL-B",
+      "pickup_label": "Enlèvement B",
+      "delivery_label": "Livraison B",
+      "quantity": 5,
+      "unit_type": "colis",
+      "weight_kg": 600.0,
+      "direct_distance_km": 1.0,
+      "direct_duration_min": 1.3333333333333333
+    }
+  ],
+  "pickup_before_delivery": true
+}

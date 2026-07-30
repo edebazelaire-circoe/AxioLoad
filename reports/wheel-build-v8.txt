@@ -1,0 +1,10 @@
+Looking in indexes: https://reader:****@packages.applied-caas-gateway1.internal.api.openai.org/artifactory/api/pypi/pypi-public/simple
+Processing /mnt/data/axioload_v08_work/pallet_loading_optimizer
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Building wheels for collected packages: pallet-loading-optimizer
+  Building wheel for pallet-loading-optimizer (pyproject.toml): started
+  Building wheel for pallet-loading-optimizer (pyproject.toml): finished with status 'done'
+  Created wheel for pallet-loading-optimizer: filename=pallet_loading_optimizer-0.8.0-py3-none-any.whl size=310741 sha256=3c5fedad8adc5d6f23a233136ab80e8f245ad6a63f5a7b5b18f6a02394bc428b
+  Stored in directory: /tmp/pip-ephem-wheel-cache-d2432miy/wheels/74/05/58/9f3634108b1711d54b52a932ff0b667ac5a1d0a576f050ef51
+Successfully built pallet-loading-optimizer

@@ -1,0 +1,578 @@
+<!doctype html>
+<html lang="fr" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AxioLoad · Optimisation de chargement</title>
+  <meta name="theme-color" content="#063B5B">
+  <link rel="icon" type="image/svg+xml" href="/static/brand/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/brand/favicon-32.png">
+  <script>
+    (function () {
+      try {
+        const saved = JSON.parse(localStorage.getItem('axioload.settings.v1') || '{}');
+        document.documentElement.dataset.theme = saved.theme === 'dark' ? 'dark' : 'light';
+      } catch (_) {
+        document.documentElement.dataset.theme = 'light';
+      }
+    }());
+  </script>
+  <link rel="stylesheet" href="/static/app.css?v={{ app_version }}">
+  <link rel="stylesheet" href="/static/route.css?v={{ app_version }}">
+  <link rel="stylesheet" href="/static/total.css?v={{ app_version }}">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand-lockup">
+      <img src="/static/brand/axioload-horizontal-dark.svg" alt="AxioLoad" class="brand-logo">
+      <div>
+        <div class="eyebrow">Logiciel d’optimisation de transport</div>
+        <p>Optimisation physique du chargement, métrage linéaire et contrôle d’accessibilité.</p>
+      </div>
+    </div>
+    <button id="open-settings" class="settings-access" type="button" aria-controls="tab-settings" aria-label="Ouvrir les paramètres">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.4 13a7.7 7.7 0 0 0 .1-1 7.7 7.7 0 0 0-.1-1l2.1-1.6-2-3.4-2.5 1a7.3 7.3 0 0 0-1.7-1L15 3.3h-4L10.6 6a7.3 7.3 0 0 0-1.7 1L6.4 6l-2 3.4L6.5 11a7.7 7.7 0 0 0-.1 1 7.7 7.7 0 0 0 .1 1l-2.1 1.6 2 3.4 2.5-1a7.3 7.3 0 0 0 1.7 1l.4 2.7h4l.4-2.7a7.3 7.3 0 0 0 1.7-1l2.5 1 2-3.4L19.4 13ZM13 15.5A3.5 3.5 0 1 1 13 8a3.5 3.5 0 0 1 0 7.5Z"/></svg>
+      <span>Paramètres</span>
+    </button>
+  </header>
+
+  <nav class="tabs" aria-label="Navigation principale">
+    <button class="tab active" data-tab="vehicles">0. Véhicules</button>
+    <button class="tab" data-tab="data">1. Données</button>
+    <button class="tab" data-tab="results">2. Résultats</button>
+    <button class="tab" data-tab="history">3. Historique</button>
+    <button class="tab" data-tab="route">4. Itinéraire</button>
+    <button class="tab" data-tab="total">5. Optimisation totale</button>
+  </nav>
+
+  <main>
+    <section id="tab-vehicles" class="panel tab-panel active">
+      <div class="panel-heading">
+        <div>
+          <div class="eyebrow">Catalogue de flotte</div>
+          <h2>Configurer les dimensions intérieures des véhicules</h2>
+          <p class="section-intro">Cette section définit l’espace réellement disponible dans chaque type de véhicule. Les dimensions enregistrées sont utilisées par toutes les optimisations suivantes.</p>
+        </div>
+        <div class="import-box">
+          <button id="add-vehicle" class="secondary">+ Ajouter un véhicule</button>
+          <button id="reset-vehicles" class="secondary">Restaurer les modèles de démonstration</button>
+        </div>
+      </div>
+
+      <div class="table-wrap vehicle-table-wrap">
+        <table id="vehicle-table" class="wide-table">
+          <thead><tr>
+            <th class="col-id">Identifiant <button type="button" class="help-tip small-tip" data-tooltip="Code technique unique du véhicule. Il ne peut plus être modifié après le premier enregistrement." aria-label="Aide identifiant véhicule">?</button></th>
+            <th class="col-name">Nom <button type="button" class="help-tip small-tip" data-tooltip="Nom lisible affiché dans la liste des véhicules." aria-label="Aide nom véhicule">?</button></th>
+            <th class="col-num">Longueur int. (mm) <button type="button" class="help-tip small-tip" data-tooltip="Distance intérieure utile dans le sens longitudinal, de la porte arrière vers l’avant du véhicule." aria-label="Aide longueur intérieure">?</button></th>
+            <th class="col-num">Largeur int. (mm) <button type="button" class="help-tip small-tip" data-tooltip="Largeur intérieure réellement disponible entre les parois." aria-label="Aide largeur intérieure">?</button></th>
+            <th class="col-num">Hauteur int. (mm) <button type="button" class="help-tip small-tip" data-tooltip="Hauteur verticale intérieure maximale utilisable." aria-label="Aide hauteur intérieure">?</button></th>
+            <th class="col-num">Largeur LDM (mm) <button type="button" class="help-tip small-tip" data-tooltip="Largeur de référence utilisée pour le calcul des mètres linéaires." aria-label="Aide largeur LDM">?</button></th>
+            <th class="col-num">Charge utile (kg) <button type="button" class="help-tip small-tip" data-tooltip="Poids total maximal des marchandises pouvant être chargé dans le véhicule." aria-label="Aide charge utile">?</button></th>
+            <th class="col-num">Ouverture l. (mm) <button type="button" class="help-tip small-tip" data-tooltip="Largeur disponible au passage de la porte arrière." aria-label="Aide largeur ouverture">?</button></th>
+            <th class="col-num">Ouverture H. (mm) <button type="button" class="help-tip small-tip" data-tooltip="Hauteur disponible au passage de la porte arrière." aria-label="Aide hauteur ouverture">?</button></th>
+            <th class="col-version">Version <button type="button" class="help-tip small-tip" data-tooltip="Numéro de version conservé pour garantir la traçabilité des anciens calculs." aria-label="Aide version véhicule">?</button></th>
+            <th class="col-action"></th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="form-actions">
+        <button id="save-vehicles" class="primary">Enregistrer les véhicules</button>
+      </div>
+      <div id="vehicle-message" class="message hidden" role="status" aria-live="polite"></div>
+    </section>
+
+    <section id="tab-data" class="panel tab-panel">
+      <div class="panel-heading">
+        <div>
+          <div class="eyebrow">Chargement</div>
+          <h2>Préparer le cas à optimiser</h2>
+          <p class="section-intro">Renseignez le contexte du calcul, puis décrivez les objets à charger. L’outil utilise ces informations pour vérifier la faisabilité, rechercher plusieurs plans et comparer les résultats.</p>
+        </div>
+        <div class="import-box">
+          <label class="file-button">Importer CSV/XLSX<input id="import-file" type="file" accept=".csv,.xlsx"></label>
+          <a href="/static/import-template.csv" download>Modèle CSV</a>
+        </div>
+      </div>
+
+      <div class="section-title-row">
+        <div>
+          <h3>1. Paramètres du calcul</h3>
+          <p class="section-description">Cette section permet de choisir le véhicule, le temps alloué au moteur et les règles globales. Ces paramètres pilotent la recherche de solutions sans modifier les dimensions des objets.</p>
+        </div>
+      </div>
+      <div class="settings-grid">
+        <label><span class="field-label">Véhicule</span>
+          <select id="vehicle-id"></select>
+        </label>
+        <label><span class="field-label">Budget de calcul</span>
+          <select id="budget-seconds"><option value="5">5 s</option><option value="15">15 s</option><option value="30" selected>30 s</option></select>
+        </label>
+        <label><span class="field-label">Nombre maximal de véhicules</span>
+          <input id="max-vehicles" type="number" min="1" max="10" value="5">
+        </label>
+        <label><span class="field-label">Graine déterministe</span>
+          <input id="seed" type="number" value="1">
+        </label>
+        <label><span class="field-label">Marge de sécurité globale (mm)</span>
+          <input id="default-margin" type="number" min="0" value="0">
+        </label>
+      </div>
+
+      <div id="selected-vehicle-summary" class="vehicle-summary"></div>
+      <div class="hint"><strong>Ordre de livraison :</strong> un nombre plus élevé signifie un déchargement plus tôt. Sans consigne particulière, les objets les plus urgents doivent donc rester les plus accessibles depuis la porte arrière.</div>
+
+      <label class="total-mode-toggle">
+        <input id="total-optimization-enabled" type="checkbox">
+        <span><strong>Optimisation totale</strong><small>Couple le nombre de véhicules, le rangement LIFO et les distances de tournée. Complétez le lieu actuel du camion et les points d’enlèvement/livraison de chaque ligne.</small></span>
+      </label>
+      <section id="total-route-inputs" class="total-route-inputs hidden" aria-labelledby="total-route-inputs-title">
+        <div class="total-route-inputs-heading"><div><h3 id="total-route-inputs-title">Informations d’itinéraire utilisées par l’optimisation totale</h3><p class="section-description">Le lieu actuel sert de départ commun. Chaque tournée collecte les marchandises dans l’ordre inverse des livraisons, puis effectue les livraisons selon la règle LIFO.</p></div><button id="total-geocode-all" class="secondary" type="button">Localiser toutes les adresses</button></div>
+        <div class="total-route-settings">
+          <label class="total-depot-field"><span>Lieu actuel du camion</span><div class="total-address-control"><input id="total-depot-address" type="text" placeholder="Adresse complète ou coordonnées : 49.4944, 0.1079" autocomplete="street-address"><button id="total-geocode-depot" class="secondary" type="button">Localiser</button></div><small id="total-depot-status" class="total-location-status">Adresse non localisée.</small></label>
+          <label class="total-return-toggle"><input id="total-return-depot" type="checkbox" checked><span>Retour au lieu de départ après chaque tournée</span></label>
+          <button id="total-fill-pickups" class="secondary" type="button">Utiliser le départ comme enlèvement pour les lignes vides</button>
+        </div>
+      </section>
+
+      <div class="section-title-row cargo-section-title">
+        <div>
+          <h3>2. Marchandises à charger</h3>
+          <p class="section-description">Ajoutez une ligne par référence. Chaque ligne décrit un type d’objet, sa quantité, ses dimensions, son poids et les contraintes qui orienteront le placement dans le véhicule.</p>
+        </div>
+      </div>
+      <div class="table-wrap cargo-table-wrap">
+        <table id="cargo-table" class="wide-table">
+          <thead><tr>
+            <th class="col-select"></th>
+            <th class="col-name">Référence <button type="button" class="help-tip small-tip" data-tooltip="Code ou nom qui permettra d’identifier l’objet dans les résultats, la vue 3D et les exports." aria-label="Aide référence">?</button></th>
+            <th class="col-qty">Qté <button type="button" class="help-tip small-tip" data-tooltip="Nombre d’unités identiques à placer." aria-label="Aide quantité">?</button></th>
+            <th class="col-shape">Forme <button type="button" class="help-tip small-tip" data-tooltip="Type géométrique de la marchandise. Le moteur utilise son enveloppe extérieure pour le rangement." aria-label="Aide forme">?</button></th>
+            <th class="col-num">L (mm) <button type="button" class="help-tip small-tip" data-tooltip="Longueur extérieure de l’objet avant rotation." aria-label="Aide longueur objet">?</button></th>
+            <th class="col-num">l (mm) <button type="button" class="help-tip small-tip" data-tooltip="Largeur extérieure de l’objet avant rotation." aria-label="Aide largeur objet">?</button></th>
+            <th class="col-num">H (mm) <button type="button" class="help-tip small-tip" data-tooltip="Hauteur verticale de l’objet." aria-label="Aide hauteur objet">?</button></th>
+            <th class="col-num">Poids (kg) <button type="button" class="help-tip small-tip" data-tooltip="Poids d’une seule unité. Il sert au contrôle de la charge utile et à l’inspection." aria-label="Aide poids">?</button></th>
+            <th class="col-destination">Destination <button type="button" class="help-tip small-tip" data-tooltip="Lieu ou client de livraison. Cette information aide à comprendre et contrôler l’ordre de déchargement." aria-label="Aide destination">?</button></th>
+            <th class="total-route-column total-col-address">Point d’enlèvement <button type="button" class="help-tip small-tip" data-tooltip="Adresse où cette marchandise est récupérée. Elle sera visitée avant la livraison correspondante." aria-label="Aide enlèvement optimisation totale">?</button></th>
+            <th class="total-route-column total-col-address">Point de livraison <button type="button" class="help-tip small-tip" data-tooltip="Adresse finale du client utilisée pour construire les tournées." aria-label="Aide livraison optimisation totale">?</button></th>
+            <th class="total-route-column total-col-status">Localisation <button type="button" class="help-tip small-tip" data-tooltip="Indique si les deux adresses ont été converties en coordonnées." aria-label="Aide localisation optimisation totale">?</button></th>
+            <th class="col-order">Ordre <button type="button" class="help-tip small-tip" data-tooltip="Priorité de déchargement. Plus le nombre est élevé, plus l’objet doit rester accessible près de la porte arrière." aria-label="Aide ordre de livraison">?</button></th>
+            <th class="col-bool">Rotation <button type="button" class="help-tip small-tip" data-tooltip="Autorise une rotation de 90° sur le plancher. La hauteur reste verticale." aria-label="Aide rotation">?</button></th>
+            <th class="col-group">Rester ensemble <button type="button" class="help-tip small-tip" data-tooltip="Code de groupe, par exemple G1. Les références portant le même code doivent être regroupées autant que possible." aria-label="Aide groupe rester ensemble">?</button></th>
+            <th class="col-group">Séparer <button type="button" class="help-tip small-tip" data-tooltip="Code de séparation, par exemple S1. Les références portant le même code doivent être éloignées." aria-label="Aide groupe séparer">?</button></th>
+            <th class="col-tags">Tags <button type="button" class="help-tip small-tip" data-tooltip="Catégories séparées par des virgules, par exemple alimentaire, fragile. Elles servent aux contrôles de compatibilité." aria-label="Aide tags">?</button></th>
+            <th class="col-tags">Incompatibles <button type="button" class="help-tip small-tip" data-tooltip="Tags avec lesquels l’objet ne doit pas être placé à proximité, par exemple chimique." aria-label="Aide incompatibilités">?</button></th>
+            <th class="col-num">Écart (mm) <button type="button" class="help-tip small-tip" data-tooltip="Distance minimale spécifique à conserver autour de cette référence, en plus de la marge globale." aria-label="Aide écart">?</button></th>
+            <th class="col-action"></th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="form-actions">
+        <button id="add-row" class="secondary">+ Ajouter une ligne</button>
+        <button id="duplicate-row" class="secondary">Dupliquer la dernière</button>
+        <button id="optimize" class="primary">Optimiser le chargement</button>
+      </div>
+      <div id="data-errors" class="message error hidden" role="alert"></div>
+    </section>
+
+    <section id="tab-results" class="panel tab-panel">
+      <div class="panel-heading">
+        <div>
+          <div class="eyebrow">Comparaison</div>
+          <h2>Solutions de chargement</h2>
+          <p class="section-intro">Comparez les solutions proposées, choisissez celle à retenir puis inspectez les objets dans une vue 3D plus technique. La décision finale est enregistrée dans l’historique du cas.</p>
+        </div>
+        <div id="run-meta" class="run-meta"></div>
+      </div>
+      <div id="empty-results" class="empty-state">Lancez une optimisation pour faire apparaître les plans.</div>
+      <div id="results-content" class="hidden">
+        <div id="solution-cards" class="solution-cards"></div>
+        <section class="decision-panel" aria-labelledby="decision-title">
+          <div>
+            <h3 id="decision-title">Décision utilisateur</h3>
+            <p class="section-description">Sélectionnez une solution, puis indiquez si elle est validée ou si le cas doit être déclaré en échec. Une seule solution peut être retenue par cas.</p>
+          </div>
+          <div id="decision-status" class="decision-status">Aucune décision finale n’a encore été enregistrée pour ce cas.</div>
+          <div class="decision-grid">
+            <label class="decision-field">
+              <span>Raison de l’échec (optionnelle)</span>
+              <select id="failure-reason">
+                <option value="">Choisir une raison</option>
+                <option value="aucune solution exploitable">Aucune solution exploitable</option>
+                <option value="dépassement des dimensions">Dépassement des dimensions</option>
+                <option value="dépassement du poids">Dépassement du poids</option>
+                <option value="mauvaise répartition des objets">Mauvaise répartition des objets</option>
+                <option value="résultat visuel incorrect">Résultat visuel incorrect</option>
+                <option value="problème technique">Problème technique</option>
+                <option value="autre raison">Autre raison</option>
+              </select>
+            </label>
+            <label class="decision-field decision-comment">
+              <span>Commentaire (optionnel)</span>
+              <textarea id="failure-comment" rows="3" placeholder="Précisez si nécessaire le motif de la validation ou de l’échec."></textarea>
+            </label>
+          </div>
+          <div class="decision-actions">
+            <button id="validate-optimization" class="primary" type="button" disabled>Valider l’optimisation</button>
+            <button id="declare-failure" class="danger" type="button">Déclarer un échec</button>
+          </div>
+          <div id="decision-message" class="message hidden" role="status" aria-live="polite"></div>
+        </section>
+        <div class="viewer-grid">
+          <div class="viewer-card">
+            <div class="viewer-toolbar">
+              <div><strong id="viewer-title">Plan 3D</strong><span id="viewer-subtitle"></span></div>
+              <div class="viewer-actions">
+                <select id="viewer-vehicle" aria-label="Véhicule affiché"></select>
+                <button id="reset-view" class="secondary small">Réinitialiser la vue</button>
+              </div>
+            </div>
+            <canvas id="viewer" width="1000" height="620" aria-label="Visualisation 3D du chargement"></canvas>
+            <div class="viewer-help">Glisser pour tourner · Maj + glisser pour déplacer la caméra · molette pour zoomer · cliquer sur un objet pour l’inspecter</div>
+            <div class="axis-legend" aria-label="Repère 3D"><span class="axis length-axis">Longueur</span><span class="axis width-axis">Largeur</span><span class="axis height-axis">Hauteur</span></div>
+          </div>
+          <aside class="inspection-card">
+            <h3>Inspection de l’objet</h3>
+            <div id="inspection">Cliquez sur un objet dans la scène.</div>
+            <h3>Diagnostics</h3>
+            <div id="diagnostics"></div>
+            <h3>Exports opérationnels</h3>
+            <div id="exports" class="export-links"></div>
+            <p class="export-note">Le PDF opérationnel reprend la vue 3D affichée, les références, les orientations et les dimensions du véhicule.</p>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-history" class="panel tab-panel">
+      <div class="panel-heading">
+        <div>
+          <div class="eyebrow">Traçabilité</div>
+          <h2>Historique des calculs</h2>
+          <p class="section-intro">Retrouvez les optimisations déjà enregistrées, filtrez-les par statut et rechargez un cas pour le réutiliser ou le comparer.</p>
+        </div>
+        <button id="refresh-history" class="secondary">Actualiser</button>
+      </div>
+      <section class="history-filters" aria-labelledby="history-filters-title">
+        <h3 id="history-filters-title">Filtres</h3>
+        <div class="history-filter-grid">
+          <label><span>Statut</span>
+            <select id="history-filter-status">
+              <option value="all">Tous</option>
+              <option value="pending">Non enregistré</option>
+              <option value="validated">Validé</option>
+              <option value="failed">Échec</option>
+            </select>
+          </label>
+          <label><span>Utilisateur</span>
+            <input id="history-filter-user" type="text" placeholder="Nom d’utilisateur">
+          </label>
+          <label><span>Type d’optimisation</span>
+            <input id="history-filter-type" type="text" placeholder="Véhicule, forme ou mot-clé">
+          </label>
+          <label><span>Nom / identifiant du cas</span>
+            <input id="history-filter-case" type="text" placeholder="Ex. PAL-001">
+          </label>
+          <label><span>Date du</span>
+            <input id="history-filter-from" type="date">
+          </label>
+          <label><span>au</span>
+            <input id="history-filter-to" type="date">
+          </label>
+        </div>
+      </section>
+      <div id="history-list" class="history-list"></div>
+    </section>
+
+    <section id="tab-route" class="panel tab-panel route-page">
+      <div class="panel-heading">
+        <div>
+          <div class="eyebrow">Planification transport</div>
+          <h2>Optimiser l’itinéraire du camion</h2>
+          <p class="section-intro">Définissez le point de départ, les missions d’enlèvement et de livraison, puis comparez deux méthodes indépendantes. Cet onglet est isolé du moteur de chargement : il ne modifie ni les palettes, ni les plans 3D, ni l’historique des chargements.</p>
+        </div>
+        <div class="route-heading-actions">
+          <button id="route-import-clients" class="secondary" type="button">Récupérer les clients saisis</button>
+          <button id="route-add-job" class="secondary" type="button">+ Ajouter une mission</button>
+        </div>
+      </div>
+
+      <section class="route-settings-card">
+        <div class="section-title-row">
+          <div>
+            <h3>1. Départ et paramètres de tournée</h3>
+            <p class="section-description">Le départ correspond au dépôt, au parking ou au site depuis lequel le camion commence sa tournée. Les distances routières sont récupérées par OSRM lorsque le réseau est disponible.</p>
+          </div>
+        </div>
+        <div class="route-settings-grid">
+          <label class="route-depot-field"><span>Point de départ du camion</span>
+            <div class="route-address-control">
+              <input id="route-depot-address" type="text" placeholder="Adresse complète ou coordonnées : 49.4944, 0.1079" autocomplete="street-address">
+              <button id="route-geocode-depot" class="secondary" type="button">Localiser</button>
+            </div>
+            <small id="route-depot-status" class="route-location-status">Adresse non localisée.</small>
+          </label>
+          <label><span>Capacité du camion (kg)</span>
+            <input id="route-capacity" type="number" min="0" step="1" value="24000">
+          </label>
+          <label><span>Budget de calcul</span>
+            <select id="route-time-limit">
+              <option value="2">2 s</option>
+              <option value="5" selected>5 s</option>
+              <option value="15">15 s</option>
+              <option value="30">30 s</option>
+            </select>
+          </label>
+          <label><span>Graine</span>
+            <input id="route-seed" type="number" value="1">
+          </label>
+          <label class="route-checkbox"><input id="route-return-depot" type="checkbox" checked><span>Retour au point de départ</span></label>
+        </div>
+      </section>
+
+      <section class="route-jobs-card">
+        <div class="section-title-row route-jobs-heading">
+          <div>
+            <h3>2. Missions à desservir</h3>
+            <p class="section-description">Chaque ligne relie un enlèvement à une livraison. Les missions peuvent être entrelacées pour réduire le trajet, mais chaque enlèvement reste obligatoirement placé avant sa livraison et la capacité du camion est contrôlée à chaque arrêt.</p>
+          </div>
+          <button id="route-geocode-all" class="secondary" type="button">Localiser toutes les adresses</button>
+        </div>
+        <div class="table-wrap route-table-wrap">
+          <table id="route-jobs-table" class="wide-table">
+            <thead><tr>
+              <th class="route-col-color">Couleur <button type="button" class="help-tip small-tip" data-tooltip="Couleur automatiquement associée au client. Elle est reprise sur la carte, dans l’ordre de passage et dans le récapitulatif." aria-label="Aide couleur client">?</button></th>
+              <th class="route-col-client">Client <button type="button" class="help-tip small-tip" data-tooltip="Nom du client ou libellé de la mission. Il est affiché sur la carte et dans l’ordre de tournée." aria-label="Aide client itinéraire">?</button></th>
+              <th class="route-col-reference">Référence <button type="button" class="help-tip small-tip" data-tooltip="Référence de la marchandise ou du dossier associée à la mission." aria-label="Aide référence itinéraire">?</button></th>
+              <th class="route-col-address">Point d’enlèvement <button type="button" class="help-tip small-tip" data-tooltip="Adresse à laquelle la marchandise doit être récupérée. Elle sera toujours visitée avant la livraison correspondante." aria-label="Aide point enlèvement">?</button></th>
+              <th class="route-col-address">Point de livraison <button type="button" class="help-tip small-tip" data-tooltip="Adresse finale du client. Saisissez une adresse suffisamment précise : numéro, voie, code postal et ville." aria-label="Aide point livraison">?</button></th>
+              <th class="route-col-quantity">Qté <button type="button" class="help-tip small-tip" data-tooltip="Nombre de palettes, colis ou unités transportées pour cette mission." aria-label="Aide quantité itinéraire">?</button></th>
+              <th class="route-col-unit">Unité <button type="button" class="help-tip small-tip" data-tooltip="Nature des unités de manutention : palettes, colis ou unités mixtes." aria-label="Aide unité itinéraire">?</button></th>
+              <th class="route-col-weight">Poids (kg) <button type="button" class="help-tip small-tip" data-tooltip="Poids total chargé lors de l’enlèvement puis déchargé à la livraison. Il est utilisé pour contrôler la charge présente dans le camion à chaque étape." aria-label="Aide poids itinéraire">?</button></th>
+              <th class="route-col-status">Localisation <button type="button" class="help-tip small-tip" data-tooltip="Indique si les deux adresses ont été converties en coordonnées géographiques utilisables par le calcul." aria-label="Aide localisation itinéraire">?</button></th>
+              <th class="col-action"></th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="route-methods-card">
+        <div>
+          <h3>3. Lancer le calcul</h3>
+          <p class="section-description">Les deux modes utilisent la même matrice routière et les mêmes missions afin que leurs kilométrages soient directement comparables.</p>
+        </div>
+        <div class="route-method-actions">
+          <button id="route-optimize-hgs" class="primary" type="button">Calculer avec HGS / PyVRP</button>
+          <button id="route-optimize-alns" class="primary" type="button">Calculer avec ALNS</button>
+          <button id="route-compare" class="secondary route-compare-button" type="button">Comparer les deux méthodes</button>
+        </div>
+        <div id="route-message" class="message hidden" role="status" aria-live="polite"></div>
+      </section>
+
+      <section id="route-results" class="route-results hidden">
+        <div class="route-result-heading">
+          <div>
+            <h3>Résultats de tournée</h3>
+            <p class="section-description">Sélectionnez une proposition pour afficher son tracé et l’ordre détaillé des arrêts.</p>
+          </div>
+          <div id="route-source-note" class="route-source-note"></div>
+        </div>
+        <div id="route-result-cards" class="route-result-cards"></div>
+        <div class="route-map-layout">
+          <div class="route-map-card">
+            <div class="route-map-toolbar">
+              <div><strong id="route-map-title">Carte de l’itinéraire</strong><span id="route-map-subtitle"></span></div>
+              <button id="route-map-reset" type="button" class="secondary small">Recentrer</button>
+            </div>
+            <canvas id="route-map" width="1200" height="680" aria-label="Fond de carte OpenStreetMap et tracé de l’itinéraire"></canvas>
+            <div class="route-map-attribution">Fond de carte © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">contributeurs OpenStreetMap</a> · affichage uniquement, sans modification de la carte.</div>
+            <div id="route-map-legend" class="route-map-legend">
+              <span><i class="route-dot start"></i>Départ / retour</span>
+              <span><strong>P</strong> Enlèvement</span>
+              <span><strong>L</strong> Livraison</span>
+            </div>
+          </div>
+          <aside class="route-summary-card">
+            <h3>Ordre de passage</h3>
+            <div id="route-stop-list" class="route-stop-list"></div>
+          </aside>
+        </div>
+        <section class="route-recap-card" aria-labelledby="route-recap-title">
+          <div class="route-recap-heading">
+            <div>
+              <h3 id="route-recap-title">Récapitulatif des clients transportés</h3>
+              <p class="section-description">La distance affichée par client correspond au trajet routier direct entre son point d’enlèvement et son point de livraison. Le total de tournée reprend l’ensemble du parcours optimisé, y compris les liaisons entre missions et le retour au dépôt lorsqu’il est demandé.</p>
+            </div>
+          </div>
+          <div class="table-wrap route-recap-wrap">
+            <table id="route-recap-table">
+              <thead><tr>
+                <th>Couleur</th>
+                <th>Client</th>
+                <th>Point d’enlèvement</th>
+                <th>Point de livraison</th>
+                <th>Distance directe</th>
+                <th>Nombre de palettes / colis</th>
+                <th>Poids transporté</th>
+              </tr></thead>
+              <tbody></tbody>
+              <tfoot></tfoot>
+            </table>
+          </div>
+        </section>
+      </section>
+    </section>
+
+
+    <section id="tab-total" class="panel tab-panel total-page">
+      <div class="panel-heading"><div><div class="eyebrow">3L-CVRP intégré</div><h2>Résumé de l’optimisation totale</h2><p class="section-intro">Comparez deux approches gratuites qui croisent le découpage des tournées, les kilomètres et la faisabilité physique du chargement. Le nombre de véhicules est prioritaire, puis la distance et la longueur occupée.</p></div><div id="total-run-meta" class="run-meta"></div></div>
+      <div id="total-empty" class="empty-state">Activez « Optimisation totale » dans l’onglet Données, renseignez les adresses puis lancez le calcul.</div>
+      <div id="total-results" class="hidden">
+        <div id="total-method-cards" class="total-method-cards"></div>
+        <section class="total-summary-banner"><div><strong id="total-summary-title">Solution sélectionnée</strong><span id="total-summary-subtitle"></span></div><div id="total-summary-metrics" class="total-summary-metrics"></div></section>
+        <div class="total-map-layout"><section class="total-map-card"><div class="total-map-toolbar"><div><strong>Carte des tournées</strong><span id="total-map-subtitle"></span></div><button id="total-map-reset" type="button" class="secondary small">Recentrer</button></div><canvas id="total-map" width="1200" height="650" aria-label="Carte OpenStreetMap des tournées"></canvas><div class="route-map-attribution">Fond de carte © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">contributeurs OpenStreetMap</a> · affichage uniquement.</div><div id="total-map-legend" class="total-map-legend"></div></section><aside class="total-model-card"><h3>Principe du calcul</h3><p id="total-model-description"></p><div id="total-model-note" class="notice neutral-notice"></div></aside></div>
+        <section class="total-routes-section"><div class="section-title-row"><div><h3>Tournées et plans de chargement</h3><p class="section-description">Chaque véhicule possède sa séquence d’enlèvements, ses livraisons, son kilométrage et le plan de rangement validé par l’oracle LIFO.</p></div></div><div id="total-route-list" class="total-route-list"></div></section>
+      </div>
+    </section>
+
+
+    <section id="tab-settings" class="panel tab-panel settings-page" aria-labelledby="settings-title">
+      <div class="panel-heading settings-heading">
+        <div>
+          <div class="eyebrow">Préférences</div>
+          <h2 id="settings-title">Paramètres de l’application</h2>
+          <p class="section-intro">Personnalisez l’apparence, préparez les futures connexions API et consultez les indicateurs d’utilisation de l’outil.</p>
+        </div>
+        <button id="close-settings" class="secondary">Retour à l’application</button>
+      </div>
+
+      <div class="settings-sections">
+        <section class="settings-card" aria-labelledby="account-settings-title">
+          <div class="settings-card-heading">
+            <div class="settings-icon" aria-hidden="true">U</div>
+            <div>
+              <h3 id="account-settings-title">Compte utilisateur</h3>
+              <p>Gérez le nom affiché et le mot de passe local du navigateur. Ces informations restent stockées localement dans cette première version.</p>
+            </div>
+          </div>
+          <div class="notice neutral-notice"><strong>Portée actuelle :</strong> le profil reste local à ce navigateur. Aucun compte n’est envoyé à un serveur et aucune étape d’authentification distante n’est imposée.</div>
+          <form id="account-form" class="settings-form" novalidate>
+            <label>Nom d’utilisateur actuel
+              <input id="current-username" type="text" readonly aria-readonly="true">
+            </label>
+            <label>Nouveau nom d’utilisateur
+              <input id="new-username" type="text" autocomplete="username" maxlength="80" required>
+            </label>
+            <label>Mot de passe actuel
+              <span class="password-field"><input id="current-password" type="password" autocomplete="current-password"><button type="button" class="password-toggle" data-target="current-password" aria-label="Afficher le mot de passe actuel">Afficher</button></span>
+            </label>
+            <label>Nouveau mot de passe
+              <span class="password-field"><input id="new-password" type="password" autocomplete="new-password" minlength="8"><button type="button" class="password-toggle" data-target="new-password" aria-label="Afficher le nouveau mot de passe">Afficher</button></span>
+            </label>
+            <label>Confirmation du nouveau mot de passe
+              <span class="password-field"><input id="confirm-password" type="password" autocomplete="new-password" minlength="8"><button type="button" class="password-toggle" data-target="confirm-password" aria-label="Afficher la confirmation du mot de passe">Afficher</button></span>
+            </label>
+            <div class="settings-actions"><button class="primary" type="submit">Enregistrer le compte</button></div>
+          </form>
+          <div id="account-message" class="message hidden" role="status" aria-live="polite"></div>
+        </section>
+
+        <section class="settings-card" aria-labelledby="appearance-settings-title">
+          <div class="settings-card-heading">
+            <div class="settings-icon" aria-hidden="true">◐</div>
+            <div>
+              <h3 id="appearance-settings-title">Apparence de l’interface</h3>
+              <p>Choisissez le thème visuel le plus confortable. Le changement est appliqué immédiatement et conservé dans ce navigateur.</p>
+            </div>
+          </div>
+          <div class="theme-options" role="radiogroup" aria-label="Thème de l’application">
+            <label class="theme-choice">
+              <input type="radio" name="theme" value="light">
+              <span class="theme-preview light-preview"><i></i><b></b><em></em></span>
+              <span><strong>Mode clair</strong><small>Fond lumineux et contrastes doux.</small></span>
+            </label>
+            <label class="theme-choice">
+              <input type="radio" name="theme" value="dark">
+              <span class="theme-preview dark-preview"><i></i><b></b><em></em></span>
+              <span><strong>Mode sombre</strong><small>Surfaces foncées adaptées aux environnements peu éclairés.</small></span>
+            </label>
+          </div>
+          <div class="settings-actions"><button id="save-appearance" class="primary" type="button">Enregistrer l’apparence</button></div>
+          <div id="appearance-message" class="message hidden" role="status" aria-live="polite"></div>
+        </section>
+
+        <section class="settings-card full-width" aria-labelledby="dashboard-title">
+          <div class="settings-card-heading">
+            <div class="settings-icon" aria-hidden="true">◫</div>
+            <div>
+              <h3 id="dashboard-title">Dashboard</h3>
+              <p>Suivez l’utilisation générale de l’outil à partir des données réellement enregistrées dans l’application et des sessions locales ouvertes dans ce navigateur.</p>
+            </div>
+          </div>
+          <div id="dashboard-cards" class="dashboard-cards"></div>
+          <div class="dashboard-grid">
+            <section class="chart-card">
+              <div class="chart-card-heading">
+                <h4>Répartition des résultats</h4>
+                <p>Statuts des optimisations présentes dans l’historique.</p>
+              </div>
+              <div class="status-chart-layout">
+                <div id="status-donut" class="status-donut" aria-hidden="true"></div>
+                <div id="status-legend" class="status-legend"></div>
+              </div>
+            </section>
+            <section class="chart-card">
+              <div class="chart-card-heading">
+                <h4>Évolution de l’activité</h4>
+                <p>Visualisez l’évolution des optimisations et des décisions selon la période choisie.</p>
+              </div>
+              <div class="dashboard-toolbar">
+                <label>Période
+                  <select id="dashboard-period">
+                    <option value="today">Aujourd’hui</option>
+                    <option value="7days" selected>7 derniers jours</option>
+                    <option value="30days">30 derniers jours</option>
+                    <option value="custom">Période personnalisée</option>
+                  </select>
+                </label>
+                <label class="dashboard-custom-range">Du
+                  <input id="dashboard-from" type="date">
+                </label>
+                <label class="dashboard-custom-range">Au
+                  <input id="dashboard-to" type="date">
+                </label>
+              </div>
+              <div id="activity-chart" class="activity-chart"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="settings-card full-width" aria-labelledby="api-settings-title">
+          <div class="settings-card-heading api-heading">
+            <div class="settings-icon" aria-hidden="true">{ }</div>
+            <div>
+              <h3 id="api-settings-title">Gestion des clés API</h3>
+              <p>Préparez les identifiants de services qui pourront être connectés dans une future version.</p>
+            </div>
+            <button id="add-api-key" type="button" class="secondary">+ Ajouter un service</button>
+          </div>
+          <div class="notice warning-notice"><strong>Important :</strong> les clés saisies dans cette version sont enregistrées localement dans ce navigateur et ne sont jamais utilisées par AxioLoad. Aucune requête externe n’est exécutée et aucun calcul ne dépend d’une clé API.</div>
+          <p class="api-explanation">Une clé API permet de connecter une application à un service externe. Elle doit rester confidentielle et ne doit jamais être communiquée à une autre personne.</p>
+          <div id="api-key-list" class="api-key-list"></div>
+          <div id="api-message" class="message hidden" role="status" aria-live="polite"></div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <div id="global-tooltip" class="tooltip-popover" role="tooltip" hidden></div>
+  <footer><strong>AxioLoad</strong> · Les dimensions doivent être validées sur les fiches techniques, cartes grises et carrosseries réellement utilisées.</footer>
+  <script>window.PLO_VEHICLES = {{ vehicles | tojson }};</script>
+  <script src="/static/app.js?v={{ app_version }}"></script>
+  <script src="/static/route.js?v={{ app_version }}"></script>
+  <script src="/static/total.js?v={{ app_version }}"></script>
+</body>
+</html>

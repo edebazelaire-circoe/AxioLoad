@@ -1,0 +1,1 @@
+e946653ec41b84a415eaa357b61d79e2165c20a86172a0a3bb1754974381026e  dist/pallet_loading_optimizer-0.4.0-py3-none-any.whl

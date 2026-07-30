@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1420 360" role="img" aria-labelledby="title desc">
+  <title id="title">AxioLoad</title>
+  <desc id="desc">Logo horizontal AxioLoad pour fond clair.</desc>
+  <g transform="translate(18 8) scale(.67)">
+    <rect x="72" y="72" width="368" height="368" rx="82" fill="#F4FAFC"/>
+    <path d="M118 302 246 238l56 29-128 65z" fill="#0A4D73"/>
+    <path d="m174 332 128-65 92 46-128 65z" fill="#087FA2"/>
+    <path d="m118 302 56 30 92 46-56 28-92-47z" fill="#063B5B"/>
+    <path d="M246 238 374 174l20 10v129l-92-46z" fill="#16B8B0"/>
+    <rect x="140" y="104" width="112" height="112" rx="18" fill="#00A8BF"/>
+    <rect x="278" y="116" width="78" height="78" rx="14" fill="#A6DE75"/>
+    <path d="M108 245h104l-34 34h-70z" fill="#1C6A91"/>
+    <path d="M108 214h126l-30 30h-96z" fill="#135A82"/>
+  </g>
+  <text x="390" y="229" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="170" font-weight="800" letter-spacing="-7" fill="#063B5B">Axio</text>
+  <text x="755" y="229" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="170" font-weight="700" letter-spacing="-7" fill="#00A8BF">Load</text>
+</svg>

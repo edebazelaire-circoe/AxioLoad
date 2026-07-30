@@ -37,3 +37,16 @@ def test_loading_ui_total_mode_features_are_exposed(tmp_path):
     assert "toggleOrderColumn" in javascript
     assert "groupedJobs" in javascript
     assert "Les produits d’un même client restent toujours dans le même camion" in javascript
+
+
+def test_cargo_observer_does_not_watch_status_mutations_recursively():
+    javascript = (
+        Path(__file__).resolve().parents[1]
+        / "src"
+        / "pallet_optimizer"
+        / "static"
+        / "total.js"
+    ).read_text(encoding="utf-8")
+
+    assert "observer.observe(cargoBody,{childList:true});" in javascript
+    assert "observer.observe(cargoBody,{childList:true,subtree:true});" not in javascript

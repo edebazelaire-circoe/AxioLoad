@@ -178,7 +178,9 @@ def test_deleted_vehicle_is_not_reseeded(tmp_path) -> None:
     response = client.delete("/api/vehicles/rigid_20m3", headers=headers)
     assert response.status_code == 204
     vehicles = client.get("/api/vehicles", headers=headers).json()
-    assert [v["model_id"] for v in vehicles] == ["semi_trailer"]
+    vehicle_ids = [v["model_id"] for v in vehicles]
+    assert "rigid_20m3" not in vehicle_ids
+    assert vehicle_ids == ["semi_trailer", "container_20ft", "container_40ft"]
 
 
 def test_index_still_renders_when_demo_mode_is_disabled(tmp_path, monkeypatch) -> None:

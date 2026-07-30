@@ -196,6 +196,15 @@ class AdminBaseMixin:
                 );
                 """
             )
+        with _connect(self.registry.registry_path) as db:
+            tenants = db.execute("SELECT id,db_path FROM tenants").fetchall()
+            for tenant in tenants:
+                tenant_id = str(tenant["id"])
+                expected_path = self.registry.tenants_dir / f"{tenant_id}.sqlite"
+                if str(tenant["db_path"]) != str(expected_path):
+                    db.execute("UPDATE tenants SET db_path=? WHERE id=?", (str(expected_path), tenant_id))
+                self.registry._migrate_tenant(expected_path)
+                self.registry._seed_default_vehicles(expected_path)
         for tenant in self._tenant_rows(include_archived=True):
             self._ensure_vehicle_metadata(str(tenant["id"]))
             self._ensure_history_columns(str(tenant["id"]))
@@ -322,4 +331,3 @@ class AdminBaseMixin:
     def list_companies(self) -> list[dict[str, Any]]:
         self.refresh_expired_invitations()
         return [self.get_company(str(row["id"])) for row in self._tenant_rows(include_archived=True)]
-

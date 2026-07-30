@@ -232,6 +232,7 @@ class AdminIntegrationsMixin:
                 ).fetchall()
             }
         output = []
+        legacy_local = context.tenant_id == "local" and context.actor_id == "local-user"
         for vehicle in self.registry.list_vehicles(context.tenant_id):
             payload = vehicle_to_payload(vehicle)
             meta = ownership.get(vehicle.model_id)
@@ -242,8 +243,8 @@ class AdminIntegrationsMixin:
                     "origin": origin,
                     "owner_user_id": owner,
                     "base_model_id": str(meta["base_model_id"]) if meta and meta["base_model_id"] else None,
-                    "can_edit": context.is_super_admin or origin == "custom" and owner == context.actor_id,
-                    "can_delete": context.is_super_admin or origin == "custom" and owner == context.actor_id,
+                    "can_edit": legacy_local or context.is_super_admin or origin == "custom" and owner == context.actor_id,
+                    "can_delete": legacy_local or context.is_super_admin or origin == "custom" and owner == context.actor_id,
                 }
             )
             output.append(payload)
@@ -259,9 +260,10 @@ class AdminIntegrationsMixin:
                 "SELECT * FROM vehicle_ownership WHERE tenant_id=? AND model_id=? AND deleted_at IS NULL",
                 (context.tenant_id, model_id),
             ).fetchone()
-        if meta and meta["origin"] == "global":
+        legacy_local = context.tenant_id == "local" and context.actor_id == "local-user"
+        if meta and meta["origin"] == "global" and not legacy_local:
             raise PermissionError("Les véhicules globaux sont verrouillés. Dupliquez le modèle pour le personnaliser")
-        if meta and not context.is_super_admin and meta["owner_user_id"] != context.actor_id:
+        if meta and not context.is_super_admin and meta["owner_user_id"] != context.actor_id and not legacy_local:
             raise PermissionError("Seul le créateur ou le super administrateur peut modifier ce véhicule")
         vehicle = self.registry.save_vehicle(context.tenant_id, payload, actor=context.actor_label)
         with _connect(self.registry.registry_path) as db:
@@ -302,9 +304,10 @@ class AdminIntegrationsMixin:
             ).fetchone()
         if not meta:
             raise KeyError(model_id)
-        if meta["origin"] == "global":
+        legacy_local = context.tenant_id == "local" and context.actor_id == "local-user"
+        if meta["origin"] == "global" and not legacy_local:
             raise PermissionError("Un véhicule global ne peut pas être supprimé")
-        if not context.is_super_admin and meta["owner_user_id"] != context.actor_id:
+        if not context.is_super_admin and meta["owner_user_id"] != context.actor_id and not legacy_local:
             raise PermissionError("Seul le créateur ou le super administrateur peut supprimer ce véhicule")
         snapshot = vehicle_to_payload(self.registry.get_vehicle(context.tenant_id, model_id))
         self.registry.delete_vehicle(context.tenant_id, model_id, actor=context.actor_label)

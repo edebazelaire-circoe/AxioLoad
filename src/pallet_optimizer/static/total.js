@@ -23,6 +23,7 @@
   };
 
   const colors = ['#007A9C','#E26D3D','#7A5CC7','#0C9A83','#D04E8C','#9A6B12','#3C7DC4','#A84A42','#4E8B3A','#B95B9A','#6E7280','#C3781D'];
+  const operationColors = {start:'#063B5B',pickup:'#007A9C',delivery:'#E26D3D',return:'#6E7280',mixed:'#7A5CC7'};
   const TILE = 256;
 
   function esc(value) {
@@ -332,6 +333,39 @@
       <small>${Number(solution.iterations||0).toLocaleString('fr-FR')} itérations · ${solution.oracle_calls} contrôles 3D · ${solution.oracle_cache_hits} résultats réutilisés</small>`;
     card.addEventListener('click',()=>{state.selected=index;resetMap();render();}); return card;
   }
+  function operationMeta(type) {
+    const metadata={
+      start:{label:'Départ',icon:'●',className:'start'},
+      pickup:{label:'Chargement',icon:'↥',className:'pickup'},
+      delivery:{label:'Livraison',icon:'↧',className:'delivery'},
+      return:{label:'Retour',icon:'↩',className:'return'},
+    };
+    return metadata[type] || {label:'Étape',icon:'•',className:'mixed'};
+  }
+  function stopOperations(stop) {
+    if (Array.isArray(stop.operations) && stop.operations.length) return stop.operations;
+    return [{type:stop.type,client:stop.client}];
+  }
+  function stopVisualType(stop) {
+    const types=[...new Set(stopOperations(stop).map(operation=>operation.type))];
+    if (types.includes('pickup') && types.includes('delivery')) return 'mixed';
+    if (types.includes('pickup')) return 'pickup';
+    if (types.includes('delivery')) return 'delivery';
+    if (types.includes('return')) return 'return';
+    return 'start';
+  }
+  function renderRoutePath(route) {
+    const stops=Array.isArray(route.stops) ? route.stops : [];
+    return `<div class="total-path" aria-label="Parcours opérationnel du véhicule">${stops.map((stop,index)=>{
+      const operations=stopOperations(stop);
+      const types=[...new Set(operations.map(operation=>operation.type))];
+      const visualType=stopVisualType(stop);
+      const badges=types.map(type=>{const meta=operationMeta(type);return `<span class="total-operation-badge ${meta.className}">${meta.icon} ${meta.label}</span>`;}).join('');
+      const clients=[...new Set(operations.map(operation=>operation.client).filter(Boolean))].join(', ');
+      const meta=operationMeta(visualType);
+      return `<div class="total-path-step ${visualType}"><span class="total-path-number">${stop.sequence || index+1}</span><span class="total-path-icon" aria-hidden="true">${meta.icon}</span><span class="total-path-content"><span class="total-path-badges">${badges}</span><strong>${esc(stop.label || '')}</strong>${clients?`<small>${esc(clients)}</small>`:''}</span></div>${index<stops.length-1?'<span class="total-path-arrow" aria-hidden="true">→</span>':''}`;
+    }).join('')}</div>`;
+  }
   function render() {
     if (!state.result?.solutions?.length) return;
     $('#total-empty').classList.add('hidden'); $('#total-results').classList.remove('hidden');
@@ -347,7 +381,8 @@
     renderLegend(solution); renderRoutes(solution); fitMap(solution); drawMap();
   }
   function renderLegend(solution) {
-    $('#total-map-legend').innerHTML=solution.routes.map((route,index)=>`<span><i style="--route-color:${colors[index%colors.length]}"></i>Véhicule ${index+1} · ${fmt(route.distance_km)} km</span>`).join('');
+    const routes=solution.routes.map((route,index)=>`<span><i style="--route-color:${colors[index%colors.length]}"></i>Véhicule ${index+1} · ${fmt(route.distance_km)} km</span>`).join('');
+    $('#total-map-legend').innerHTML=`${routes}<span class="total-operation-legend pickup">↥ Chargement</span><span class="total-operation-legend delivery">↧ Livraison</span>`;
   }
   function renderRoutes(solution) {
     const list=$('#total-route-list');
@@ -357,7 +392,7 @@
       const placements=route.loading_plan?.placements || [];
       return `<article class="total-route-card" style="--route-color:${color}">
         <div class="total-route-heading"><div><strong>Véhicule ${index+1} · ${esc(route.vehicle_name)}</strong><small>${fmt(route.distance_km)} km · ${fmt(route.duration_min)} min · ${fmt(route.weight_kg,0)} kg</small></div><div><strong>${fmt(route.linear_meters,2)} m.l.</strong><small>${esc(route.loading_method_name)}</small></div></div>
-        <div class="total-orders"><span><strong>Enlèvements :</strong> ${route.pickup_order.map(esc).join(' → ')}</span><span><strong>Livraisons :</strong> ${route.delivery_order.map(esc).join(' → ')}</span></div>
+        ${renderRoutePath(route)}
         <div class="table-wrap"><table class="total-client-table"><thead><tr><th>Client</th><th>Enlèvement</th><th>Livraison</th><th>Quantité</th><th>Poids</th></tr></thead><tbody>${clients}</tbody></table></div>
         <details><summary>Voir le plan de chargement (${placements.length} objet(s))</summary><div class="table-wrap"><table><thead><tr><th>Objet</th><th>X</th><th>Y longitudinal</th><th>Orientation</th><th>L × l × H</th></tr></thead><tbody>${placements.map(p=>`<tr><td>${esc(p.item_id)}</td><td>${p.x_mm} mm</td><td>${p.y_mm} mm</td><td>${p.orientation_deg}°</td><td>${p.actual_length_mm} × ${p.actual_width_mm} × ${p.actual_height_mm} mm</td></tr>`).join('')}</tbody></table></div></details>
       </article>`;
@@ -382,7 +417,7 @@
   }
   function drawMap(){
     if(!mapCtx||!state.result)return; const solution=state.result.solutions[state.selected]; mapCtx.clearRect(0,0,mapCanvas.width,mapCanvas.height);mapCtx.fillStyle=document.documentElement.dataset.theme==='dark'?'#102D39':'#E7F1F4';mapCtx.fillRect(0,0,mapCanvas.width,mapCanvas.height);drawTiles();
-    solution.routes.forEach((route,index)=>{const color=colors[index%colors.length],geometry=route.geometry?.length?route.geometry:route.stops.map(s=>[s.lat,s.lon]);mapCtx.save();mapCtx.strokeStyle='rgba(255,255,255,.75)';mapCtx.lineWidth=7;mapCtx.beginPath();geometry.forEach((p,i)=>{const q=screen(Number(p[0]),Number(p[1]));i?mapCtx.lineTo(q.x,q.y):mapCtx.moveTo(q.x,q.y);});mapCtx.stroke();mapCtx.strokeStyle=color;mapCtx.lineWidth=4;mapCtx.stroke();mapCtx.restore();route.stops.forEach(stop=>{const q=screen(stop.lat,stop.lon),fill=(stop.type==='pickup'||stop.type==='delivery')?clientColor(stop.client):'#063B5B';mapCtx.beginPath();mapCtx.arc(q.x,q.y,8,0,Math.PI*2);mapCtx.fillStyle=fill;mapCtx.fill();mapCtx.strokeStyle='#fff';mapCtx.lineWidth=2;mapCtx.stroke();mapCtx.fillStyle='#fff';mapCtx.font='700 9px Segoe UI';mapCtx.textAlign='center';mapCtx.textBaseline='middle';mapCtx.fillText(String(stop.sequence),q.x,q.y);});});
+    solution.routes.forEach((route,index)=>{const color=colors[index%colors.length],geometry=route.geometry?.length?route.geometry:route.stops.map(s=>[s.lat,s.lon]);mapCtx.save();mapCtx.strokeStyle='rgba(255,255,255,.75)';mapCtx.lineWidth=7;mapCtx.beginPath();geometry.forEach((p,i)=>{const q=screen(Number(p[0]),Number(p[1]));i?mapCtx.lineTo(q.x,q.y):mapCtx.moveTo(q.x,q.y);});mapCtx.stroke();mapCtx.strokeStyle=color;mapCtx.lineWidth=4;mapCtx.stroke();mapCtx.restore();route.stops.forEach(stop=>{const q=screen(stop.lat,stop.lon),visualType=stopVisualType(stop),fill=operationColors[visualType]||operationColors.start,label=visualType==='pickup'?'C':visualType==='delivery'?'L':visualType==='return'?'R':'D';mapCtx.beginPath();mapCtx.arc(q.x,q.y,9,0,Math.PI*2);mapCtx.fillStyle=fill;mapCtx.fill();mapCtx.strokeStyle='#fff';mapCtx.lineWidth=2;mapCtx.stroke();mapCtx.fillStyle='#fff';mapCtx.font='700 9px Segoe UI';mapCtx.textAlign='center';mapCtx.textBaseline='middle';mapCtx.fillText(label,q.x,q.y);});});
   }
   mapCanvas?.addEventListener('pointerdown',event=>{state.drag={x:event.clientX,y:event.clientY,panX:state.panX,panY:state.panY};mapCanvas.setPointerCapture(event.pointerId);});
   mapCanvas?.addEventListener('pointermove',event=>{if(!state.drag)return;state.panX=state.drag.panX+event.clientX-state.drag.x;state.panY=state.drag.panY+event.clientY-state.drag.y;drawMap();});

@@ -51,6 +51,40 @@ def default_vehicle_catalog() -> tuple[VehicleVersion, ...]:
             ),
             source_note="Modèle de démonstration non réglementaire. À valider sur la carte grise et la carrosserie.",
         ),
+        VehicleVersion(
+            model_id="container_20ft",
+            version=1,
+            name="Conteneur dry 20 pieds (configuration standard)",
+            interior_length_mm=5900,
+            interior_width_mm=2352,
+            interior_height_mm=2395,
+            linear_meter_width_mm=2352,
+            payload_kg=28130,
+            door_width_mm=2340,
+            door_height_mm=2292,
+            axles=(),
+            source_note=(
+                "Configuration indicative d’un conteneur dry 20 pieds d’après les dimensions publiées "
+                "par Hapag-Lloyd. Les dimensions et la charge utile varient selon le fabricant et l’unité."
+            ),
+        ),
+        VehicleVersion(
+            model_id="container_40ft",
+            version=1,
+            name="Conteneur dry 40 pieds (configuration standard)",
+            interior_length_mm=12032,
+            interior_width_mm=2352,
+            interior_height_mm=2395,
+            linear_meter_width_mm=2352,
+            payload_kg=28750,
+            door_width_mm=2340,
+            door_height_mm=2292,
+            axles=(),
+            source_note=(
+                "Configuration indicative d’un conteneur dry 40 pieds d’après les dimensions publiées "
+                "par Hapag-Lloyd. Les dimensions et la charge utile varient selon le fabricant et l’unité."
+            ),
+        ),
     )
 
 

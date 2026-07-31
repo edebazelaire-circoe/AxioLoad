@@ -20,12 +20,15 @@ from .document_control_panel import install_document_control_panel_injection
 from .document_control_system import install_document_control_system
 from .optimization_experience_panel import install_optimization_experience_injection
 from .optimization_portfolio import install_optimization_portfolio
+from .password_reset_panel import install_password_reset_injection
+from .password_reset_system import install_password_reset_system
 from .scaling import install_unlimited_item_count
 from .super_admin_routes import install_super_admin_routes
 
-__version__ = "0.16.0"
+__version__ = "0.17.0"
 
 install_super_admin_routes()
+install_password_reset_system()
 install_client_grouping()
 install_optimization_portfolio()
 install_client_split_policy()
@@ -35,5 +38,6 @@ install_document_control_panel_injection()
 install_document_control_experience_injection()
 install_optimization_experience_injection()
 install_auth_experience_injection()
+install_password_reset_injection()
 install_document_control_routes()
 install_document_control_system()

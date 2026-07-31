@@ -5,16 +5,18 @@ from typing import Any
 
 from fastapi.templating import Jinja2Templates
 
-_ADMIN_STYLE = b'<link rel="stylesheet" href="/static/admin.css?v=0.12.3">'
-_WORKFLOW_STYLE = b'<link rel="stylesheet" href="/static/workflow_layout.css?v=0.12.3">'
-_UNITS_IMPORT_SCRIPT = b'<script src="/static/units_import.js?v=0.12.3"></script>'
-_WORKFLOW_SCRIPT = b'<script src="/static/workflow_layout.js?v=0.12.3"></script>'
-_ADMIN_SCRIPT = b'<script src="/static/admin.js?v=0.12.3"></script>'
+_ADMIN_STYLE = b'<link rel="stylesheet" href="/static/admin.css?v=0.12.4">'
+_WORKFLOW_STYLE = b'<link rel="stylesheet" href="/static/workflow_layout.css?v=0.12.4">'
+_RESULTS_STYLE = b'<link rel="stylesheet" href="/static/results_enhancements.css?v=0.12.4">'
+_UNITS_IMPORT_SCRIPT = b'<script src="/static/units_import.js?v=0.12.4"></script>'
+_WORKFLOW_SCRIPT = b'<script src="/static/workflow_layout.js?v=0.12.4"></script>'
+_RESULTS_SCRIPT = b'<script src="/static/results_enhancements.js?v=0.12.4"></script>'
+_ADMIN_SCRIPT = b'<script src="/static/admin.js?v=0.12.4"></script>'
 _original_template_response: Callable[..., Any] = Jinja2Templates.TemplateResponse
 
 
 def install_admin_panel_injection() -> None:
-    """Load administration and workflow enhancements without duplicating the main template."""
+    """Load administration, workflow and result enhancements without duplicating the main template."""
     if getattr(Jinja2Templates.TemplateResponse, "_axioload_admin_injection", False):
         return
 
@@ -22,11 +24,11 @@ def install_admin_panel_injection() -> None:
         response = _original_template_response(self, *args, **kwargs)
         body = getattr(response, "body", b"")
         if b'id="open-settings"' in body:
-            for style in (_ADMIN_STYLE, _WORKFLOW_STYLE):
+            for style in (_ADMIN_STYLE, _WORKFLOW_STYLE, _RESULTS_STYLE):
                 if style not in body:
                     body = body.replace(b"</head>", style + b"</head>")
-            scripts = _UNITS_IMPORT_SCRIPT + _WORKFLOW_SCRIPT + _ADMIN_SCRIPT
-            for script in (_UNITS_IMPORT_SCRIPT, _WORKFLOW_SCRIPT, _ADMIN_SCRIPT):
+            scripts = _UNITS_IMPORT_SCRIPT + _WORKFLOW_SCRIPT + _RESULTS_SCRIPT + _ADMIN_SCRIPT
+            for script in (_UNITS_IMPORT_SCRIPT, _WORKFLOW_SCRIPT, _RESULTS_SCRIPT, _ADMIN_SCRIPT):
                 body = body.replace(script, b"")
             body = body.replace(b"</body>", scripts + b"</body>")
             response.body = body

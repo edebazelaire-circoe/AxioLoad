@@ -14,7 +14,7 @@ PLO_SUPER_ADMIN_EMAIL=<adresse du super administrateur>
 
 Cette règle reste volontairement simple tant que l'authentification définitive et le branchement des comptes ne sont pas en place. Le futur fournisseur d'identité pourra remplacer ce contrôle sans modifier les écrans d'administration.
 
-Cette simplification ne concerne pas les **clés API des entreprises**, qui restent distinctes et nécessaires uniquement lorsqu'un client utilise l'API AxioLoad.
+Cette simplification ne concerne pas les **clés API des entreprises**. Ces clés ne servent pas à ouvrir le panneau Super Admin : elles servent uniquement à identifier une entreprise lorsqu'un logiciel externe appelle l'API AxioLoad, conformément au besoin de disposer d'une clé différente pour chaque client.
 
 ## Parcours d'une entreprise
 
@@ -57,6 +57,7 @@ Le chargement de l'historique est protégé par plusieurs garde-fous :
 
 - une première lecture est autorisée au chargement de l'application ;
 - un clic sur l'onglet Historique ou une action qui modifie l'historique autorise un seul nouveau chargement réseau ;
+- toutes les variantes de lecture de l'historique partagent la même copie en mémoire ;
 - les appels simultanés partagent la même réponse ;
 - les appels sans action concrète réutilisent les données déjà chargées ;
 - un coupe-circuit limite à trois appels réseau sur trente secondes lorsqu'une réponse en cache existe.

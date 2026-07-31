@@ -7,6 +7,7 @@ from fastapi.templating import Jinja2Templates
 
 _STYLE = b'<link rel="stylesheet" href="/static/document_control_experience.css?v=0.14.0">'
 _SCRIPT = b'<script src="/static/document_control_experience.js?v=0.14.0"></script>'
+_PERMISSION_SCRIPT = b'<script src="/static/document_control_permission_ui.js?v=0.14.0"></script>'
 _original_template_response: Callable[..., Any] | None = None
 
 
@@ -23,8 +24,9 @@ def install_document_control_experience_injection() -> None:
         if b'id="open-settings"' in body:
             if _STYLE not in body:
                 body = body.replace(b"</head>", _STYLE + b"</head>")
-            body = body.replace(_SCRIPT, b"")
-            body = body.replace(b"</body>", _SCRIPT + b"</body>")
+            for script in (_SCRIPT, _PERMISSION_SCRIPT):
+                body = body.replace(script, b"")
+            body = body.replace(b"</body>", _SCRIPT + _PERMISSION_SCRIPT + b"</body>")
             response.body = body
             response.headers["content-length"] = str(len(body))
         return response

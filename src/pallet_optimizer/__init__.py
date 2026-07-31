@@ -1,5 +1,7 @@
 """AxioLoad transport loading optimizer."""
 
+from fastapi import FastAPI
+
 from .document_control_bootstrap import install_document_control_permissions, install_document_control_routes
 
 # Permissions must be extended before admin_service imports the catalog snapshots.
@@ -11,6 +13,7 @@ from .document_control_permissions import install_document_control_permission_mi
 # permission rows before AdminRepository resolves their effective rights.
 install_document_control_permission_migration()
 
+from . import prompt_center_system as _prompt_center_system
 from .admin_panel import install_admin_panel_injection
 from .auth_experience_panel import install_auth_experience_injection
 from .client_grouping import install_client_grouping
@@ -22,10 +25,12 @@ from .optimization_experience_panel import install_optimization_experience_injec
 from .optimization_portfolio import install_optimization_portfolio
 from .password_reset_panel import install_password_reset_injection
 from .password_reset_system import install_password_reset_system
+from .prompt_center_experience_panel import install_prompt_center_experience_injection
+from .prompt_center_system import install_prompt_center_system
 from .scaling import install_unlimited_item_count
 from .super_admin_routes import install_super_admin_routes
 
-__version__ = "0.18.0"
+__version__ = "0.19.0"
 
 install_super_admin_routes()
 install_password_reset_system()
@@ -39,5 +44,8 @@ install_document_control_experience_injection()
 install_optimization_experience_injection()
 install_auth_experience_injection()
 install_password_reset_injection()
+install_prompt_center_experience_injection()
 install_document_control_routes()
 install_document_control_system()
+_prompt_center_system._original_fastapi_init = FastAPI.__init__
+install_prompt_center_system()

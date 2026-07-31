@@ -30,7 +30,7 @@ from .prompt_center_system import install_prompt_center_system
 from .scaling import install_unlimited_item_count
 from .super_admin_routes import install_super_admin_routes
 
-__version__ = "0.19.0"
+__version__ = "0.19.1"
 
 install_super_admin_routes()
 install_password_reset_system()

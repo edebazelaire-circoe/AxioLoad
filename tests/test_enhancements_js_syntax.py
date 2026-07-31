@@ -20,3 +20,15 @@ def test_enhancements_are_idempotent_and_do_not_poll_history_in_a_dom_loop():
     assert "if (title && title.textContent !== nextTitle)" in javascript
     assert "if (badge.textContent !== nextText)" in javascript
     assert "refreshHistory();window.AxioEnhancements" not in javascript
+
+
+def test_history_transport_requires_a_concrete_refresh_permission():
+    root = Path(__file__).resolve().parents[1]
+    guard = (root / "src" / "pallet_optimizer" / "static" / "history_stability.js").read_text(encoding="utf-8")
+
+    assert "refreshPermit = 1" in guard
+    assert "grantRefresh('user-action')" in guard
+    assert "if (existing && !explicitlyAllowed)" in guard
+    assert "MAX_NETWORK_REQUESTS = 3" in guard
+    assert "NETWORK_WINDOW_MS = 30 * 1000" in guard
+    assert "mutatesHistory && response.ok" in guard

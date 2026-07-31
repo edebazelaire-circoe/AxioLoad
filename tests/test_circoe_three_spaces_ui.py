@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import shutil
+import subprocess
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 
 from pallet_optimizer.api import create_app
@@ -59,6 +62,28 @@ def test_global_locked_badge_is_not_generated() -> None:
     admin_script = _read(STATIC / "admin.js")
     assert "Global verrouillé" not in admin_script
     assert "Personnalisé" in admin_script
+
+
+def test_changed_javascript_files_are_syntactically_valid() -> None:
+    node = shutil.which("node")
+    if not node:
+        pytest.skip("Node.js n’est pas disponible dans cet environnement")
+    scripts = (
+        STATIC / "admin.js",
+        STATIC / "auth_experience.js",
+        STATIC / "document_control_experience.js",
+        STATIC / "document_control_permission_ui.js",
+        STATIC / "optimization_experience.js",
+        STATIC / "password_reset.js",
+    )
+    for script in scripts:
+        result = subprocess.run(
+            [node, "--check", str(script)],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert result.returncode == 0, f"{script.name}: {result.stderr}"
 
 
 def test_versioned_assets_are_loaded(tmp_path) -> None:

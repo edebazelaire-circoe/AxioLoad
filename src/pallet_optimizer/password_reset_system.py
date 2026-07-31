@@ -203,6 +203,8 @@ def install_password_reset_system() -> None:
                 email,
                 reveal_ambiguity=False,
             )
+            audit_user_id: str | None = None
+            audit_request_id: str | None = None
             if resolved_tenant:
                 with _connect(admin.registry.registry_path) as db:
                     user = db.execute(
@@ -219,21 +221,23 @@ def install_password_reset_system() -> None:
                                WHERE user_id=? AND status='pending'""",
                             (now, user["id"]),
                         )
-                        request_id = str(uuid.uuid4())
+                        audit_request_id = str(uuid.uuid4())
+                        audit_user_id = str(user["id"])
                         db.execute(
                             """INSERT INTO password_reset_requests(
                                    id,tenant_id,user_id,status,created_at
                                ) VALUES (?,?,?,'pending',?)""",
-                            (request_id, resolved_tenant, user["id"], now),
+                            (audit_request_id, resolved_tenant, audit_user_id, now),
                         )
-                        admin.audit(
-                            resolved_tenant,
-                            email,
-                            "password_reset.requested",
-                            str(user["id"]),
-                            {},
-                            {"request_id": request_id},
-                        )
+            if resolved_tenant and audit_user_id and audit_request_id:
+                admin.audit(
+                    resolved_tenant,
+                    email,
+                    "password_reset.requested",
+                    audit_user_id,
+                    {},
+                    {"request_id": audit_request_id},
+                )
             return {"message": GENERIC_REQUEST_MESSAGE}
 
         @app.get("/api/admin/password-reset-requests")

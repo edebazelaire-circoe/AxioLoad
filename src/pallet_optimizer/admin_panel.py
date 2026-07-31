@@ -5,13 +5,13 @@ from typing import Any
 
 from fastapi.templating import Jinja2Templates
 
-_ADMIN_STYLE = b'<link rel="stylesheet" href="/static/admin.css?v=0.12.5">'
-_WORKFLOW_STYLE = b'<link rel="stylesheet" href="/static/workflow_layout.css?v=0.12.5">'
-_RESULTS_STYLE = b'<link rel="stylesheet" href="/static/results_enhancements.css?v=0.12.5">'
-_UNITS_IMPORT_SCRIPT = b'<script src="/static/units_import.js?v=0.12.5"></script>'
-_WORKFLOW_SCRIPT = b'<script src="/static/workflow_layout.js?v=0.12.5"></script>'
-_RESULTS_SCRIPT = b'<script src="/static/results_enhancements.js?v=0.12.5"></script>'
-_ADMIN_SCRIPT = b'<script src="/static/admin.js?v=0.12.5"></script>'
+_ADMIN_STYLE = b'<link rel="stylesheet" href="/static/admin.css?v=0.18.0">'
+_WORKFLOW_STYLE = b'<link rel="stylesheet" href="/static/workflow_layout.css?v=0.18.0">'
+_RESULTS_STYLE = b'<link rel="stylesheet" href="/static/results_enhancements.css?v=0.18.0">'
+_UNITS_IMPORT_SCRIPT = b'<script src="/static/units_import.js?v=0.18.0"></script>'
+_WORKFLOW_SCRIPT = b'<script src="/static/workflow_layout.js?v=0.18.0"></script>'
+_RESULTS_SCRIPT = b'<script src="/static/results_enhancements.js?v=0.18.0"></script>'
+_ADMIN_SCRIPT = b'<script src="/static/admin.js?v=0.18.0"></script>'
 _original_template_response: Callable[..., Any] = Jinja2Templates.TemplateResponse
 
 

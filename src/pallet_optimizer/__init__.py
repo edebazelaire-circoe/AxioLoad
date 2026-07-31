@@ -22,10 +22,12 @@ from .optimization_experience_panel import install_optimization_experience_injec
 from .optimization_portfolio import install_optimization_portfolio
 from .password_reset_panel import install_password_reset_injection
 from .password_reset_system import install_password_reset_system
+from .prompt_center_experience_panel import install_prompt_center_experience_injection
+from .prompt_center_system import install_prompt_center_system
 from .scaling import install_unlimited_item_count
 from .super_admin_routes import install_super_admin_routes
 
-__version__ = "0.18.0"
+__version__ = "0.19.0"
 
 install_super_admin_routes()
 install_password_reset_system()
@@ -39,5 +41,7 @@ install_document_control_experience_injection()
 install_optimization_experience_injection()
 install_auth_experience_injection()
 install_password_reset_injection()
+install_prompt_center_experience_injection()
 install_document_control_routes()
 install_document_control_system()
+install_prompt_center_system()

@@ -10,6 +10,12 @@
     if (node) node.textContent = text;
   }
 
+  function showMessage(message, text, error = false) {
+    message.textContent = text;
+    message.className = `message ${error ? 'error' : 'success'}`;
+    message.classList.remove('hidden');
+  }
+
   function installLoginModes() {
     const form = q('#login-form');
     const message = q('#login-message');
@@ -24,7 +30,8 @@
     const title = q('.login-shell h1');
     const intro = q('.login-shell h1 + p');
     const help = q('.login-help');
-    if (!tenantInput || !emailInput || !passwordInput || !tenantLabel || !emailLabel) return false;
+    const actions = q('.login-actions', form);
+    if (!tenantInput || !emailInput || !passwordInput || !tenantLabel || !emailLabel || !actions) return false;
 
     const switcher = document.createElement('div');
     switcher.className = 'auth-account-switch';
@@ -36,8 +43,19 @@
 
     const adminNote = document.createElement('div');
     adminNote.className = 'auth-admin-note';
-    adminNote.textContent = 'Utilisez l’adresse e-mail ou le pseudo configuré pour le compte super administrateur.';
+    adminNote.textContent = 'Utilisez l’adresse e-mail ou le pseudo du compte super administrateur.';
     form.before(adminNote);
+
+    const tenantHint = document.createElement('small');
+    tenantHint.className = 'auth-field-hint';
+    tenantHint.textContent = 'Facultatif. À préciser seulement si votre adresse est utilisée dans plusieurs entreprises.';
+    tenantLabel.append(tenantHint);
+
+    const forgotButton = document.createElement('button');
+    forgotButton.type = 'button';
+    forgotButton.className = 'auth-forgot-link';
+    forgotButton.textContent = 'Mot de passe oublié ?';
+    actions.prepend(forgotButton);
 
     let mode = new URLSearchParams(location.search).get('mode') === 'super_admin' ? 'super_admin' : 'user';
 
@@ -50,17 +68,18 @@
       });
       const admin = mode === 'super_admin';
       tenantLabel.hidden = admin;
-      tenantInput.required = !admin;
+      tenantInput.required = false;
       emailInput.type = admin ? 'text' : 'email';
       emailInput.autocomplete = 'username';
       emailInput.placeholder = admin ? 'Adresse e-mail ou pseudo' : '';
       setLabelText(emailLabel, admin ? 'Adresse e-mail ou pseudo' : 'Adresse e-mail');
       adminNote.classList.toggle('visible', admin);
+      forgotButton.hidden = admin;
       if (eyebrow) eyebrow.textContent = admin ? 'Administration AxioLoad' : 'Espace client';
       if (title) title.textContent = admin ? 'Connexion super administrateur' : 'Connexion';
       if (intro) intro.textContent = admin
         ? 'Connectez-vous pour gérer les entreprises, les utilisateurs et les paramètres globaux.'
-        : 'Utilisez l’identifiant de votre entreprise reçu lors de l’invitation.';
+        : 'Votre adresse e-mail suffit dans la majorité des cas.';
       if (help) help.hidden = admin;
       emailInput.focus();
     };
@@ -69,6 +88,32 @@
       button.addEventListener('click', () => applyMode(button.dataset.authMode));
     });
     applyMode(mode);
+
+    forgotButton.addEventListener('click', async () => {
+      message.classList.add('hidden');
+      const email = emailInput.value.trim();
+      if (!email) {
+        showMessage(message, 'Renseignez votre adresse e-mail avant de demander une réinitialisation.', true);
+        emailInput.focus();
+        return;
+      }
+      forgotButton.disabled = true;
+      try {
+        const response = await fetch('/api/auth/forgot-password', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({tenant_id: tenantInput.value.trim(), email}),
+        });
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(body.detail || 'Demande impossible');
+        showMessage(message, body.message || 'La demande a été transmise au super administrateur.');
+      } catch (error) {
+        showMessage(message, error.message || String(error), true);
+      } finally {
+        forgotButton.disabled = false;
+      }
+    });
 
     form.addEventListener('submit', async event => {
       event.preventDefault();
@@ -90,12 +135,9 @@
         });
         const body = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(body.detail || 'Connexion impossible');
-        sessionStorage.removeItem('axioload.admin.token');
-        location.href = '/';
+        location.href = !admin && body.must_change_password ? '/change-password' : '/';
       } catch (error) {
-        message.textContent = error.message || String(error);
-        message.className = 'message error';
-        message.classList.remove('hidden');
+        showMessage(message, error.message || String(error), true);
       } finally {
         button.disabled = false;
       }
@@ -129,7 +171,6 @@
         }
         await fetch('/api/auth/logout', {method: 'POST', credentials: 'same-origin'});
       } finally {
-        sessionStorage.removeItem('axioload.admin.token');
         localStorage.removeItem('axioload.superadmin.active');
         location.href = '/login';
       }

@@ -104,5 +104,5 @@ def test_optimization_experience_assets_are_injected(tmp_path):
     client = TestClient(create_app(tmp_path))
     response = client.get("/")
     assert response.status_code == 200
-    assert "/static/optimization_experience.css?v=0.15.0" in response.text
-    assert "/static/optimization_experience.js?v=0.15.0" in response.text
+    assert "/static/optimization_experience.css?v=0.18.0" in response.text
+    assert "/static/optimization_experience.js?v=0.18.0" in response.text

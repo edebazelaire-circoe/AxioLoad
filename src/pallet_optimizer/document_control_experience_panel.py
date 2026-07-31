@@ -5,9 +5,9 @@ from typing import Any
 
 from fastapi.templating import Jinja2Templates
 
-_STYLE = b'<link rel="stylesheet" href="/static/document_control_experience.css?v=0.14.0">'
-_SCRIPT = b'<script src="/static/document_control_experience.js?v=0.14.0"></script>'
-_PERMISSION_SCRIPT = b'<script src="/static/document_control_permission_ui.js?v=0.14.0"></script>'
+_STYLE = b'<link rel="stylesheet" href="/static/document_control_experience.css?v=0.18.0">'
+_SCRIPT = b'<script src="/static/document_control_experience.js?v=0.18.0"></script>'
+_PERMISSION_SCRIPT = b'<script src="/static/document_control_permission_ui.js?v=0.18.0"></script>'
 _original_template_response: Callable[..., Any] | None = None
 
 

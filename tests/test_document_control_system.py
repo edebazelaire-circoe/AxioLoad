@@ -87,5 +87,5 @@ def test_experience_assets_are_injected(tmp_path, monkeypatch):
     client = TestClient(create_app(tmp_path))
     page = client.get("/")
     assert page.status_code == 200
-    assert "/static/document_control_experience.css?v=0.14.0" in page.text
-    assert "/static/document_control_experience.js?v=0.14.0" in page.text
+    assert "/static/document_control_experience.css?v=0.18.0" in page.text
+    assert "/static/document_control_experience.js?v=0.18.0" in page.text

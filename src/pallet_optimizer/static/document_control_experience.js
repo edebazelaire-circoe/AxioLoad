@@ -8,6 +8,7 @@
   }[char]));
 
   const icons = {
+    database: '<svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg>',
     truck: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h11v10H3zM14 9h4l3 3v3h-7zM7 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm11 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/></svg>',
     document: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h8l4 4v16H6zM14 2v5h5M9 11h6M9 15h6M9 19h4"/></svg>',
     shield: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5zM9 12l2 2 4-5"/></svg>',
@@ -28,71 +29,152 @@
     return `<span class="ax-icon ${className}">${icons[name] || icons.spark}</span>`;
   }
 
-  function adminHeaders() {
-    const token = sessionStorage.getItem('axioload.admin.token') || '';
-    return {
-      'Content-Type': 'application/json',
-      ...(token ? {'X-AxioLoad-Super-Admin': token} : {})
-    };
-  }
-
-  async function adminApi(url, options = {}, retry = true) {
+  async function adminApi(url, options = {}) {
     const response = await fetch(url, {
       ...options,
-      headers: {...adminHeaders(), ...(options.headers || {})}
+      credentials: 'same-origin',
+      headers: {'Content-Type': 'application/json', ...(options.headers || {})}
     });
-    if (response.status === 401 && retry) {
-      const token = prompt('Saisissez le jeton super administrateur.');
-      if (token) {
-        sessionStorage.setItem('axioload.admin.token', token.trim());
-        return adminApi(url, options, false);
-      }
-    }
     if (!response.ok) {
       const body = await response.json().catch(() => ({}));
+      if (response.status === 401) {
+        throw new Error('Session super administrateur expirée. Reconnectez-vous.');
+      }
       throw new Error(body.detail || `Erreur ${response.status}`);
     }
     return response.status === 204 ? null : response.json();
   }
 
-  function decorateOptimizationTabs() {
-    const map = {vehicles: 'vehicles', data: 'data', results: 'results', history: 'history', route: 'route', total: 'total'};
-    qa('nav.tabs .tab[data-tab]').forEach(button => {
-      const name = map[button.dataset.tab];
-      if (!name || q('.ax-tab-icon', button)) return;
-      const label = button.textContent.trim();
-      button.innerHTML = `${icon(name, 'ax-tab-icon')}<span>${escapeHtml(label)}</span>`;
+  function decorateTab(button, iconName, fallbackLabel = '') {
+    if (!button || q('.ax-tab-icon', button)) return;
+    const label = button.textContent.trim() || fallbackLabel;
+    button.innerHTML = `${icon(iconName, 'ax-tab-icon')}<span>${escapeHtml(label)}</span>`;
+  }
+
+  function setSubnavActive(nav, activeButton) {
+    qa('.tab', nav).forEach(button => {
+      const active = button === activeButton;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-selected', String(active));
     });
+  }
+
+  function showWorkspaceNotice(text) {
+    let notice = q('#workspace-notice');
+    if (!notice) {
+      notice = document.createElement('div');
+      notice.id = 'workspace-notice';
+      notice.className = 'workspace-notice';
+      document.body.append(notice);
+    }
+    notice.textContent = text;
+    notice.classList.add('visible');
+    clearTimeout(window.__axioloadWorkspaceNoticeTimer);
+    window.__axioloadWorkspaceNoticeTimer = setTimeout(() => notice.classList.remove('visible'), 3200);
+  }
+
+  function openPromptConfiguration() {
+    const openAdmin = q('#open-admin');
+    const openSettings = q('#open-settings');
+    const adminPanel = q('#tab-admin');
+
+    if (adminPanel && openAdmin) {
+      openAdmin.click();
+      setTimeout(() => {
+        const promptView = q('[data-admin-view="document-prompts"]');
+        if (promptView) promptView.click();
+        else showWorkspaceNotice('Ouvrez la rubrique Prompts documentaires dans le Super Admin.');
+      }, 80);
+      return;
+    }
+
+    if (openSettings) {
+      openSettings.click();
+      setTimeout(() => {
+        const target = q('#dc-prompt-settings, [data-document-prompts], [id*="prompt"], textarea[id*="prompt"]');
+        if (target) target.scrollIntoView({behavior: 'smooth', block: 'center'});
+        else showWorkspaceNotice('La configuration des prompts est réservée à l’administrateur principal.');
+      }, 120);
+      return;
+    }
+    showWorkspaceNotice('Aucun écran de configuration des prompts n’est disponible pour ce compte.');
   }
 
   function installWorkspaceSwitcher() {
     const nav = q('nav.tabs');
-    const documentTab = q('[data-tab="document-control"]');
+    const documentTab = q('[data-tab="document-control"]', nav || document);
     const documentPanel = q('#tab-document-control');
     if (!nav || !documentTab || !documentPanel || q('#workspace-switcher')) return false;
 
-    decorateOptimizationTabs();
+    const originalTabs = {
+      vehicles: q('[data-tab="vehicles"]', nav),
+      data: q('[data-tab="data"]', nav),
+      results: q('[data-tab="results"]', nav),
+      route: q('[data-tab="route"]', nav),
+      total: q('[data-tab="total"]', nav),
+      history: q('[data-tab="history"]', nav)
+    };
+
+    const tabIcons = {vehicles: 'vehicles', data: 'data', results: 'results', route: 'route', total: 'total', history: 'history'};
+    Object.entries(originalTabs).forEach(([name, button]) => decorateTab(button, tabIcons[name]));
+
     documentTab.classList.add('ax-hidden-document-tab');
     documentTab.setAttribute('aria-hidden', 'true');
+
+    Object.entries(originalTabs).forEach(([name, button]) => {
+      if (!button) return;
+      button.dataset.workspaceGroup = name === 'vehicles' ? 'database' : 'optimization';
+    });
+
+    const promptButton = document.createElement('button');
+    promptButton.type = 'button';
+    promptButton.className = 'tab workspace-synthetic-tab';
+    promptButton.dataset.workspaceGroup = 'database';
+    promptButton.dataset.workspaceTab = 'prompts';
+    promptButton.innerHTML = `${icon('prompt', 'ax-tab-icon')}<span>Prompts</span>`;
+
+    const documentNewButton = document.createElement('button');
+    documentNewButton.type = 'button';
+    documentNewButton.className = 'tab workspace-synthetic-tab';
+    documentNewButton.dataset.workspaceGroup = 'documents';
+    documentNewButton.dataset.workspaceTab = 'document-new';
+    documentNewButton.innerHTML = `${icon('document', 'ax-tab-icon')}<span>Nouveau contrôle</span>`;
+
+    const documentHistoryButton = document.createElement('button');
+    documentHistoryButton.type = 'button';
+    documentHistoryButton.className = 'tab workspace-synthetic-tab';
+    documentHistoryButton.dataset.workspaceGroup = 'documents';
+    documentHistoryButton.dataset.workspaceTab = 'document-history';
+    documentHistoryButton.innerHTML = `${icon('history', 'ax-tab-icon')}<span>Historique</span>`;
+
+    nav.append(promptButton, documentNewButton, documentHistoryButton);
+    nav.classList.add('workspace-subnav');
 
     const switcher = document.createElement('section');
     switcher.id = 'workspace-switcher';
     switcher.className = 'workspace-switcher';
     switcher.setAttribute('aria-label', 'Choisir un espace de travail');
     switcher.innerHTML = `
-      <button type="button" class="workspace-card active" data-workspace="optimization">
-        ${icon('truck')}
-        <span><strong>Optimisation</strong><small>Chargement, itinéraires et flotte</small></span>
+      <button type="button" class="workspace-card workspace-database active" data-workspace="database">
+        ${icon('database')}
+        <span><strong>Base de données</strong><small>Flotte et prompts</small></span>
       </button>
-      <button type="button" class="workspace-card" data-workspace="documents">
+      <button type="button" class="workspace-card workspace-optimization" data-workspace="optimization">
+        ${icon('truck')}
+        <span><strong>Optimisation</strong><small>Chargement, itinéraires et historique</small></span>
+      </button>
+      <button type="button" class="workspace-card workspace-documents" data-workspace="documents">
         ${icon('shield')}
         <span><strong>Contrôle documentaire</strong><small>Comparer, corriger et exporter</small></span>
       </button>`;
     nav.before(switcher);
-    nav.classList.add('optimization-subnav');
 
-    let lastOptimizationTab = q('nav.tabs .tab.active:not([data-tab="document-control"])')?.dataset.tab || 'vehicles';
-    let workspace = 'optimization';
+    let workspace = 'database';
+    let lastDatabaseTab = 'vehicles';
+    let lastOptimizationTab = 'data';
+    let lastDocumentTab = 'document-new';
+
+    const workspaceButtons = () => qa('[data-workspace-group]', nav);
 
     const setWorkspaceVisual = name => {
       workspace = name;
@@ -102,33 +184,76 @@
         button.classList.toggle('active', active);
         button.setAttribute('aria-pressed', String(active));
       });
-      nav.classList.toggle('workspace-nav-hidden', name === 'documents');
+      workspaceButtons().forEach(button => {
+        const visible = button.dataset.workspaceGroup === name;
+        button.hidden = !visible;
+      });
+      nav.dataset.workspace = name;
     };
 
-    const openOptimization = () => {
+    const openDatabase = targetName => {
+      setWorkspaceVisual('database');
+      const target = targetName || lastDatabaseTab;
+      if (target === 'prompts') {
+        lastDatabaseTab = 'prompts';
+        setSubnavActive(nav, promptButton);
+        openPromptConfiguration();
+        return;
+      }
+      lastDatabaseTab = 'vehicles';
+      originalTabs.vehicles?.click();
+      setSubnavActive(nav, originalTabs.vehicles);
+    };
+
+    const openOptimization = targetName => {
       setWorkspaceVisual('optimization');
-      const target = q(`nav.tabs .tab[data-tab="${lastOptimizationTab}"]`) || q('nav.tabs .tab[data-tab="vehicles"]');
+      const target = originalTabs[targetName || lastOptimizationTab] || originalTabs.data || originalTabs.results;
+      if (target?.dataset.tab) lastOptimizationTab = target.dataset.tab;
       target?.click();
+      setSubnavActive(nav, target);
     };
 
-    const openDocuments = () => {
-      const current = q('nav.tabs .tab.active:not([data-tab="document-control"])');
-      if (current?.dataset.tab) lastOptimizationTab = current.dataset.tab;
+    const openDocuments = targetName => {
       setWorkspaceVisual('documents');
+      const target = targetName || lastDocumentTab;
+      lastDocumentTab = target;
       documentTab.click();
+      const synthetic = target === 'document-history' ? documentHistoryButton : documentNewButton;
+      setSubnavActive(nav, synthetic);
+      setTimeout(() => {
+        const action = target === 'document-history' ? q('#dc-history-view') : q('#dc-new-view');
+        action?.click();
+      }, 0);
     };
 
-    q('[data-workspace="optimization"]', switcher).addEventListener('click', openOptimization);
-    q('[data-workspace="documents"]', switcher).addEventListener('click', openDocuments);
-    qa('nav.tabs .tab:not([data-tab="document-control"])').forEach(tab => {
-      tab.addEventListener('click', () => {
-        lastOptimizationTab = tab.dataset.tab || lastOptimizationTab;
-        setWorkspaceVisual('optimization');
+    q('[data-workspace="database"]', switcher).addEventListener('click', () => openDatabase());
+    q('[data-workspace="optimization"]', switcher).addEventListener('click', () => openOptimization());
+    q('[data-workspace="documents"]', switcher).addEventListener('click', () => openDocuments());
+
+    promptButton.addEventListener('click', () => openDatabase('prompts'));
+    documentNewButton.addEventListener('click', () => openDocuments('document-new'));
+    documentHistoryButton.addEventListener('click', () => openDocuments('document-history'));
+
+    Object.entries(originalTabs).forEach(([name, button]) => {
+      if (!button) return;
+      button.addEventListener('click', () => {
+        const group = button.dataset.workspaceGroup;
+        if (group === 'database') {
+          lastDatabaseTab = name;
+          setWorkspaceVisual('database');
+        } else {
+          lastOptimizationTab = name;
+          setWorkspaceVisual('optimization');
+        }
+        setSubnavActive(nav, button);
       });
     });
+
     q('#close-settings')?.addEventListener('click', () => {
-      if (workspace === 'documents') setTimeout(openDocuments, 0);
+      if (workspace === 'documents') setTimeout(() => openDocuments(lastDocumentTab), 0);
     });
+
+    openDatabase('vehicles');
     return true;
   }
 

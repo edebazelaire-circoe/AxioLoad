@@ -63,5 +63,5 @@ def test_limits_and_locked_prompt_extension(tmp_path, monkeypatch):
     assert saved.json()["version"] == 1
     fetched = client.get("/api/document-control/prompts/transport_order/cmr")
     assert fetched.status_code == 200
-    assert fetched.json()["system_prompt_version"] == "document-control-v1.0"
+    assert fetched.json()["system_prompt_version"] == "document-control-v1.1"
     assert "moteur verrouillé" in fetched.json()["locked_prompt_preview"]

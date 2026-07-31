@@ -29,8 +29,6 @@ def test_super_admin_can_login_with_username_or_email(client: TestClient, identi
     assert context.status_code == 200
     assert context.json()["actor"] == "b.olivier@circoe.com"
 
-    # The middleware converts the HttpOnly session into the legacy admin header
-    # internally, so the browser never needs to expose the session token.
     bootstrap = client.get("/api/admin/bootstrap")
     assert bootstrap.status_code == 200
     assert bootstrap.json()["actor"] == "b.olivier@circoe.com"
@@ -62,5 +60,7 @@ def test_authentication_assets_are_injected(client: TestClient) -> None:
     assert home.status_code == 200
     assert login.status_code == 200
     for response in (home, login):
-        assert "/static/auth_experience.css?v=0.16.0" in response.text
-        assert "/static/auth_experience.js?v=0.16.0" in response.text
+        assert "/static/auth_experience.css?v=0.17.0" in response.text
+        assert "/static/auth_experience.js?v=0.17.0" in response.text
+        assert "/static/password_reset.css?v=0.17.0" in response.text
+        assert "/static/password_reset.js?v=0.17.0" in response.text

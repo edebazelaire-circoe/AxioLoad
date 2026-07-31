@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-import secrets
 
 from .admin_base import (
     DEFAULT_NEW_COMPANY_PERMISSIONS, PERMISSION_CATALOG, PERMISSION_KEYS, WebContext,
@@ -41,12 +40,7 @@ class AdminRepository(
         )
 
     def _ensure_super_admin_account(self) -> None:
-        """Create or refresh the bootstrap Super Admin account.
-
-        The configured password is stored only as a salted digest in SQLite. The
-        environment variables remain the source of truth until a dedicated password
-        management screen is introduced.
-        """
+        """Create or refresh the bootstrap Super Admin account."""
         email, _username, password = self.super_admin_credentials()
         salt, digest = _hash_secret(password)
         now = utc_now()
@@ -87,14 +81,14 @@ class AdminRepository(
             password, row["password_salt"], row["password_digest"]
         ):
             raise ValueError("Identifiants super administrateur invalides")
-        token = self.create_user_session("local", SUPER_ADMIN_USER_ID)
+        session_id = self.create_user_session("local", SUPER_ADMIN_USER_ID)
         self.record_activity("local", SUPER_ADMIN_USER_ID, 0, "super_admin_login")
         user = self.get_user(SUPER_ADMIN_USER_ID)
         user["username"] = username
-        return {"session_token": token, "user": user, "mode": "super_admin"}
+        return {"session_token": session_id, "user": user, "mode": "super_admin"}
 
-    def resolve_user_session(self, token: str | None) -> WebContext | None:
-        context = super().resolve_user_session(token)
+    def resolve_user_session(self, session_id: str | None) -> WebContext | None:
+        context = super().resolve_user_session(session_id)
         if context and context.actor_id == SUPER_ADMIN_USER_ID:
             email, _username, _password = self.super_admin_credentials()
             return WebContext(
@@ -105,16 +99,9 @@ class AdminRepository(
             )
         return context
 
-    def super_admin_actor(self, provided_token: str | None = None) -> str:
-        """Resolve a Super Admin session or the optional legacy server token."""
-        candidate = (provided_token or "").strip()
-        if candidate.startswith("Bearer "):
-            candidate = candidate[7:].strip()
-        session = self.resolve_user_session(candidate)
+    def super_admin_actor(self, session_id: str | None = None) -> str:
+        """Resolve the authenticated Super Admin browser session."""
+        session = self.resolve_user_session((session_id or "").strip())
         if session and session.is_super_admin:
             return session.actor_label
-
-        legacy_token = os.getenv("PLO_SUPER_ADMIN_TOKEN", "").strip()
-        if legacy_token and candidate and secrets.compare_digest(candidate, legacy_token):
-            return self.super_admin_credentials()[0]
         raise PermissionError("Connexion super administrateur requise")

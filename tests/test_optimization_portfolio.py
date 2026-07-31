@@ -78,7 +78,8 @@ def test_one_model_failure_does_not_stop_the_other_models(monkeypatch):
     assert any(outcome["status"] == "success" for outcome in outcomes if outcome["code"] != "skyline_blf")
 
 
-def test_destination_is_used_as_default_client_bundle():
+def test_destination_is_grouped_when_the_client_fits_one_vehicle():
+    vehicle = default_vehicle_catalog()[0]
     first = _problem().items[0]
     second = CargoItem(
         id="PAL-002#1",
@@ -92,9 +93,11 @@ def test_destination_is_used_as_default_client_bundle():
         destination="Client A",
         delivery_order=1,
     )
-    bundles = packing._bundles((first, second))
-    assert len(bundles) == 1
-    assert {item.id for item in bundles[0]} == {first.id, second.id}
+    partition = packing.partition_items((first, second), vehicle, 1, seed=1)
+    assert partition is not None
+    assert len(partition) == 1
+    assert {item.id for item in partition[0]} == {first.id, second.id}
+    assert {item.keep_together_group for item in partition[0]} == {"CLIENT::client a"}
 
 
 def test_optimization_experience_assets_are_injected(tmp_path):

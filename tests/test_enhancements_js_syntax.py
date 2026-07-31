@@ -10,25 +10,25 @@ def test_enhancement_script_is_loaded_after_existing_applications():
     assert "drawFocusedRoute" in javascript
 
 
-def test_enhancements_are_idempotent_and_do_not_poll_history_in_a_dom_loop():
+def test_history_refresh_is_explicit_and_never_controls_unrelated_requests():
     root = Path(__file__).resolve().parents[1]
     javascript = (root / "src" / "pallet_optimizer" / "static" / "enhancements.js").read_text(encoding="utf-8")
 
-    assert "axioload:history-loaded" in javascript
     assert "runtime.historyRequest" in javascript
-    assert "node.nodeType === Node.ELEMENT_NODE" in javascript
-    assert "if (title && title.textContent !== nextTitle)" in javascript
-    assert "if (badge.textContent !== nextText)" in javascript
-    assert "refreshHistory();window.AxioEnhancements" not in javascript
+    assert "nativeFetch('/api/history?limit=200'" in javascript
+    assert "axioload:history-refresh-request" in javascript
+    assert "refreshHistory(true, 'validation')" in javascript
+    assert "cachedResponse" not in javascript
+    assert "refreshPermit" not in javascript
+    assert "circuitIsOpen" not in javascript
 
 
-def test_history_transport_requires_a_concrete_refresh_permission():
+def test_dom_observers_are_limited_to_feature_containers():
     root = Path(__file__).resolve().parents[1]
-    guard = (root / "src" / "pallet_optimizer" / "static" / "history_stability.js").read_text(encoding="utf-8")
+    javascript = (root / "src" / "pallet_optimizer" / "static" / "enhancements.js").read_text(encoding="utf-8")
 
-    assert "refreshPermit = 1" in guard
-    assert "grantRefresh('user-action')" in guard
-    assert "if (cachedResponse && !explicitlyAllowed)" in guard
-    assert "MAX_NETWORK_REQUESTS = 3" in guard
-    assert "NETWORK_WINDOW_MS = 30 * 1000" in guard
-    assert "mutatesHistory && response.ok" in guard
+    assert "observer.observe(document.body" not in javascript
+    assert "observeContainer('#vehicle-table tbody'" in javascript
+    assert "observeContainer('#cargo-table tbody'" in javascript
+    assert "observeContainer('#history-list'" in javascript
+    assert "root.dataset.axioloadObserved" in javascript

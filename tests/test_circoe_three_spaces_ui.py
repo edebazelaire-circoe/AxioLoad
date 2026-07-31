@@ -19,7 +19,7 @@ def _read(path: Path) -> str:
 
 
 def test_three_main_workspaces_are_declared() -> None:
-    script = _read(STATIC / "document_control_experience.js")
+    script = _read(STATIC / "document_control_experience_v2.js")
     assert 'data-workspace="database"' in script
     assert 'data-workspace="optimization"' in script
     assert 'data-workspace="documents"' in script
@@ -28,6 +28,7 @@ def test_three_main_workspaces_are_declared() -> None:
     assert "Contrôle documentaire" in script
     assert "Nouveau contrôle" in script
     assert "Prompts" in script
+    assert "workspace-group-hidden" in script
 
 
 def test_circoe_palette_is_applied() -> None:
@@ -43,7 +44,7 @@ def test_frontend_has_no_manual_superadmin_credential_flow() -> None:
     inspected = [
         STATIC / "admin.js",
         STATIC / "auth_experience.js",
-        STATIC / "document_control_experience.js",
+        STATIC / "document_control_experience_v2.js",
         STATIC / "password_reset.js",
         ROOT / "src" / "pallet_optimizer" / "admin_service.py",
         ROOT / ".env.example",
@@ -64,6 +65,30 @@ def test_global_locked_badge_is_not_generated() -> None:
     assert "Personnalisé" in admin_script
 
 
+def test_runtime_scripts_do_not_watch_the_entire_document() -> None:
+    scripts = (
+        STATIC / "auth_experience.js",
+        STATIC / "document_control_experience_v2.js",
+        STATIC / "document_control_permission_ui.js",
+        STATIC / "optimization_experience.js",
+        STATIC / "password_reset.js",
+        STATIC / "prompt_center_experience.js",
+    )
+    for script in scripts:
+        content = _read(script)
+        assert "observe(document.body" not in content, script.name
+        assert "new MutationObserver(installAll)" not in content, script.name
+    assert "observer.observe(body, {childList: true})" in _read(STATIC / "optimization_experience.js")
+    assert ".observe(target, {childList: true, subtree: true})" in _read(STATIC / "password_reset.js")
+
+
+def test_workspace_fallback_clicks_only_one_allowed_destination() -> None:
+    script = _read(STATIC / "document_control_permission_ui.js")
+    assert "optimizationWorkspace?.click() || databaseWorkspace?.click()" not in script
+    assert "const fallback = [optimizationWorkspace, databaseWorkspace]" in script
+    assert "!button.hidden && !button.disabled" in script
+
+
 def test_changed_javascript_files_are_syntactically_valid() -> None:
     node = shutil.which("node")
     if not node:
@@ -71,10 +96,11 @@ def test_changed_javascript_files_are_syntactically_valid() -> None:
     scripts = (
         STATIC / "admin.js",
         STATIC / "auth_experience.js",
-        STATIC / "document_control_experience.js",
+        STATIC / "document_control_experience_v2.js",
         STATIC / "document_control_permission_ui.js",
         STATIC / "optimization_experience.js",
         STATIC / "password_reset.js",
+        STATIC / "prompt_center_experience.js",
     )
     for script in scripts:
         result = subprocess.run(
@@ -92,11 +118,16 @@ def test_versioned_assets_are_loaded(tmp_path) -> None:
     assert response.status_code == 200
     expected = (
         "/static/admin.js?v=0.18.0",
-        "/static/document_control_experience.css?v=0.18.0",
-        "/static/document_control_experience.js?v=0.18.0",
-        "/static/document_control_permission_ui.js?v=0.18.0",
-        "/static/optimization_experience.css?v=0.18.0",
-        "/static/optimization_experience.js?v=0.18.0",
+        "/static/auth_experience.css?v=0.19.1",
+        "/static/auth_experience.js?v=0.19.1",
+        "/static/document_control_experience.css?v=0.19.1",
+        "/static/document_control_experience_v2.js?v=0.19.1",
+        "/static/document_control_permission_ui.js?v=0.19.1",
+        "/static/optimization_experience.css?v=0.19.1",
+        "/static/optimization_experience.js?v=0.19.1",
+        "/static/password_reset.css?v=0.19.1",
+        "/static/password_reset.js?v=0.19.1",
     )
     for asset in expected:
-        assert asset in response.text
+        assert response.text.count(asset) == 1
+    assert "document_control_experience.js?v=0.18.0" not in response.text

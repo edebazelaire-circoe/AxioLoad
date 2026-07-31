@@ -10,17 +10,16 @@ from pallet_optimizer.domain import AxleSpec, VehicleVersion
 
 @pytest.fixture(autouse=True)
 def legacy_super_admin_test_compatibility(request, monkeypatch):
-    """Preserve historical tests that predate authenticated Super Admin sessions.
-
-    Production code always requires a valid session or the optional legacy server
-    token. Only the older test modules keep their former implicit administrator.
-    The dedicated authentication tests are deliberately excluded from this shim.
-    """
-    if request.node.path.name == "test_super_admin_auth.py":
+    """Preserve only the historical tests that predate authenticated sessions."""
+    authenticated_test_modules = {
+        "test_super_admin_auth.py",
+        "test_company_login_and_password_reset.py",
+    }
+    if request.node.path.name in authenticated_test_modules:
         return
 
-    def resolve_test_actor(self: AdminRepository, provided_token: str | None = None) -> str:
-        del self, provided_token
+    def resolve_test_actor(self: AdminRepository, session_id: str | None = None) -> str:
+        del self, session_id
         return os.getenv("PLO_SUPER_ADMIN_EMAIL", "b.olivier@circoe.com")
 
     monkeypatch.setattr(AdminRepository, "super_admin_actor", resolve_test_actor)

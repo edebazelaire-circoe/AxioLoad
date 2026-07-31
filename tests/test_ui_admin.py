@@ -37,8 +37,8 @@ def test_super_admin_assets_and_activation_pages_are_loaded(tmp_path):
     guard = guard_response.text
     for token in (
         "pathname === '/api/history'",
-        "existing.response.clone()",
-        "inFlight.has(cacheKey)",
+        "cachedResponse.clone()",
+        "if (inFlight)",
         "mutatesHistory",
         "grantRefresh('user-action')",
         "MAX_NETWORK_REQUESTS = 3",

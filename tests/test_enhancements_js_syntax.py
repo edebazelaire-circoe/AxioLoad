@@ -28,7 +28,7 @@ def test_history_transport_requires_a_concrete_refresh_permission():
 
     assert "refreshPermit = 1" in guard
     assert "grantRefresh('user-action')" in guard
-    assert "if (existing && !explicitlyAllowed)" in guard
+    assert "if (cachedResponse && !explicitlyAllowed)" in guard
     assert "MAX_NETWORK_REQUESTS = 3" in guard
     assert "NETWORK_WINDOW_MS = 30 * 1000" in guard
     assert "mutatesHistory && response.ok" in guard

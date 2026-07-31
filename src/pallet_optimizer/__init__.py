@@ -12,16 +12,22 @@ from .document_control_permissions import install_document_control_permission_mi
 install_document_control_permission_migration()
 
 from .admin_panel import install_admin_panel_injection
+from .client_grouping import install_client_grouping
 from .document_control_experience_panel import install_document_control_experience_injection
 from .document_control_panel import install_document_control_panel_injection
 from .document_control_system import install_document_control_system
+from .optimization_experience_panel import install_optimization_experience_injection
+from .optimization_portfolio import install_optimization_portfolio
 from .scaling import install_unlimited_item_count
 
-__version__ = "0.14.0"
+__version__ = "0.15.0"
 
+install_client_grouping()
+install_optimization_portfolio()
 install_unlimited_item_count()
 install_admin_panel_injection()
 install_document_control_panel_injection()
 install_document_control_experience_injection()
+install_optimization_experience_injection()
 install_document_control_routes()
 install_document_control_system()

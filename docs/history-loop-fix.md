@@ -1,25 +1,25 @@
-# Correctif de stabilité de l’historique
+# Stabilité de l’historique et réactivité de l’interface
 
-Le chargement de l’historique est désormais piloté par un contrôleur unique et les enrichissements DOM sont idempotents.
+Le premier correctif utilisait un contrôleur global autour de `window.fetch`. Il empêchait la boucle infinie, mais il pouvait aussi retenir des chargements légitimes et ralentir les interactions ordinaires.
 
-## Déclencheurs autorisés
+La nouvelle approche ne contrôle plus toutes les requêtes de l’application.
 
-Un accès réseau à `/api/history` est autorisé dans trois cas :
+## Chargement de l’historique
 
-- au premier chargement de l’application, afin de disposer d’une première copie de l’historique ;
-- après une action concrète de l’utilisateur, notamment l’ouverture de l’onglet Historique ou une demande explicite de rafraîchissement ;
-- après une action qui modifie réellement l’historique, par exemple la validation d’une optimisation.
+L’historique est chargé uniquement :
 
-Une autorisation ne permet qu’un seul nouvel appel réseau. Les réactions internes du DOM ne donnent jamais une nouvelle autorisation.
+- par le fonctionnement normal de l’onglet Historique ;
+- après la validation d’une optimisation ;
+- après une demande explicite de rafraîchissement.
 
-## Garde-fous
+Deux demandes simultanées partagent la même requête. Une réponse déjà chargée peut être réutilisée pour décorer l’affichage, mais elle ne bloque jamais les autres appels réseau de l’application.
 
-- les observateurs DOM ne réagissent qu’à l’ajout de nouveaux éléments et ne réécrivent plus les mêmes textes en boucle ;
-- toutes les variantes de lecture de `/api/history`, avec ou sans paramètre `limit`, partagent la même réponse ;
-- les appels GET simultanés partagent la même requête ;
-- les appels sans action concrète réutilisent la réponse déjà chargée ;
-- le cache est invalidé dès qu’une action modifie l’historique ;
-- un coupe-circuit limite à trois appels réseau en trente secondes lorsqu’une réponse en cache est disponible ;
-- les anciennes informations de jeton Super Admin stockées dans le navigateur sont supprimées.
+## Observateurs DOM
 
-L’objectif est d’éviter les rafales de requêtes visibles dans l’onglet Réseau tout en conservant un historique actualisé après les actions réelles de l’utilisateur.
+Il n’existe plus d’observateur placé sur l’ensemble de la page. Chaque observateur est limité à son propre conteneur : véhicules, marchandises, résultats ou historique.
+
+Une frappe dans un champ ou un clic sur un bouton sans rapport avec ces conteneurs ne déclenche donc aucun retraitement global.
+
+## Accès Super Admin
+
+Le jeton technique `PLO_SUPER_ADMIN_TOKEN` n’est pas utilisé. L’accès actuel reste direct pendant la phase de développement. Le fonctionnement cible reposera sur le portail de connexion et sur une session associée à un compte ayant le rôle `super_admin`.

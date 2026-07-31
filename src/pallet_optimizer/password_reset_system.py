@@ -6,7 +6,7 @@ import uuid
 from collections.abc import Callable
 from typing import Annotated, Any
 
-from fastapi import Cookie, FastAPI, Header, HTTPException, Request
+from fastapi import Cookie, FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
@@ -17,7 +17,7 @@ from .persistence import _connect, _hash_secret, _verify_secret, utc_now
 APP_VERSION = "0.17.0"
 GENERIC_REQUEST_MESSAGE = (
     "Si ce compte existe, la demande a été transmise au super administrateur. "
-    "Un mot de passe temporaire vous sera communiqué par le canal habituel."
+    "Un nouveau mot de passe vous sera communiqué par le canal habituel."
 )
 
 _original_register: Callable[..., Any] | None = None
@@ -55,6 +55,46 @@ def _ensure_schema(admin: AdminRepository) -> None:
         )
 
 
+def _resolve_tenant_for_email(
+    admin: AdminRepository,
+    tenant_value: str,
+    email: str,
+    *,
+    reveal_ambiguity: bool,
+) -> str | None:
+    tenant_value = tenant_value.strip()
+    email = email.strip().lower()
+    if "@" not in email:
+        return None
+
+    with _connect(admin.registry.registry_path) as db:
+        if tenant_value:
+            tenant = db.execute(
+                """SELECT id FROM tenants
+                   WHERE lower(id)=lower(?) OR lower(name)=lower(?)
+                   ORDER BY CASE WHEN lower(id)=lower(?) THEN 0 ELSE 1 END
+                   LIMIT 1""",
+                (tenant_value, tenant_value, tenant_value),
+            ).fetchone()
+            return str(tenant["id"]) if tenant else tenant_value
+
+        rows = db.execute(
+            """SELECT DISTINCT tenant_id FROM company_users
+               WHERE email=? AND active=1 AND role <> 'super_admin'
+               ORDER BY tenant_id""",
+            (email,),
+        ).fetchall()
+
+    if len(rows) == 1:
+        return str(rows[0]["tenant_id"])
+    if len(rows) > 1 and reveal_ambiguity:
+        raise ValueError(
+            "Cette adresse est rattachée à plusieurs entreprises. "
+            "Précisez l’identifiant ou le nom de l’entreprise."
+        )
+    return None
+
+
 def _install_repository_extensions() -> None:
     global _original_get_user, _original_authenticate
     if getattr(AdminRepository, "_axioload_password_reset", False):
@@ -65,8 +105,8 @@ def _install_repository_extensions() -> None:
 
     def get_user(self: AdminRepository, user_id: str) -> dict[str, Any]:
         assert _original_get_user is not None
-        result = _original_get_user(self, user_id)
         _ensure_schema(self)
+        result = _original_get_user(self, user_id)
         with _connect(self.registry.registry_path) as db:
             row = db.execute(
                 "SELECT must_change_password FROM company_users WHERE id=?",
@@ -82,7 +122,16 @@ def _install_repository_extensions() -> None:
         password: str,
     ) -> dict[str, Any]:
         assert _original_authenticate is not None
-        result = _original_authenticate(self, tenant_id, email, password)
+        resolved_tenant = _resolve_tenant_for_email(
+            self,
+            tenant_id,
+            email,
+            reveal_ambiguity=True,
+        )
+        if not resolved_tenant:
+            raise ValueError("Identifiants invalides")
+        result = _original_authenticate(self, resolved_tenant, email, password)
+        result["tenant_id"] = resolved_tenant
         result["must_change_password"] = bool(
             result.get("user", {}).get("must_change_password", False)
         )
@@ -93,17 +142,12 @@ def _install_repository_extensions() -> None:
     AdminRepository._axioload_password_reset = True  # type: ignore[attr-defined]
 
 
-def _super_admin(
-    request: Request,
-    admin: AdminRepository,
-    token: str | None,
-    authorization: str | None,
-) -> str:
-    candidate = token or authorization or request.cookies.get("axioload_session")
-    try:
-        return admin.super_admin_actor(candidate)
-    except PermissionError as exc:
-        raise HTTPException(401, str(exc)) from exc
+def _super_admin_from_cookie(request: Request, admin: AdminRepository) -> str:
+    session_id = request.cookies.get("axioload_session")
+    context = admin.resolve_user_session(session_id)
+    if not context or not context.is_super_admin:
+        raise HTTPException(401, "Connexion super administrateur requise")
+    return context.actor_label
 
 
 def _temporary_password() -> str:
@@ -137,24 +181,35 @@ def install_password_reset_system() -> None:
             context = admin.resolve_user_session(axioload_session)
             if not context or context.is_super_admin:
                 raise HTTPException(401, "Connexion utilisateur requise")
+            user = admin.get_user(context.actor_id)
             return templates.TemplateResponse(
                 request,
                 "change_password.html",
-                {"app_version": APP_VERSION, "actor": context.actor_label},
+                {
+                    "app_version": APP_VERSION,
+                    "actor": context.actor_label,
+                    "required_change": bool(user.get("must_change_password")),
+                },
             )
 
         @app.post("/api/auth/forgot-password")
         async def forgot_password(request: Request) -> dict[str, str]:
             payload = await request.json()
-            tenant_id = str(payload.get("tenant_id") or "").strip()
+            tenant_value = str(payload.get("tenant_id") or "").strip()
             email = str(payload.get("email") or "").strip().lower()
-            if tenant_id and email and "@" in email:
+            resolved_tenant = _resolve_tenant_for_email(
+                admin,
+                tenant_value,
+                email,
+                reveal_ambiguity=False,
+            )
+            if resolved_tenant:
                 with _connect(admin.registry.registry_path) as db:
                     user = db.execute(
                         """SELECT id FROM company_users
                            WHERE tenant_id=? AND email=? AND active=1
                              AND role <> 'super_admin'""",
-                        (tenant_id, email),
+                        (resolved_tenant, email),
                     ).fetchone()
                     if user:
                         now = utc_now()
@@ -169,10 +224,10 @@ def install_password_reset_system() -> None:
                             """INSERT INTO password_reset_requests(
                                    id,tenant_id,user_id,status,created_at
                                ) VALUES (?,?,?,'pending',?)""",
-                            (request_id, tenant_id, user["id"], now),
+                            (request_id, resolved_tenant, user["id"], now),
                         )
                         admin.audit(
-                            tenant_id,
+                            resolved_tenant,
                             email,
                             "password_reset.requested",
                             str(user["id"]),
@@ -182,18 +237,8 @@ def install_password_reset_system() -> None:
             return {"message": GENERIC_REQUEST_MESSAGE}
 
         @app.get("/api/admin/password-reset-requests")
-        def password_reset_requests(
-            request: Request,
-            status: str = "pending",
-            x_axioload_super_admin: Annotated[str | None, Header()] = None,
-            authorization: Annotated[str | None, Header()] = None,
-        ) -> dict[str, Any]:
-            _super_admin(
-                request,
-                admin,
-                x_axioload_super_admin,
-                authorization,
-            )
+        def password_reset_requests(request: Request, status: str = "pending") -> dict[str, Any]:
+            _super_admin_from_cookie(request, admin)
             requested_status = status if status in {"pending", "resolved", "all"} else "pending"
             where = "" if requested_status == "all" else "WHERE r.status=?"
             params: tuple[Any, ...] = () if requested_status == "all" else (requested_status,)
@@ -229,30 +274,22 @@ def install_password_reset_system() -> None:
             }
 
         @app.post("/api/admin/users/{user_id}/password-reset")
-        def reset_user_password(
-            request: Request,
-            user_id: str,
-            x_axioload_super_admin: Annotated[str | None, Header()] = None,
-            authorization: Annotated[str | None, Header()] = None,
-        ) -> dict[str, Any]:
-            actor = _super_admin(
-                request,
-                admin,
-                x_axioload_super_admin,
-                authorization,
-            )
+        async def reset_user_password(request: Request, user_id: str) -> dict[str, Any]:
+            actor = _super_admin_from_cookie(request, admin)
             if user_id == SUPER_ADMIN_USER_ID:
-                raise HTTPException(422, "Le compte super administrateur se configure sur le serveur")
+                raise HTTPException(422, "Utilisez les paramètres serveur pour le compte super administrateur")
+            payload = await request.json()
+            requested_password = str(payload.get("password") or "")
+            if requested_password and len(requested_password) < 10:
+                raise HTTPException(422, "Le mot de passe doit contenir au moins 10 caractères")
+
             with _connect(admin.registry.registry_path) as db:
-                user = db.execute(
-                    "SELECT * FROM company_users WHERE id=?",
-                    (user_id,),
-                ).fetchone()
+                user = db.execute("SELECT * FROM company_users WHERE id=?", (user_id,)).fetchone()
                 if not user:
                     raise HTTPException(404, "Utilisateur inconnu")
                 if not user["active"]:
-                    raise HTTPException(422, "Seul un utilisateur actif peut recevoir un mot de passe temporaire")
-                temporary_password = _temporary_password()
+                    raise HTTPException(422, "L’utilisateur doit être actif")
+                temporary_password = requested_password or _temporary_password()
                 salt, digest = _hash_secret(temporary_password)
                 now = utc_now()
                 db.execute(
@@ -277,7 +314,7 @@ def install_password_reset_system() -> None:
                 "password_reset.admin_completed",
                 user_id,
                 {},
-                {"temporary_password": "visible_once", "must_change_password": True},
+                {"password": "visible_once", "must_change_password": True},
             )
             return {
                 "user": admin.get_user(user_id),
@@ -299,7 +336,7 @@ def install_password_reset_system() -> None:
             if len(new_password) < 10:
                 raise HTTPException(422, "Le nouveau mot de passe doit contenir au moins 10 caractères")
             if new_password == current_password:
-                raise HTTPException(422, "Le nouveau mot de passe doit être différent du mot de passe temporaire")
+                raise HTTPException(422, "Le nouveau mot de passe doit être différent")
             with _connect(admin.registry.registry_path) as db:
                 user = db.execute(
                     "SELECT * FROM company_users WHERE id=? AND active=1",

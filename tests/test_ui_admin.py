@@ -11,18 +11,18 @@ def test_super_admin_assets_and_activation_pages_are_loaded(tmp_path):
     response = client.get("/")
     assert response.status_code == 200
     assert 'id="open-settings"' in response.text
-    units_script = '<script src="/static/units_import.js?v=0.12.5"></script>'
-    workflow_script = '<script src="/static/workflow_layout.js?v=0.12.5"></script>'
-    results_script = '<script src="/static/results_enhancements.js?v=0.12.5"></script>'
-    admin_script = '<script src="/static/admin.js?v=0.12.5"></script>'
+    units_script = '<script src="/static/units_import.js?v=0.18.0"></script>'
+    workflow_script = '<script src="/static/workflow_layout.js?v=0.18.0"></script>'
+    results_script = '<script src="/static/results_enhancements.js?v=0.18.0"></script>'
+    admin_script = '<script src="/static/admin.js?v=0.18.0"></script>'
     assert units_script in response.text
     assert workflow_script in response.text
     assert results_script in response.text
     assert admin_script in response.text
     assert response.text.index(units_script) < response.text.index(workflow_script) < response.text.index(results_script) < response.text.index(admin_script)
-    assert '<link rel="stylesheet" href="/static/admin.css?v=0.12.5">' in response.text
-    assert '<link rel="stylesheet" href="/static/workflow_layout.css?v=0.12.5">' in response.text
-    assert '<link rel="stylesheet" href="/static/results_enhancements.css?v=0.12.5">' in response.text
+    assert '<link rel="stylesheet" href="/static/admin.css?v=0.18.0">' in response.text
+    assert '<link rel="stylesheet" href="/static/workflow_layout.css?v=0.18.0">' in response.text
+    assert '<link rel="stylesheet" href="/static/results_enhancements.css?v=0.18.0">' in response.text
     assert "history_stability.js" not in response.text
 
     units_response = client.get("/static/units_import.js")

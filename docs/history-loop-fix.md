@@ -15,6 +15,7 @@ Une autorisation ne permet qu’un seul nouvel appel réseau. Les réactions int
 ## Garde-fous
 
 - les observateurs DOM ne réagissent qu’à l’ajout de nouveaux éléments et ne réécrivent plus les mêmes textes en boucle ;
+- toutes les variantes de lecture de `/api/history`, avec ou sans paramètre `limit`, partagent la même réponse ;
 - les appels GET simultanés partagent la même requête ;
 - les appels sans action concrète réutilisent la réponse déjà chargée ;
 - le cache est invalidé dès qu’une action modifie l’historique ;

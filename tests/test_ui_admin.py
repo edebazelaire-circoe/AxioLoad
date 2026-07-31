@@ -26,7 +26,7 @@ def test_super_admin_assets_and_activation_pages_are_loaded(tmp_path):
         "Unité des dimensions",
         "Millimètres",
         "Mètres",
-        "L’ancien format Excel .xls",
+        "ancien format .xls",
         "dimension_unit",
         "missingTotalData",
     ):

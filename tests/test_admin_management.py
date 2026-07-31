@@ -7,8 +7,7 @@ from fastapi.testclient import TestClient
 from pallet_optimizer.api import create_app
 
 
-ADMIN_TOKEN = "test-super-admin-token"
-ADMIN_HEADERS = {"X-AxioLoad-Super-Admin": ADMIN_TOKEN}
+ADMIN_HEADERS: dict[str, str] = {}
 
 
 def _create_company(client: TestClient, name: str = "Client Test") -> dict:
@@ -60,16 +59,16 @@ def _submit_profile(client: TestClient) -> None:
     assert response.json()["status"] == "pending_validation"
 
 
-def test_admin_requires_configured_token(tmp_path, monkeypatch):
+def test_admin_opens_directly_without_token(tmp_path, monkeypatch):
     monkeypatch.delenv("PLO_SUPER_ADMIN_TOKEN", raising=False)
+    monkeypatch.setenv("PLO_SUPER_ADMIN_EMAIL", "admin@axioload.test")
     client = TestClient(create_app(tmp_path))
     response = client.get("/api/admin/bootstrap")
-    assert response.status_code == 401
-    assert "PLO_SUPER_ADMIN_TOKEN" in response.json()["detail"]
+    assert response.status_code == 200, response.text
+    assert response.json()["actor"] == "admin@axioload.test"
 
 
 def test_company_invitation_activation_profile_and_validation(tmp_path, monkeypatch):
-    monkeypatch.setenv("PLO_SUPER_ADMIN_TOKEN", ADMIN_TOKEN)
     monkeypatch.setenv("PLO_SUPER_ADMIN_EMAIL", "admin@axioload.test")
     client = TestClient(create_app(tmp_path))
 
@@ -95,8 +94,7 @@ def test_company_invitation_activation_profile_and_validation(tmp_path, monkeypa
     assert approved.json()["status"] == "active"
 
 
-def test_user_permission_override_api_keys_and_suspension(tmp_path, monkeypatch):
-    monkeypatch.setenv("PLO_SUPER_ADMIN_TOKEN", ADMIN_TOKEN)
+def test_user_permission_override_api_keys_and_suspension(tmp_path):
     client = TestClient(create_app(tmp_path))
     created = _create_company(client, "Transport Démo")
     tenant_id = created["company"]["id"]
@@ -172,7 +170,6 @@ def test_user_permission_override_api_keys_and_suspension(tmp_path, monkeypatch)
 
 
 def test_assistance_marks_history_and_freezes_vehicle_dimensions(tmp_path, monkeypatch, base_payload):
-    monkeypatch.setenv("PLO_SUPER_ADMIN_TOKEN", ADMIN_TOKEN)
     monkeypatch.setenv("PLO_SUPER_ADMIN_EMAIL", "support@axioload.test")
     client = TestClient(create_app(tmp_path))
     created = _create_company(client, "Société Assistance")
@@ -202,8 +199,7 @@ def test_assistance_marks_history_and_freezes_vehicle_dimensions(tmp_path, monke
     assert vehicle["interior_length_mm"] > 0
 
 
-def test_global_vehicle_is_locked_and_can_be_duplicated(tmp_path, monkeypatch):
-    monkeypatch.setenv("PLO_SUPER_ADMIN_TOKEN", ADMIN_TOKEN)
+def test_global_vehicle_is_locked_and_can_be_duplicated(tmp_path):
     client = TestClient(create_app(tmp_path))
     created = _create_company(client, "Flotte Client")
     tenant_id = created["company"]["id"]
@@ -232,8 +228,7 @@ def test_global_vehicle_is_locked_and_can_be_duplicated(tmp_path, monkeypatch):
     assert duplicated.json()["base_model_id"] == global_vehicle["model_id"]
 
 
-def test_dashboard_boots_before_first_optimization(tmp_path, monkeypatch):
-    monkeypatch.setenv("PLO_SUPER_ADMIN_TOKEN", ADMIN_TOKEN)
+def test_dashboard_boots_before_first_optimization(tmp_path):
     client = TestClient(create_app(tmp_path))
     response = client.get("/api/admin/bootstrap", headers=ADMIN_HEADERS)
     assert response.status_code == 200, response.text

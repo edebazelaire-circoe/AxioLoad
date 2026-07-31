@@ -2,16 +2,19 @@
 
 Cette évolution met en place le socle multi-entreprises et le panneau **Super Admin**. La persistance repose provisoirement sur les bases SQLite déjà utilisées par AxioLoad. L'accès aux données est isolé derrière `AdminRepository` afin de pouvoir brancher ultérieurement une base clients, un fournisseur d'identité et un service d'e-mail sans réécrire les écrans.
 
-## Sécurité du super administrateur
+## Accès au panneau Super Admin
 
-Le serveur doit définir :
+Pour la phase actuelle, le bouton **Super Admin** ouvre directement le panneau d'administration. Aucun jeton supplémentaire n'est demandé à l'utilisateur.
+
+Le serveur peut uniquement définir l'adresse utilisée pour identifier les interventions dans le journal d'audit :
 
 ```text
-PLO_SUPER_ADMIN_TOKEN=<secret long et aléatoire>
 PLO_SUPER_ADMIN_EMAIL=<adresse du super administrateur>
 ```
 
-Le panneau demande ce jeton lors de sa première ouverture et le conserve uniquement dans la session du navigateur. En l'absence de `PLO_SUPER_ADMIN_TOKEN`, toutes les routes `/api/admin/*` sont refusées.
+Cette règle reste volontairement simple tant que l'authentification définitive et le branchement des comptes ne sont pas en place. Le futur fournisseur d'identité pourra remplacer ce contrôle sans modifier les écrans d'administration.
+
+Cette simplification ne concerne pas les **clés API des entreprises**. Ces clés ne servent pas à ouvrir le panneau Super Admin : elles servent uniquement à identifier une entreprise lorsqu'un logiciel externe appelle l'API AxioLoad, conformément au besoin de disposer d'une clé différente pour chaque client.
 
 ## Parcours d'une entreprise
 
@@ -49,6 +52,15 @@ Une entreprise peut posséder plusieurs clés nommées. Chaque clé :
 Le bouton **Accéder à l'espace client** ouvre une session d'assistance explicite. Un bandeau reste visible pendant toute l'intervention. Les créations, validations, suppressions, exports et modifications réalisées par le support sont journalisées.
 
 L'historique client affiche la mention **Intervention du support AxioLoad**. Le journal du super administrateur conserve le détail de l'auteur et de l'action. Chaque optimisation conserve également une copie figée du type de véhicule et de ses dimensions.
+
+Le chargement de l'historique est protégé par plusieurs garde-fous :
+
+- une première lecture est autorisée au chargement de l'application ;
+- un clic sur l'onglet Historique ou une action qui modifie l'historique autorise un seul nouveau chargement réseau ;
+- toutes les variantes de lecture de l'historique partagent la même copie en mémoire ;
+- les appels simultanés partagent la même réponse ;
+- les appels sans action concrète réutilisent les données déjà chargées ;
+- un coupe-circuit limite à trois appels réseau sur trente secondes lorsqu'une réponse en cache existe.
 
 ## Dashboard
 

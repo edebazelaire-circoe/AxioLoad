@@ -29,7 +29,7 @@
 
   function removeLockedLabels(root = document) {
     qa('.vehicle-origin-badge, .global-lock-badge, [data-global-lock]', root).forEach(element => element.remove());
-    qa('span, small, em, strong, div', root).forEach(element => {
+    qa('span, small, em, strong', root).forEach(element => {
       if (element.children.length) return;
       const text = element.textContent.trim().toLocaleLowerCase('fr');
       if (text === 'global verrouillé' || text === 'global verrouille') element.remove();
@@ -37,15 +37,16 @@
   }
 
   function setButtonContent(element, iconName, label) {
-    if (!element) return;
+    if (!element || element.dataset.opxContent === label) return;
     const preservedControls = qa('input', element);
     element.innerHTML = `${icon(iconName)}<span>${escapeHtml(label)}</span>`;
     preservedControls.forEach(control => element.append(control));
+    element.dataset.opxContent = label;
   }
 
   function polishImportActions() {
     const box = q('#tab-data .import-box');
-    if (!box || box.dataset.opxReady === '1') return;
+    if (!box || box.dataset.opxReady === '1') return false;
     box.dataset.opxReady = '1';
     box.classList.add('opx-import-actions');
     q('#import-format-help')?.remove();
@@ -61,26 +62,30 @@
     setButtonContent(importer, 'upload', 'Importer CSV/XLSX');
     setButtonContent(csv, 'file', 'Modèle CSV');
     setButtonContent(excel, 'file', 'Modèle Excel AxioLoad');
+    return true;
   }
 
   function normalizeBudgetSelect(select) {
-    if (!select) return;
+    if (!select || select.dataset.opxBudgetReady === '1') return;
     const current = ['5', '15', '30', '60'].includes(select.value) ? select.value : '30';
     select.innerHTML = [5, 15, 30, 60]
       .map(value => `<option value="${value}" ${String(value) === current ? 'selected' : ''}>${value} s</option>`)
       .join('');
     select.value = current;
+    select.dataset.opxBudgetReady = '1';
   }
 
   function arrangeLoadingActions() {
     const panel = q('#tab-data');
+    if (!panel || panel.dataset.opxActionsReady === '1') return false;
     const actions = q('.form-actions', panel);
     const add = q('#add-row', panel);
     const duplicate = q('#duplicate-row', panel);
     const optimize = q('#optimize', panel);
     const budgetLabel = q('#budget-seconds', panel)?.closest('label');
-    if (!actions || !add || !duplicate || !optimize || !budgetLabel) return;
+    if (!actions || !add || !duplicate || !optimize || !budgetLabel) return false;
 
+    panel.dataset.opxActionsReady = '1';
     actions.classList.add('opx-loading-actions');
     actions.append(add, duplicate, optimize);
     setButtonContent(add, 'plus', 'Ajouter une ligne');
@@ -105,6 +110,7 @@
     qa('.calculation-toolbar', panel).forEach(toolbar => {
       if (!toolbar.children.length) toolbar.remove();
     });
+    return true;
   }
 
   function prepareClientGroups() {
@@ -167,31 +173,40 @@
 
   function bindClientGrouping() {
     const optimize = q('#optimize');
-    if (!optimize || optimize.dataset.opxClientGrouping === '1') return;
+    if (!optimize || optimize.dataset.opxClientGrouping === '1') return false;
     optimize.dataset.opxClientGrouping = '1';
     optimize.addEventListener('click', prepareClientGroups, {capture: true});
+    return true;
   }
 
-  function apply() {
+  function observeVehicleRows() {
+    const body = q('#vehicle-table tbody');
+    if (!body || body.dataset.opxObserverReady === '1') return Boolean(body);
+    body.dataset.opxObserverReady = '1';
+    removeLockedLabels(body);
+    const observer = new MutationObserver(records => {
+      records.forEach(record => {
+        record.addedNodes.forEach(node => {
+          if (node.nodeType === Node.ELEMENT_NODE) removeLockedLabels(node);
+        });
+      });
+    });
+    observer.observe(body, {childList: true});
+    return true;
+  }
+
+  function applyStatic() {
     distinguishWorkspaces();
-    removeLockedLabels();
     polishImportActions();
     arrangeLoadingActions();
     bindClientGrouping();
+    observeVehicleRows();
   }
 
   function init() {
     installResultCapture();
-    apply();
-    let scheduled = false;
-    new MutationObserver(() => {
-      if (scheduled) return;
-      scheduled = true;
-      requestAnimationFrame(() => {
-        scheduled = false;
-        apply();
-      });
-    }).observe(document.body, {childList: true, subtree: true});
+    removeLockedLabels(q('#vehicle-table') || document);
+    [0, 50, 200, 700, 1600].forEach(delay => window.setTimeout(applyStatic, delay));
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, {once: true});

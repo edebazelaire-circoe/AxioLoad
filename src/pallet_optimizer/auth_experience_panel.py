@@ -5,8 +5,8 @@ from typing import Any
 
 from fastapi.templating import Jinja2Templates
 
-_STYLE = b'<link rel="stylesheet" href="/static/auth_experience.css?v=0.17.0">'
-_SCRIPT = b'<script src="/static/auth_experience.js?v=0.17.0"></script>'
+_STYLE = b'<link rel="stylesheet" href="/static/auth_experience.css?v=0.18.0">'
+_SCRIPT = b'<script src="/static/auth_experience.js?v=0.18.0"></script>'
 _original_template_response: Callable[..., Any] | None = None
 
 

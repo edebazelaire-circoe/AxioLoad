@@ -8,3 +8,15 @@ def test_enhancement_script_is_loaded_after_existing_applications():
     assert "enhancements.js" in api
     assert "window.fetch" in javascript
     assert "drawFocusedRoute" in javascript
+
+
+def test_enhancements_are_idempotent_and_do_not_poll_history_in_a_dom_loop():
+    root = Path(__file__).resolve().parents[1]
+    javascript = (root / "src" / "pallet_optimizer" / "static" / "enhancements.js").read_text(encoding="utf-8")
+
+    assert "axioload:history-loaded" in javascript
+    assert "runtime.historyRequest" in javascript
+    assert "node.nodeType === Node.ELEMENT_NODE" in javascript
+    assert "if (title && title.textContent !== nextTitle)" in javascript
+    assert "if (badge.textContent !== nextText)" in javascript
+    assert "refreshHistory();window.AxioEnhancements" not in javascript

@@ -5,8 +5,9 @@
   const CACHE_TTL_MS = 5 * 60 * 1000;
   const NETWORK_WINDOW_MS = 30 * 1000;
   const MAX_NETWORK_REQUESTS = 3;
-  const cache = new Map();
-  const inFlight = new Map();
+  let cachedResponse = null;
+  let cachedAt = 0;
+  let inFlight = null;
   let refreshPermit = 0;
   let refreshReason = 'initial';
   let networkRequests = [];
@@ -18,13 +19,10 @@
     const rawUrl = typeof input === 'string' ? input : input?.url || '';
     const method = String(init.method || (typeof input !== 'string' ? input?.method : '') || 'GET').toUpperCase();
     let pathname = '';
-    let cacheKey = '';
     try {
-      const url = new URL(rawUrl, window.location.href);
-      pathname = url.pathname;
-      cacheKey = `${url.pathname}${url.search}`;
+      pathname = new URL(rawUrl, window.location.href).pathname;
     } catch (_) {}
-    return {method, pathname, cacheKey};
+    return {method, pathname};
   }
 
   function grantRefresh(reason = 'user') {
@@ -33,7 +31,8 @@
   }
 
   function invalidateHistoryCache(reason = 'mutation') {
-    cache.clear();
+    cachedResponse = null;
+    cachedAt = 0;
     grantRefresh(reason);
   }
 
@@ -47,12 +46,6 @@
     const now = Date.now();
     networkRequests = networkRequests.filter(timestamp => now - timestamp < NETWORK_WINDOW_MS);
     return networkRequests.length >= MAX_NETWORK_REQUESTS;
-  }
-
-  function cachedClone(cacheKey) {
-    const entry = cache.get(cacheKey);
-    if (!entry) return null;
-    return entry.response.clone();
   }
 
   function publishHistory(response, source) {
@@ -81,7 +74,7 @@
   });
 
   window.fetch = async (input, init = {}) => {
-    const {method, pathname, cacheKey} = requestInfo(input, init);
+    const {method, pathname} = requestInfo(input, init);
     const isHistoryList = method === 'GET' && pathname === '/api/history';
     const mutatesHistory = pathname.startsWith('/api/history') && method !== 'GET';
 
@@ -94,37 +87,35 @@
       return response;
     }
 
-    const existing = cache.get(cacheKey);
-    const cacheIsFresh = existing && Date.now() - existing.cachedAt < CACHE_TTL_MS;
     const explicitlyAllowed = refreshPermit > 0;
 
     // Sans action concrète, une donnée déjà chargée est réutilisée. Une mutation
     // ou un clic sur l'onglet Historique autorise exactement un nouvel appel.
-    if (existing && !explicitlyAllowed) return existing.response.clone();
-    if (inFlight.has(cacheKey)) return (await inFlight.get(cacheKey)).clone();
+    if (cachedResponse && !explicitlyAllowed) return cachedResponse.clone();
+    if (inFlight) return (await inFlight).clone();
 
     // Garde-fou ultime : même en cas de régression DOM, pas plus de trois appels
     // réseau en trente secondes lorsqu'une réponse de secours existe.
-    if (circuitIsOpen() && existing) return existing.response.clone();
+    if (circuitIsOpen() && cachedResponse) return cachedResponse.clone();
 
     refreshPermit = 0;
-    const source = explicitlyAllowed ? refreshReason : cacheIsFresh ? 'cache-refresh' : 'initial-load';
+    const source = explicitlyAllowed ? refreshReason : cachedResponse ? 'cache-refresh' : 'initial-load';
     rememberNetworkRequest();
 
-    const request = nativeFetch(input, init)
+    inFlight = nativeFetch(input, init)
       .then(response => {
         if (response.ok) {
-          cache.set(cacheKey, {response: response.clone(), cachedAt: Date.now()});
+          cachedResponse = response.clone();
+          cachedAt = Date.now();
           publishHistory(response, source);
         }
         return response;
       })
       .finally(() => {
-        inFlight.delete(cacheKey);
+        inFlight = null;
       });
 
-    inFlight.set(cacheKey, request);
-    return (await request).clone();
+    return (await inFlight).clone();
   };
 
   window.AxioHistoryTransport = {
@@ -136,7 +127,8 @@
     },
     diagnostics() {
       return {
-        cacheEntries: cache.size,
+        hasCache: Boolean(cachedResponse),
+        cacheAgeMs: cachedAt ? Date.now() - cachedAt : null,
         requestsInWindow: networkRequests.length,
         refreshPermit,
       };

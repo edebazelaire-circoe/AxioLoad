@@ -78,4 +78,5 @@ def test_enhancement_assets_are_loaded_and_expose_requested_controls(tmp_path):
     assert "/static/enhancements.js" in html;assert "/static/enhancements.css" in html
     javascript=(Path(__file__).resolve().parents[1]/"src"/"pallet_optimizer"/"static"/"enhancements.js").read_text(encoding="utf-8")
     assert "Gerbable" in javascript;assert "Valider et enregistrer" in javascript
-    assert "empty_distance_percent" in javascript;assert "vehicle-focused" in javascript
+    assert "empty_distance_percent" in javascript;assert "observeContainer" in javascript
+    assert "observer.observe(document.body" not in javascript

@@ -15,10 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 STATIC = ROOT / "src" / "pallet_optimizer" / "static"
 
 
-def _login_super_admin(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("PLO_SUPER_ADMIN_EMAIL", "b.olivier@circoe.com")
-    monkeypatch.setenv("PLO_SUPER_ADMIN_USERNAME", "superadmn")
-    monkeypatch.setenv("PLO_SUPER_ADMIN_PASSWORD", "1234")
+def _login_super_admin(client: TestClient) -> None:
     response = client.post(
         "/api/auth/super-admin-login",
         json={"identifier": "superadmn", "password": "1234"},
@@ -31,7 +28,9 @@ def test_prompt_center_assets_are_injected(tmp_path: Path) -> None:
     response = client.get("/")
     assert response.status_code == 200
     assert "/static/prompt_center_experience.css?v=0.19.0" in response.text
+    assert "/static/prompt_center_guard.js?v=0.19.0" in response.text
     assert "/static/prompt_center_experience.js?v=0.19.0" in response.text
+    assert response.text.index("prompt_center_guard.js") < response.text.index("prompt_center_experience.js")
 
 
 def test_company_prompt_center_only_exposes_company_complements(tmp_path: Path) -> None:
@@ -59,8 +58,11 @@ def test_company_prompt_center_only_exposes_company_complements(tmp_path: Path) 
 def test_super_admin_can_edit_core_and_all_system_prompts(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    monkeypatch.setenv("PLO_SUPER_ADMIN_EMAIL", "b.olivier@circoe.com")
+    monkeypatch.setenv("PLO_SUPER_ADMIN_USERNAME", "superadmn")
+    monkeypatch.setenv("PLO_SUPER_ADMIN_PASSWORD", "1234")
     client = TestClient(create_app(tmp_path))
-    _login_super_admin(client, monkeypatch)
+    _login_super_admin(client)
 
     response = client.get("/api/prompt-center")
     assert response.status_code == 200
@@ -87,6 +89,7 @@ def test_super_admin_can_edit_core_and_all_system_prompts(
 
 def test_frontend_keeps_prompts_out_of_management_center() -> None:
     script = (STATIC / "prompt_center_experience.js").read_text(encoding="utf-8")
+    guard = (STATIC / "prompt_center_guard.js").read_text(encoding="utf-8")
     assert "Centre de gestion" in script
     assert "Nuage des optimisations" in script
     assert "Métrage linéaire" in script
@@ -94,15 +97,17 @@ def test_frontend_keeps_prompts_out_of_management_center() -> None:
     assert "data-workspace-tab=\"prompts\"" in script
     assert "removeLegacyPromptAdminView" in script
     assert "Coûts" in script
+    assert "document-prompts" in guard
 
 
 def test_prompt_center_javascript_syntax() -> None:
     node = shutil.which("node")
     if not node:
         pytest.skip("Node.js indisponible")
-    subprocess.run(
-        [node, "--check", str(STATIC / "prompt_center_experience.js")],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
+    for filename in ("prompt_center_guard.js", "prompt_center_experience.js"):
+        subprocess.run(
+            [node, "--check", str(STATIC / filename)],
+            check=True,
+            capture_output=True,
+            text=True,
+        )

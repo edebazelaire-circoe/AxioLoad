@@ -7,10 +7,11 @@
   function setLabelText(label, text) {
     if (!label) return;
     const node = [...label.childNodes].find(child => child.nodeType === Node.TEXT_NODE);
-    if (node) node.textContent = text;
+    if (node && node.textContent !== text) node.textContent = text;
   }
 
   function showMessage(message, text, error = false) {
+    if (!message) return;
     message.textContent = text;
     message.className = `message ${error ? 'error' : 'success'}`;
     message.classList.remove('hidden');
@@ -38,12 +39,12 @@
     switcher.setAttribute('role', 'tablist');
     switcher.innerHTML = `
       <button type="button" role="tab" data-auth-mode="user">Compte utilisateur</button>
-      <button type="button" role="tab" data-auth-mode="super_admin">Super administrateur</button>`;
+      <button type="button" role="tab" data-auth-mode="super_admin">Centre de gestion</button>`;
     form.before(switcher);
 
     const adminNote = document.createElement('div');
     adminNote.className = 'auth-admin-note';
-    adminNote.textContent = 'Utilisez l’adresse e-mail ou le pseudo du compte super administrateur.';
+    adminNote.textContent = 'Utilisez l’adresse e-mail ou le pseudo du compte du Centre de gestion.';
     form.before(adminNote);
 
     const tenantHint = document.createElement('small');
@@ -75,8 +76,8 @@
       setLabelText(emailLabel, admin ? 'Adresse e-mail ou pseudo' : 'Adresse e-mail');
       adminNote.classList.toggle('visible', admin);
       forgotButton.hidden = admin;
-      if (eyebrow) eyebrow.textContent = admin ? 'Administration AxioLoad' : 'Espace client';
-      if (title) title.textContent = admin ? 'Connexion super administrateur' : 'Connexion';
+      if (eyebrow) eyebrow.textContent = admin ? 'Centre de gestion AxioLoad' : 'Espace client';
+      if (title) title.textContent = admin ? 'Connexion au Centre de gestion' : 'Connexion';
       if (intro) intro.textContent = admin
         ? 'Connectez-vous pour gérer les entreprises, les utilisateurs et les paramètres globaux.'
         : 'Votre adresse e-mail suffit dans la majorité des cas.';
@@ -85,11 +86,14 @@
     };
 
     qa('[data-auth-mode]', switcher).forEach(button => {
-      button.addEventListener('click', () => applyMode(button.dataset.authMode));
+      button.addEventListener('click', () => {
+        if (!button.disabled) applyMode(button.dataset.authMode);
+      });
     });
     applyMode(mode);
 
     forgotButton.addEventListener('click', async () => {
+      if (forgotButton.disabled) return;
       message.classList.add('hidden');
       const email = emailInput.value.trim();
       if (!email) {
@@ -107,7 +111,7 @@
         });
         const body = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(body.detail || 'Demande impossible');
-        showMessage(message, body.message || 'La demande a été transmise au super administrateur.');
+        showMessage(message, body.message || 'La demande a été transmise au Centre de gestion.');
       } catch (error) {
         showMessage(message, error.message || String(error), true);
       } finally {
@@ -120,6 +124,7 @@
       event.stopImmediatePropagation();
       message.classList.add('hidden');
       const button = q('button[type="submit"]', form);
+      if (!button || button.disabled) return;
       button.disabled = true;
       try {
         const admin = mode === 'super_admin';
@@ -153,7 +158,7 @@
 
   function logoutButton(context) {
     const topbar = q('.topbar');
-    if (!topbar || q('#site-logout')) return;
+    if (!topbar || q('#site-logout')) return false;
     const button = document.createElement('button');
     button.id = 'site-logout';
     button.type = 'button';
@@ -164,6 +169,7 @@
       <span>Se déconnecter</span>`;
     topbar.append(button);
     button.addEventListener('click', async () => {
+      if (button.disabled) return;
       button.disabled = true;
       try {
         if (context.mode === 'assistance' && context.company?.id !== 'local') {
@@ -175,6 +181,7 @@
         location.href = '/login';
       }
     });
+    return true;
   }
 
   async function installApplicationSession() {
@@ -196,10 +203,7 @@
 
     if (directAdmin) {
       localStorage.setItem('axioload.superadmin.active', '1');
-      removeDirectAdminAssistanceBanner();
-      const observer = new MutationObserver(removeDirectAdminAssistanceBanner);
-      observer.observe(document.body, {childList: true, subtree: true});
-      setTimeout(() => observer.disconnect(), 5000);
+      [0, 50, 200, 700, 1600].forEach(delay => window.setTimeout(removeDirectAdminAssistanceBanner, delay));
     } else if (!assistance) {
       localStorage.removeItem('axioload.superadmin.active');
     }
@@ -208,7 +212,7 @@
 
     document.addEventListener('click', event => {
       const adminButton = event.target.closest?.('#open-admin');
-      if (!adminButton || directAdmin || assistance) return;
+      if (!adminButton || adminButton.disabled || adminButton.hidden || directAdmin || assistance) return;
       event.preventDefault();
       event.stopImmediatePropagation();
       location.href = '/login?mode=super_admin';

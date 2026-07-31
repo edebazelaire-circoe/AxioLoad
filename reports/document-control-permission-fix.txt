@@ -1,0 +1,1 @@
+Cause: les entreprises existantes ne possédaient pas les nouvelles permissions document_control.*. Le front créait l’onglet, puis le masquait après résolution des droits. Correctif: migration INSERT OR IGNORE au démarrage, avec conservation des refus explicites.

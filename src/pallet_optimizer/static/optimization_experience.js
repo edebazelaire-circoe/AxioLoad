@@ -23,10 +23,8 @@
   };
 
   function distinguishWorkspaces() {
-    const optimization = q('[data-workspace="optimization"]');
-    const documents = q('[data-workspace="documents"]');
-    optimization?.classList.add('workspace-optimization');
-    documents?.classList.add('workspace-documents');
+    q('[data-workspace="optimization"]')?.classList.add('workspace-optimization');
+    q('[data-workspace="documents"]')?.classList.add('workspace-documents');
   }
 
   function removeLockedLabels(root = document) {
@@ -40,7 +38,9 @@
 
   function setButtonContent(element, iconName, label) {
     if (!element) return;
+    const preservedControls = qa('input', element);
     element.innerHTML = `${icon(iconName)}<span>${escapeHtml(label)}</span>`;
+    preservedControls.forEach(control => element.append(control));
   }
 
   function polishImportActions() {
@@ -48,7 +48,6 @@
     if (!box || box.dataset.opxReady === '1') return;
     box.dataset.opxReady = '1';
     box.classList.add('opx-import-actions');
-
     q('#import-format-help')?.remove();
     qa('small, p', box).forEach(element => {
       if (element.textContent.includes('Formats acceptés')) element.remove();
@@ -56,14 +55,12 @@
     [...box.childNodes].forEach(node => {
       if (node.nodeType === Node.TEXT_NODE && node.textContent.includes('Formats acceptés')) node.remove();
     });
-
     const importer = q('.file-button', box);
     const csv = [...box.querySelectorAll('a')].find(link => link.href.includes('import-template.csv'));
     const excel = q('#download-excel-template', box) || [...box.querySelectorAll('a')].find(link => link.href.includes('template.xlsx'));
     setButtonContent(importer, 'upload', 'Importer CSV/XLSX');
     setButtonContent(csv, 'file', 'Modèle CSV');
     setButtonContent(excel, 'file', 'Modèle Excel AxioLoad');
-    if (excel) excel.setAttribute('title', 'Télécharger le modèle Excel AxioLoad');
   }
 
   function normalizeBudgetSelect(select) {
@@ -85,11 +82,7 @@
     if (!actions || !add || !duplicate || !optimize || !budgetLabel) return;
 
     actions.classList.add('opx-loading-actions');
-    if (add.parentElement !== actions) actions.append(add);
-    if (duplicate.parentElement !== actions) actions.append(duplicate);
-    if (optimize.parentElement !== actions) actions.append(optimize);
     actions.append(add, duplicate, optimize);
-
     setButtonContent(add, 'plus', 'Ajouter une ligne');
     setButtonContent(duplicate, 'duplicate', 'Dupliquer la dernière');
     setButtonContent(optimize, 'calculate', 'Optimiser le chargement');
@@ -104,9 +97,11 @@
     }
     budgetLabel.classList.add('opx-budget-control');
     const labelText = q('.field-label', budgetLabel) || q('span', budgetLabel);
-    if (labelText) labelText.innerHTML = `${icon('clock')}<span>Temps de calcul</span>`;
+    if (labelText && labelText.dataset.opxLabel !== '1') {
+      labelText.dataset.opxLabel = '1';
+      labelText.innerHTML = `${icon('clock')}<span>Temps de calcul</span>`;
+    }
     budgetRow.append(budgetLabel);
-
     qa('.calculation-toolbar', panel).forEach(toolbar => {
       if (!toolbar.children.length) toolbar.remove();
     });
@@ -122,43 +117,21 @@
     });
   }
 
-  const statusLabels = {
-    success: 'Réussi', failure: 'Échec', timeout: 'Temps atteint', not_run: 'Non lancé'
-  };
-
-  function formatMetric(value, suffix = '') {
-    if (value === null || value === undefined || Number.isNaN(Number(value))) return 'Non disponible';
-    return `${Number(value).toLocaleString('fr-FR', {maximumFractionDigits: 2})}${suffix}`;
-  }
+  const statusLabels = {success: 'Réussi', failure: 'Échec', timeout: 'Temps atteint', not_run: 'Non lancé'};
+  const formatMetric = (value, suffix = '') => value === null || value === undefined || Number.isNaN(Number(value))
+    ? 'Non disponible'
+    : `${Number(value).toLocaleString('fr-FR', {maximumFractionDigits: 2})}${suffix}`;
 
   function outcomeCard(outcome) {
     const status = outcome.status || 'failure';
-    const experimental = outcome.execution_mode === 'experimental';
-    const iconName = status === 'success' ? (experimental ? 'experiment' : 'check') : 'error';
+    const iconName = status === 'success' ? (outcome.execution_mode === 'experimental' ? 'experiment' : 'check') : 'error';
     const reason = outcome.reason || (status === 'success' ? 'Plan valide produit.' : 'Aucun résultat exploitable.');
-    return `
-      <article class="opx-model-card status-${escapeHtml(status)}" data-method="${escapeHtml(outcome.code)}">
-        <header>
-          <span class="opx-model-number">${outcome.index}</span>
-          <span class="opx-model-heading">
-            <strong>${escapeHtml(outcome.name)}</strong>
-            <small>${escapeHtml(outcome.short_label || '')}</small>
-          </span>
-          <span class="opx-model-status">${icon(iconName)}${escapeHtml(statusLabels[status] || status)}</span>
-        </header>
-        <p>${escapeHtml(reason)}</p>
-        <div class="opx-model-metrics">
-          <span><small>Temps</small><strong>${formatMetric(outcome.elapsed_seconds, ' s')}</strong></span>
-          <span><small>Véhicules</small><strong>${formatMetric(outcome.vehicle_count)}</strong></span>
-          <span><small>Longueur</small><strong>${formatMetric(outcome.occupied_length_m, ' m')}</strong></span>
-          <span><small>Équilibre</small><strong>${formatMetric(outcome.balance_penalty)}</strong></span>
-        </div>
-        <details>
-          <summary>Principe et niveau de maturité</summary>
-          <p>${escapeHtml(outcome.description || '')}</p>
-          <p class="opx-model-note">${escapeHtml(outcome.execution_note || '')}</p>
-        </details>
-      </article>`;
+    return `<article class="opx-model-card status-${escapeHtml(status)}" data-method="${escapeHtml(outcome.code)}">
+      <header><span class="opx-model-number">${outcome.index}</span><span class="opx-model-heading"><strong>${escapeHtml(outcome.name)}</strong><small>${escapeHtml(outcome.short_label || '')}</small></span><span class="opx-model-status">${icon(iconName)}${escapeHtml(statusLabels[status] || status)}</span></header>
+      <p>${escapeHtml(reason)}</p>
+      <div class="opx-model-metrics"><span><small>Temps</small><strong>${formatMetric(outcome.elapsed_seconds, ' s')}</strong></span><span><small>Véhicules</small><strong>${formatMetric(outcome.vehicle_count)}</strong></span><span><small>Longueur</small><strong>${formatMetric(outcome.occupied_length_m, ' m')}</strong></span><span><small>Équilibre</small><strong>${formatMetric(outcome.balance_penalty)}</strong></span></div>
+      <details><summary>Principe et niveau de maturité</summary><p>${escapeHtml(outcome.description || '')}</p><p class="opx-model-note">${escapeHtml(outcome.execution_note || '')}</p></details>
+    </article>`;
   }
 
   function renderMethodOutcomes(data) {
@@ -175,13 +148,7 @@
       solutions.before(section);
     }
     const successes = outcomes.filter(outcome => outcome.status === 'success').length;
-    section.innerHTML = `
-      <div class="opx-portfolio-heading">
-        <div><span>Portefeuille indépendant</span><h3>Résultat des cinq modèles</h3></div>
-        <strong>${successes}/5 modèles avec un plan</strong>
-      </div>
-      <p class="opx-portfolio-intro">Chaque modèle est exécuté séparément. Un échec ou un dépassement de temps n'interrompt jamais les autres calculs.</p>
-      <div class="opx-model-grid">${outcomes.map(outcomeCard).join('')}</div>`;
+    section.innerHTML = `<div class="opx-portfolio-heading"><div><span>Portefeuille indépendant</span><h3>Résultat des cinq modèles</h3></div><strong>${successes}/5 modèles avec un plan</strong></div><p class="opx-portfolio-intro">Chaque modèle est exécuté séparément. Un échec ou un dépassement de temps n'interrompt jamais les autres calculs.</p><div class="opx-model-grid">${outcomes.map(outcomeCard).join('')}</div>`;
   }
 
   function installResultCapture() {
@@ -192,9 +159,7 @@
       const response = await previous(input, init);
       const url = typeof input === 'string' ? input : input?.url || '';
       if (response.ok && url.includes('/local/optimize')) {
-        response.clone().json().then(data => {
-          window.setTimeout(() => renderMethodOutcomes(data), 0);
-        }).catch(() => {});
+        response.clone().json().then(data => setTimeout(() => renderMethodOutcomes(data), 0)).catch(() => {});
       }
       return response;
     };

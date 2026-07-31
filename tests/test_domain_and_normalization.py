@@ -100,8 +100,10 @@ def test_invalid_import_has_structured_field_path() -> None:
     assert "n’est pas un nombre valide" in error.value.diagnostic.message
 
 
-def test_maximum_100_expanded_objects() -> None:
-    payload = {"items": [{"id": "X", "quantity": 101, "length": 100, "width": 100, "height": 100, "weight": 1}]}
-    with pytest.raises(DomainError) as error:
-        normalize_payload(payload)
-    assert error.value.diagnostic.code == "TOO_MANY_ITEMS"
+def test_more_than_100_expanded_objects_are_supported() -> None:
+    payload = {"items": [{"id": "X", "quantity": 125, "length": 100, "width": 100, "height": 100, "weight": 1}]}
+    problem = normalize_payload(payload)
+
+    assert len(problem.items) == 125
+    assert problem.items[0].id == "X#1"
+    assert problem.items[-1].id == "X#125"

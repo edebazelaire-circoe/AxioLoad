@@ -11,12 +11,9 @@ def test_super_admin_assets_and_activation_pages_are_loaded(tmp_path):
     response = client.get("/")
     assert response.status_code == 200
     assert 'id="open-settings"' in response.text
-    history_guard = '<script src="/static/history_stability.js?v=0.12.0"></script>'
-    admin_script = '<script src="/static/admin.js?v=0.12.0"></script>'
-    assert history_guard in response.text
-    assert admin_script in response.text
-    assert response.text.index(history_guard) < response.text.index(admin_script)
-    assert '<link rel="stylesheet" href="/static/admin.css?v=0.12.0">' in response.text
+    assert '<script src="/static/admin.js?v=0.12.1"></script>' in response.text
+    assert '<link rel="stylesheet" href="/static/admin.css?v=0.12.1">' in response.text
+    assert "history_stability.js" not in response.text
 
     script_response = client.get("/static/admin.js")
     assert script_response.status_code == 200
@@ -31,21 +28,6 @@ def test_super_admin_assets_and_activation_pages_are_loaded(tmp_path):
         "admin-dashboard-users",
     ):
         assert token in script
-
-    guard_response = client.get("/static/history_stability.js")
-    assert guard_response.status_code == 200
-    guard = guard_response.text
-    for token in (
-        "pathname === '/api/history'",
-        "cachedResponse.clone()",
-        "if (inFlight)",
-        "mutatesHistory",
-        "grantRefresh('user-action')",
-        "MAX_NETWORK_REQUESTS = 3",
-        "circuitIsOpen()",
-        "sessionStorage.removeItem('axioload.admin.token')",
-    ):
-        assert token in guard
 
     assert client.get("/activate").status_code == 200
     assert client.get("/login").status_code == 200

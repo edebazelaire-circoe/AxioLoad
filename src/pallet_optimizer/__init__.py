@@ -13,6 +13,7 @@ install_document_control_permission_migration()
 
 from .admin_panel import install_admin_panel_injection
 from .client_grouping import install_client_grouping
+from .client_split_policy import install_client_split_policy
 from .document_control_experience_panel import install_document_control_experience_injection
 from .document_control_panel import install_document_control_panel_injection
 from .document_control_system import install_document_control_system
@@ -24,6 +25,7 @@ __version__ = "0.15.0"
 
 install_client_grouping()
 install_optimization_portfolio()
+install_client_split_policy()
 install_unlimited_item_count()
 install_admin_panel_injection()
 install_document_control_panel_injection()

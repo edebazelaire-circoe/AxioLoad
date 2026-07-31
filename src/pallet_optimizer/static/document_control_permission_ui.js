@@ -7,7 +7,8 @@
     const documentWorkspace = switcher?.querySelector('[data-workspace="documents"]');
     const databaseWorkspace = switcher?.querySelector('[data-workspace="database"]');
     const optimizationWorkspace = switcher?.querySelector('[data-workspace="optimization"]');
-    if (!documentTab || !switcher || !documentWorkspace || documentWorkspace.dataset.permissionBound === '1') return false;
+    if (!documentTab || !switcher || !documentWorkspace) return false;
+    if (documentWorkspace.dataset.permissionBound === '1') return true;
 
     documentWorkspace.dataset.permissionBound = '1';
     const sync = () => {
@@ -18,7 +19,9 @@
       switcher.dataset.visibleCount = String(visibleCount);
       switcher.classList.toggle('single-workspace', visibleCount === 1);
       if (denied && document.body.dataset.workspace === 'documents') {
-        optimizationWorkspace?.click() || databaseWorkspace?.click();
+        const fallback = [optimizationWorkspace, databaseWorkspace]
+          .find(button => button && !button.hidden && !button.disabled);
+        fallback?.click();
       }
     };
     new MutationObserver(sync).observe(documentTab, {attributes: true, attributeFilter: ['hidden']});
@@ -27,8 +30,7 @@
   }
 
   const run = () => {
-    install();
-    new MutationObserver(install).observe(document.body, {childList: true, subtree: true});
+    [0, 50, 200, 700, 1600].forEach(delay => window.setTimeout(install, delay));
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run, {once: true});
   else run();

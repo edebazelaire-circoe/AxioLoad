@@ -25,9 +25,7 @@
     spark: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 1.4 5.6L19 9l-5.6 1.4L12 16l-1.4-5.6L5 9l5.6-1.4zM19 16l.7 2.3L22 19l-2.3.7L19 22l-.7-2.3L16 19l2.3-.7z"/></svg>'
   };
 
-  function icon(name, className = '') {
-    return `<span class="ax-icon ${className}">${icons[name] || icons.spark}</span>`;
-  }
+  const icon = (name, className = '') => `<span class="ax-icon ${className}">${icons[name] || icons.spark}</span>`;
 
   async function adminApi(url, options = {}) {
     const response = await fetch(url, {
@@ -35,19 +33,14 @@
       credentials: 'same-origin',
       headers: {'Content-Type': 'application/json', ...(options.headers || {})}
     });
-    if (!response.ok) {
-      const body = await response.json().catch(() => ({}));
-      if (response.status === 401) {
-        throw new Error('Session super administrateur expirée. Reconnectez-vous.');
-      }
-      throw new Error(body.detail || `Erreur ${response.status}`);
-    }
-    return response.status === 204 ? null : response.json();
+    const body = response.status === 204 ? null : await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(body?.detail || `Erreur ${response.status}`);
+    return body;
   }
 
-  function decorateTab(button, iconName, fallbackLabel = '') {
+  function decorateTab(button, iconName) {
     if (!button || q('.ax-tab-icon', button)) return;
-    const label = button.textContent.trim() || fallbackLabel;
+    const label = button.textContent.trim();
     button.innerHTML = `${icon(iconName, 'ax-tab-icon')}<span>${escapeHtml(label)}</span>`;
   }
 
@@ -59,52 +52,16 @@
     });
   }
 
-  function showWorkspaceNotice(text) {
-    let notice = q('#workspace-notice');
-    if (!notice) {
-      notice = document.createElement('div');
-      notice.id = 'workspace-notice';
-      notice.className = 'workspace-notice';
-      document.body.append(notice);
-    }
-    notice.textContent = text;
-    notice.classList.add('visible');
-    clearTimeout(window.__axioloadWorkspaceNoticeTimer);
-    window.__axioloadWorkspaceNoticeTimer = setTimeout(() => notice.classList.remove('visible'), 3200);
-  }
-
-  function openPromptConfiguration() {
-    const openAdmin = q('#open-admin');
-    const openSettings = q('#open-settings');
-    const adminPanel = q('#tab-admin');
-
-    if (adminPanel && openAdmin) {
-      openAdmin.click();
-      setTimeout(() => {
-        const promptView = q('[data-admin-view="document-prompts"]');
-        if (promptView) promptView.click();
-        else showWorkspaceNotice('Ouvrez la rubrique Prompts documentaires dans le Super Admin.');
-      }, 80);
-      return;
-    }
-
-    if (openSettings) {
-      openSettings.click();
-      setTimeout(() => {
-        const target = q('#dc-prompt-settings, [data-document-prompts], [id*="prompt"], textarea[id*="prompt"]');
-        if (target) target.scrollIntoView({behavior: 'smooth', block: 'center'});
-        else showWorkspaceNotice('La configuration des prompts est réservée à l’administrateur principal.');
-      }, 120);
-      return;
-    }
-    showWorkspaceNotice('Aucun écran de configuration des prompts n’est disponible pour ce compte.');
+  function isUsable(button) {
+    return Boolean(button && !button.hidden && !button.disabled && button.getAttribute('aria-hidden') !== 'true');
   }
 
   function installWorkspaceSwitcher() {
     const nav = q('nav.tabs');
     const documentTab = q('[data-tab="document-control"]', nav || document);
     const documentPanel = q('#tab-document-control');
-    if (!nav || !documentTab || !documentPanel || q('#workspace-switcher')) return false;
+    if (!nav || !documentTab || !documentPanel) return false;
+    if (q('#workspace-switcher')) return true;
 
     const originalTabs = {
       vehicles: q('[data-tab="vehicles"]', nav),
@@ -114,16 +71,13 @@
       total: q('[data-tab="total"]', nav),
       history: q('[data-tab="history"]', nav)
     };
-
     const tabIcons = {vehicles: 'vehicles', data: 'data', results: 'results', route: 'route', total: 'total', history: 'history'};
     Object.entries(originalTabs).forEach(([name, button]) => decorateTab(button, tabIcons[name]));
 
     documentTab.classList.add('ax-hidden-document-tab');
     documentTab.setAttribute('aria-hidden', 'true');
-
     Object.entries(originalTabs).forEach(([name, button]) => {
-      if (!button) return;
-      button.dataset.workspaceGroup = name === 'vehicles' ? 'database' : 'optimization';
+      if (button) button.dataset.workspaceGroup = name === 'vehicles' ? 'database' : 'optimization';
     });
 
     const promptButton = document.createElement('button');
@@ -156,16 +110,13 @@
     switcher.setAttribute('aria-label', 'Choisir un espace de travail');
     switcher.innerHTML = `
       <button type="button" class="workspace-card workspace-database active" data-workspace="database">
-        ${icon('database')}
-        <span><strong>Base de données</strong><small>Flotte et prompts</small></span>
+        ${icon('database')}<span><strong>Base de données</strong><small>Flotte et prompts</small></span>
       </button>
       <button type="button" class="workspace-card workspace-optimization" data-workspace="optimization">
-        ${icon('truck')}
-        <span><strong>Optimisation</strong><small>Chargement, itinéraires et historique</small></span>
+        ${icon('truck')}<span><strong>Optimisation</strong><small>Chargement, itinéraires et historique</small></span>
       </button>
       <button type="button" class="workspace-card workspace-documents" data-workspace="documents">
-        ${icon('shield')}
-        <span><strong>Contrôle documentaire</strong><small>Comparer, corriger et exporter</small></span>
+        ${icon('shield')}<span><strong>Contrôle documentaire</strong><small>Comparer, corriger et exporter</small></span>
       </button>`;
     nav.before(switcher);
 
@@ -173,7 +124,6 @@
     let lastDatabaseTab = 'vehicles';
     let lastOptimizationTab = 'data';
     let lastDocumentTab = 'document-new';
-
     const workspaceButtons = () => qa('[data-workspace-group]', nav);
 
     const setWorkspaceVisual = name => {
@@ -185,8 +135,7 @@
         button.setAttribute('aria-pressed', String(active));
       });
       workspaceButtons().forEach(button => {
-        const visible = button.dataset.workspaceGroup === name;
-        button.hidden = !visible;
+        button.classList.toggle('workspace-group-hidden', button.dataset.workspaceGroup !== name);
       });
       nav.dataset.workspace = name;
     };
@@ -197,60 +146,81 @@
       if (target === 'prompts') {
         lastDatabaseTab = 'prompts';
         setSubnavActive(nav, promptButton);
-        openPromptConfiguration();
         return;
       }
-      lastDatabaseTab = 'vehicles';
-      originalTabs.vehicles?.click();
-      setSubnavActive(nav, originalTabs.vehicles);
+      const vehicleTab = isUsable(originalTabs.vehicles) ? originalTabs.vehicles : null;
+      if (vehicleTab) {
+        lastDatabaseTab = 'vehicles';
+        vehicleTab.click();
+        setSubnavActive(nav, vehicleTab);
+      } else if (isUsable(promptButton)) {
+        promptButton.click();
+      }
     };
 
     const openOptimization = targetName => {
       setWorkspaceVisual('optimization');
-      const target = originalTabs[targetName || lastOptimizationTab] || originalTabs.data || originalTabs.results;
-      if (target?.dataset.tab) lastOptimizationTab = target.dataset.tab;
-      target?.click();
+      const preferred = originalTabs[targetName || lastOptimizationTab];
+      const target = isUsable(preferred)
+        ? preferred
+        : Object.values(originalTabs).find(button => button?.dataset.workspaceGroup === 'optimization' && isUsable(button));
+      if (!target) return;
+      lastOptimizationTab = target.dataset.tab;
+      target.click();
       setSubnavActive(nav, target);
     };
 
     const openDocuments = targetName => {
+      if (!isUsable(q('[data-workspace="documents"]', switcher))) return;
       setWorkspaceVisual('documents');
-      const target = targetName || lastDocumentTab;
-      lastDocumentTab = target;
+      lastDocumentTab = targetName || lastDocumentTab;
       documentTab.click();
-      const synthetic = target === 'document-history' ? documentHistoryButton : documentNewButton;
+      const synthetic = lastDocumentTab === 'document-history' ? documentHistoryButton : documentNewButton;
       setSubnavActive(nav, synthetic);
-      setTimeout(() => {
-        const action = target === 'document-history' ? q('#dc-history-view') : q('#dc-new-view');
-        action?.click();
+      window.setTimeout(() => {
+        const action = lastDocumentTab === 'document-history' ? q('#dc-history-view') : q('#dc-new-view');
+        if (isUsable(action)) action.click();
       }, 0);
     };
 
-    q('[data-workspace="database"]', switcher).addEventListener('click', () => openDatabase());
-    q('[data-workspace="optimization"]', switcher).addEventListener('click', () => openOptimization());
-    q('[data-workspace="documents"]', switcher).addEventListener('click', () => openDocuments());
+    q('[data-workspace="database"]', switcher)?.addEventListener('click', event => {
+      if (!event.currentTarget.disabled && !event.currentTarget.hidden) openDatabase();
+    });
+    q('[data-workspace="optimization"]', switcher)?.addEventListener('click', event => {
+      if (!event.currentTarget.disabled && !event.currentTarget.hidden) openOptimization();
+    });
+    q('[data-workspace="documents"]', switcher)?.addEventListener('click', event => {
+      if (!event.currentTarget.disabled && !event.currentTarget.hidden) openDocuments();
+    });
 
-    promptButton.addEventListener('click', () => openDatabase('prompts'));
-    documentNewButton.addEventListener('click', () => openDocuments('document-new'));
-    documentHistoryButton.addEventListener('click', () => openDocuments('document-history'));
+    promptButton.addEventListener('click', () => {
+      if (!promptButton.disabled && !promptButton.hidden) {
+        setWorkspaceVisual('database');
+        lastDatabaseTab = 'prompts';
+        setSubnavActive(nav, promptButton);
+      }
+    });
+    documentNewButton.addEventListener('click', () => {
+      if (!documentNewButton.disabled && !documentNewButton.hidden) openDocuments('document-new');
+    });
+    documentHistoryButton.addEventListener('click', () => {
+      if (!documentHistoryButton.disabled && !documentHistoryButton.hidden) openDocuments('document-history');
+    });
 
     Object.entries(originalTabs).forEach(([name, button]) => {
       if (!button) return;
       button.addEventListener('click', () => {
+        if (button.disabled || button.hidden) return;
         const group = button.dataset.workspaceGroup;
-        if (group === 'database') {
-          lastDatabaseTab = name;
-          setWorkspaceVisual('database');
-        } else {
-          lastOptimizationTab = name;
-          setWorkspaceVisual('optimization');
-        }
+        if (group === 'database') lastDatabaseTab = name;
+        else lastOptimizationTab = name;
+        setWorkspaceVisual(group);
         setSubnavActive(nav, button);
       });
     });
 
     q('#close-settings')?.addEventListener('click', () => {
-      if (workspace === 'documents') setTimeout(() => openDocuments(lastDocumentTab), 0);
+      if (workspace === 'documents') window.setTimeout(() => openDocuments(lastDocumentTab), 0);
     });
 
     openDatabase('vehicles');
@@ -259,16 +229,19 @@
 
   function polishDocumentModule() {
     const panel = q('#tab-document-control');
-    if (!panel || panel.dataset.experienceReady === '1') return false;
+    if (!panel) return false;
+    if (panel.dataset.experienceReady === '1') return true;
     panel.dataset.experienceReady = '1';
 
     const heading = q('.panel-heading > div:first-child', panel);
-    if (heading) heading.insertAdjacentHTML('afterbegin', `<div class="dc-module-brand">${icon('shield')}<span>AxioLoad Documents</span></div>`);
+    if (heading && !q('.dc-module-brand', heading)) {
+      heading.insertAdjacentHTML('afterbegin', `<div class="dc-module-brand">${icon('shield')}<span>AxioLoad Documents</span></div>`);
+    }
     const title = q('.panel-heading h2', panel);
     const intro = q('.panel-heading .section-intro', panel);
+    const security = q('.dc-security span', panel);
     if (title) title.textContent = 'Comparer deux documents';
     if (intro) intro.textContent = 'Déposez les fichiers, lancez l’analyse, puis validez les écarts.';
-    const security = q('.dc-security span', panel);
     if (security) security.textContent = 'Fichiers supprimés après analyse. Seuls les résultats et décisions sont conservés.';
 
     const form = q('#dc-form', panel);
@@ -290,118 +263,30 @@
       input.insertAdjacentHTML('beforebegin', `${icon('upload')}<strong>Déposer un fichier</strong><span class="dc-file-state">PDF, JPG ou PNG</span>`);
       const state = q('.dc-file-state', label);
       input.addEventListener('change', () => {
-        state.textContent = input.files?.[0]?.name || 'PDF, JPG ou PNG';
+        if (state) state.textContent = input.files?.[0]?.name || 'PDF, JPG ou PNG';
         label.classList.toggle('has-file', Boolean(input.files?.length));
       });
       ['dragenter', 'dragover'].forEach(eventName => label.addEventListener(eventName, event => {
-        event.preventDefault(); label.classList.add('dragging');
+        event.preventDefault();
+        label.classList.add('dragging');
       }));
       ['dragleave', 'drop'].forEach(eventName => label.addEventListener(eventName, event => {
-        event.preventDefault(); label.classList.remove('dragging');
+        event.preventDefault();
+        label.classList.remove('dragging');
       }));
     });
 
     const newButton = q('#dc-new-view', panel);
     const historyButton = q('#dc-history-view', panel);
-    if (newButton) newButton.innerHTML = `${icon('document')}<span>Nouveau</span>`;
-    if (historyButton) historyButton.innerHTML = `${icon('history')}<span>Historique</span>`;
-    return true;
-  }
-
-  function promptAccordion(profile) {
-    const status = profile.is_default ? 'Base fournie' : `Personnalisé · v${profile.version}`;
-    return `
-      <details class="system-prompt-accordion" data-profile="${escapeHtml(profile.key)}" ${profile.key === 'generic' ? 'open' : ''}>
-        <summary>
-          <span class="system-prompt-summary">${icon('prompt')}<span><strong>${escapeHtml(profile.title)}</strong><small>${escapeHtml(profile.description)}</small></span></span>
-          <span class="system-prompt-badge">${escapeHtml(status)}</span>
-        </summary>
-        <div class="system-prompt-panel">
-          <label>Prompt de base<textarea rows="9" maxlength="16000" data-system-prompt>${escapeHtml(profile.instructions)}</textarea></label>
-          <div class="system-prompt-actions">
-            <span data-system-meta>Version ${profile.version} · ${escapeHtml(profile.updated_by || 'system')}</span>
-            <button type="button" class="primary" data-save-system-prompt>Enregistrer</button>
-          </div>
-          <div class="message hidden" data-system-message></div>
-        </div>
-      </details>`;
-  }
-
-  async function loadSystemPrompts(view) {
-    const root = q('[data-system-prompt-list]', view);
-    root.innerHTML = '<div class="admin-empty">Chargement des prompts…</div>';
-    try {
-      const data = await adminApi('/api/admin/document-prompts');
-      q('[data-system-version]', view).textContent = data.system_prompt_version;
-      q('[data-locked-core]', view).textContent = data.locked_core_prompt;
-      root.innerHTML = data.profiles.map(promptAccordion).join('');
-      qa('[data-save-system-prompt]', root).forEach(button => {
-        button.addEventListener('click', async () => {
-          const details = button.closest('[data-profile]');
-          const message = q('[data-system-message]', details);
-          button.disabled = true;
-          button.textContent = 'Enregistrement…';
-          try {
-            const result = await adminApi(`/api/admin/document-prompts/${encodeURIComponent(details.dataset.profile)}`, {
-              method: 'PUT', body: JSON.stringify({instructions: q('[data-system-prompt]', details).value})
-            });
-            q('[data-system-meta]', details).textContent = `Version ${result.version} · ${result.updated_by}`;
-            q('.system-prompt-badge', details).textContent = `Personnalisé · v${result.version}`;
-            message.textContent = 'Prompt de base enregistré et versionné.';
-            message.className = 'message success';
-          } catch (error) {
-            message.textContent = error.message;
-            message.className = 'message error';
-          } finally {
-            message.classList.remove('hidden');
-            button.disabled = false;
-            button.textContent = 'Enregistrer';
-          }
-        });
-      });
-    } catch (error) {
-      root.innerHTML = `<div class="admin-notice warning">${escapeHtml(error.message)}</div>`;
-    }
-  }
-
-  function installSuperAdminPromptView() {
-    const panel = q('#tab-admin');
-    const nav = q('.admin-nav', panel);
-    const content = q('.admin-content', panel);
-    if (!panel || !nav || !content || q('[data-admin-view="document-prompts"]', nav)) return false;
-
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'secondary admin-nav-rich';
-    button.dataset.adminView = 'document-prompts';
-    button.innerHTML = `${icon('prompt')}<span>Prompts documentaires</span>`;
-    nav.append(button);
-
-    const view = document.createElement('section');
-    view.id = 'admin-view-document-prompts';
-    view.className = 'admin-view';
-    view.innerHTML = `
-      <div class="admin-toolbar system-prompt-header">
-        <div><div class="dc-module-brand">${icon('prompt')}<span>Bibliothèque système</span></div><h3>Prompts de base documentaires</h3><p>Une base par cas, complétée ensuite par l’entreprise.</p></div>
-        <span class="system-version-pill">Moteur <b data-system-version>…</b></span>
-      </div>
-      <section class="admin-card locked-core-card">
-        <details><summary>${icon('shield')}<span><strong>Socle de sécurité verrouillé</strong><small>Objectif, méthode de lecture et garde-fous communs.</small></span></summary><pre data-locked-core></pre></details>
-      </section>
-      <div class="system-prompt-list" data-system-prompt-list></div>`;
-    content.append(view);
-
-    button.addEventListener('click', async () => {
-      qa('[data-admin-view]', nav).forEach(item => item.classList.toggle('active', item === button));
-      qa('.admin-view', content).forEach(item => item.classList.toggle('active', item === view));
-      await loadSystemPrompts(view);
-    });
+    if (newButton && !q('.ax-icon', newButton)) newButton.innerHTML = `${icon('document')}<span>Nouveau</span>`;
+    if (historyButton && !q('.ax-icon', historyButton)) historyButton.innerHTML = `${icon('history')}<span>Historique</span>`;
     return true;
   }
 
   function enhanceApiTester() {
     const card = q('#dc-admin-ai');
-    if (!card || q('#dc-a-test', card)) return false;
+    if (!card) return false;
+    if (q('#dc-a-test', card)) return true;
     const actions = q('.admin-actions', card);
     const state = q('#dc-a-state', card);
     if (!actions || !state) return false;
@@ -419,8 +304,9 @@
     state.after(detail);
 
     testButton.addEventListener('click', async () => {
-      const resolvedTenant = q('#admin-company-detail')?.dataset?.tenantId || window.__axioloadSelectedTenant;
-      if (!resolvedTenant) {
+      if (testButton.disabled) return;
+      const tenantId = q('#admin-company-detail')?.dataset?.tenantId || window.__axioloadSelectedTenant;
+      if (!tenantId) {
         detail.textContent = 'Entreprise introuvable. Revenez à la liste puis rouvrez sa fiche.';
         detail.className = 'api-test-detail error';
         return;
@@ -430,13 +316,18 @@
       detail.className = 'api-test-detail loading';
       detail.textContent = 'Connexion au fournisseur et vérification du modèle…';
       try {
-        const result = await adminApi(`/api/admin/companies/${encodeURIComponent(resolvedTenant)}/document-ai/test`, {
-          method: 'POST', body: JSON.stringify({provider: q('#dc-a-provider')?.value || 'openai', model: q('#dc-a-model')?.value || '', api_key: q('#dc-a-key')?.value || ''})
+        const result = await adminApi(`/api/admin/companies/${encodeURIComponent(tenantId)}/document-ai/test`, {
+          method: 'POST',
+          body: JSON.stringify({
+            provider: q('#dc-a-provider')?.value || 'openai',
+            model: q('#dc-a-model')?.value || '',
+            api_key: q('#dc-a-key')?.value || ''
+          })
         });
         detail.innerHTML = `${icon('check')}<span><strong>Connexion opérationnelle</strong><small>${escapeHtml(result.model)} · ${result.latency_ms} ms</small></span>`;
         detail.className = 'api-test-detail success';
       } catch (error) {
-        detail.innerHTML = `<span class="api-test-error">!</span><span><strong>Test refusé</strong><small>${escapeHtml(error.message)}</small></span>`;
+        detail.innerHTML = `<span class="api-test-error">!</span><span><strong>Test refusé</strong><small>${escapeHtml(error.message || String(error))}</small></span>`;
         detail.className = 'api-test-detail error';
       } finally {
         testButton.disabled = false;
@@ -446,27 +337,32 @@
     return true;
   }
 
-  function rememberSelectedTenant() {
+  function bindAdminNavigationHints() {
+    if (document.body.dataset.dcAdminHintsReady === '1') return;
+    document.body.dataset.dcAdminHintsReady = '1';
     document.addEventListener('click', event => {
-      const row = event.target.closest('[data-company]');
+      const row = event.target.closest?.('[data-company]');
       if (row?.dataset.company) {
         window.__axioloadSelectedTenant = row.dataset.company;
         const detail = q('#admin-company-detail');
         if (detail) detail.dataset.tenantId = row.dataset.company;
+        [0, 100, 350, 800].forEach(delay => window.setTimeout(enhanceApiTester, delay));
       }
-    });
+      if (event.target.closest?.('[data-detail-tab], #open-admin')) {
+        [0, 100, 350].forEach(delay => window.setTimeout(enhanceApiTester, delay));
+      }
+    }, true);
+  }
+
+  function installAll() {
+    installWorkspaceSwitcher();
+    polishDocumentModule();
+    enhanceApiTester();
   }
 
   function init() {
-    rememberSelectedTenant();
-    const installAll = () => {
-      installWorkspaceSwitcher();
-      polishDocumentModule();
-      installSuperAdminPromptView();
-      enhanceApiTester();
-    };
-    installAll();
-    new MutationObserver(installAll).observe(document.body, {childList: true, subtree: true});
+    bindAdminNavigationHints();
+    [0, 50, 200, 700, 1600].forEach(delay => window.setTimeout(installAll, delay));
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, {once: true});

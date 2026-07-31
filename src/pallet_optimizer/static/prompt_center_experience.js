@@ -9,6 +9,10 @@
 
   let analyticsRuns = [];
   let contextPromise = null;
+  let historyRequest = null;
+  let promptRequest = null;
+  let navigationBound = false;
+  let resizeFrame = 0;
 
   async function api(url, options = {}) {
     const response = await fetch(url, {
@@ -21,6 +25,10 @@
     return body;
   }
 
+  function setText(node, value) {
+    if (node && node.textContent !== value) node.textContent = value;
+  }
+
   function messageBox(root, text, error = false) {
     let box = q('[data-prompt-message]', root);
     if (!box) {
@@ -28,13 +36,15 @@
       box.dataset.promptMessage = '1';
       root.append(box);
     }
-    box.textContent = text;
+    setText(box, text);
     box.className = `message ${error ? 'error' : 'success'}`;
   }
 
   function ensurePromptPanel() {
     let panel = q('#tab-prompt-center');
     if (panel) return panel;
+    const main = q('main');
+    if (!main) return null;
     panel = document.createElement('section');
     panel.id = 'tab-prompt-center';
     panel.className = 'panel tab-panel prompt-center-page';
@@ -48,7 +58,7 @@
         <span class="prompt-center-version" data-prompt-version></span>
       </div>
       <div id="prompt-center-content" class="prompt-center-content"><div class="admin-empty">Chargement…</div></div>`;
-    q('main')?.append(panel);
+    main.append(panel);
     panel.addEventListener('click', handlePromptSave);
     return panel;
   }
@@ -71,6 +81,7 @@
 
   async function openPromptCenter(promptButton) {
     const panel = ensurePromptPanel();
+    if (!panel) return;
     activateDatabaseWorkspace(promptButton);
     qa('.tab-panel').forEach(item => item.classList.toggle('active', item === panel));
     await loadPromptCenter(panel);
@@ -125,65 +136,86 @@
   }
 
   async function loadPromptCenter(panel) {
+    if (promptRequest) return promptRequest;
     const root = q('#prompt-center-content', panel);
+    if (!root) return null;
     root.innerHTML = '<div class="admin-empty">Chargement des prompts…</div>';
-    try {
-      const data = await api('/api/prompt-center');
-      q('[data-prompt-version]', panel).textContent = data.system_prompt_version || '';
-      if (data.mode === 'super_admin') renderSuperAdminPrompts(root, data);
-      else renderCompanyPrompts(root, data);
-    } catch (error) {
-      root.innerHTML = `<div class="admin-notice warning">${escapeHtml(error.message || String(error))}</div>`;
-    }
+    promptRequest = (async () => {
+      try {
+        const data = await api('/api/prompt-center');
+        setText(q('[data-prompt-version]', panel), data.system_prompt_version || '');
+        if (data.mode === 'super_admin') renderSuperAdminPrompts(root, data);
+        else renderCompanyPrompts(root, data);
+        panel.dataset.promptLoaded = '1';
+        return data;
+      } catch (error) {
+        root.innerHTML = `<div class="admin-notice warning">${escapeHtml(error.message || String(error))}</div>`;
+        return null;
+      } finally {
+        promptRequest = null;
+      }
+    })();
+    return promptRequest;
   }
 
   async function handlePromptSave(event) {
     const button = event.target.closest('[data-save-prompt]');
-    if (!button) return;
+    if (!button || button.disabled) return;
     const card = button.closest('[data-prompt-kind]');
     const textarea = q('[data-prompt-text]', card);
+    if (!card || !textarea) return;
     const kind = card.dataset.promptKind;
     let endpoint = '/api/prompt-center/core';
     if (kind === 'system') endpoint = `/api/prompt-center/system/${encodeURIComponent(card.dataset.profileKey)}`;
     if (kind === 'company') endpoint = `/api/prompt-center/company/${encodeURIComponent(card.dataset.leftType)}/${encodeURIComponent(card.dataset.rightType)}`;
     button.disabled = true;
     const original = button.textContent;
-    button.textContent = 'Enregistrement…';
+    setText(button, 'Enregistrement…');
     try {
       const result = await api(endpoint, {method: 'PUT', body: JSON.stringify({instructions: textarea.value})});
       const badge = q('summary > b', card);
-      if (badge) badge.textContent = kind === 'company' ? `Complément v${result.version}` : `Version ${result.version}`;
+      setText(badge, kind === 'company' ? `Complément v${result.version}` : `Version ${result.version}`);
       messageBox(card, 'Prompt enregistré et versionné.');
     } catch (error) {
       messageBox(card, error.message || String(error), true);
     } finally {
       button.disabled = false;
-      button.textContent = original;
+      setText(button, original);
     }
   }
 
-  function removeLegacyPromptAdminView() {
-    q('[data-admin-view="document-prompts"]')?.remove();
-    q('#admin-view-document-prompts')?.remove();
+  function disableLegacyPromptAdminView() {
+    const button = q('[data-admin-view="document-prompts"]');
+    if (button) {
+      button.hidden = true;
+      button.classList.add('hidden');
+      button.setAttribute('aria-hidden', 'true');
+      button.setAttribute('tabindex', '-1');
+    }
+    const view = q('#admin-view-document-prompts');
+    if (view) {
+      view.hidden = true;
+      view.classList.remove('active');
+      view.setAttribute('aria-hidden', 'true');
+    }
   }
 
   function polishManagementCenter() {
     const button = q('#open-admin');
     const panel = q('#tab-admin');
-    if (button) {
-      const label = q('span', button);
-      if (label) label.textContent = 'Centre de gestion';
+    if (button && button.dataset.managementCenterReady !== '1') {
+      setText(q('span', button), 'Centre de gestion');
       button.setAttribute('aria-label', 'Ouvrir le Centre de gestion');
+      button.dataset.managementCenterReady = '1';
     }
-    if (!panel) return;
-    const eyebrow = q('.admin-heading .eyebrow', panel);
-    const title = q('.admin-heading h2', panel);
-    const intro = q('.admin-heading .section-intro', panel);
-    if (eyebrow) eyebrow.textContent = 'Centre de gestion';
-    if (title) title.textContent = 'Pilotage des comptes et des utilisateurs';
-    if (intro) intro.textContent = 'Dashboard, entreprises, utilisateurs, accès, activité et assistance.';
-    const overview = q('[data-admin-view="overview"]', panel);
-    if (overview) overview.textContent = 'Dashboard';
+    if (!panel) return false;
+    if (panel.dataset.managementCenterReady !== '1') {
+      setText(q('.admin-heading .eyebrow', panel), 'Centre de gestion');
+      setText(q('.admin-heading h2', panel), 'Pilotage des comptes et des utilisateurs');
+      setText(q('.admin-heading .section-intro', panel), 'Dashboard, entreprises, utilisateurs, accès, activité et assistance.');
+      setText(q('[data-admin-view="overview"]', panel), 'Dashboard');
+      panel.dataset.managementCenterReady = '1';
+    }
     const nav = q('.admin-nav', panel);
     if (nav && !q('[data-admin-view="costs-roadmap"]', nav)) {
       const costs = document.createElement('button');
@@ -191,10 +223,13 @@
       costs.className = 'secondary management-costs-roadmap';
       costs.dataset.adminView = 'costs-roadmap';
       costs.disabled = true;
+      costs.setAttribute('aria-disabled', 'true');
+      costs.title = 'Le suivi des coûts sera ajouté dans une prochaine version.';
       costs.innerHTML = '<span>Coûts</span><small>À venir</small>';
       nav.append(costs);
     }
-    removeLegacyPromptAdminView();
+    disableLegacyPromptAdminView();
+    return Boolean(button && nav);
   }
 
   async function applyRoleLayout() {
@@ -204,8 +239,9 @@
         .catch(() => null);
     }
     const context = await contextPromise;
+    const settings = q('#open-settings');
     const directManagement = context?.mode === 'assistance' && context?.company?.id === 'local';
-    if (directManagement) q('#open-settings')?.classList.add('hidden');
+    if (settings) settings.classList.toggle('hidden', Boolean(directManagement));
   }
 
   function ensureHistoryAnalytics() {
@@ -214,11 +250,13 @@
     const filters = q('.history-filters', history || document);
     if (!dashboard || !history || !filters) return false;
     if (dashboard.parentElement !== history) filters.before(dashboard);
+    if (dashboard.dataset.historyAnalyticsReady === '1') return true;
+    dashboard.dataset.historyAnalyticsReady = '1';
     dashboard.classList.add('history-dashboard-card');
     const title = q('#dashboard-title', dashboard);
     const intro = title?.parentElement?.querySelector('p');
-    if (title) title.textContent = 'Vue d’ensemble de l’historique';
-    if (intro) intro.textContent = 'Repérez les statuts, les volumes et les calculs atypiques avant de parcourir le détail des dossiers.';
+    setText(title, 'Vue d’ensemble de l’historique');
+    setText(intro, 'Repérez les statuts, les volumes et les calculs atypiques avant de parcourir le détail des dossiers.');
     q('.dashboard-grid', dashboard)?.classList.add('legacy-dashboard-charts');
     if (!q('#history-analytics', dashboard)) {
       const block = document.createElement('div');
@@ -235,13 +273,13 @@
       if (cards) cards.before(block); else q('.settings-card-heading', dashboard)?.after(block);
     }
     const settingsIntro = q('#settings-title')?.parentElement?.querySelector('.section-intro');
-    if (settingsIntro) settingsIntro.textContent = 'Gérez votre compte, l’apparence et les connexions de l’application.';
+    setText(settingsIntro, 'Gérez votre compte, l’apparence et les connexions de l’application.');
     return true;
   }
 
   function toneFor(status) {
     const normalized = String(status || '').toLowerCase();
-    if (['failure', 'failed', 'rejected', 'error'].includes(normalized)) return 'failure';
+    if (['failure', 'failed', 'rejected', 'error', 'invalid_input', 'internal_error'].includes(normalized)) return 'failure';
     if (['warning', 'review', 'pending'].includes(normalized)) return 'warning';
     return 'success';
   }
@@ -262,20 +300,21 @@
 
   function drawScatter(runs) {
     const canvas = q('#history-scatter');
-    if (!canvas) return;
+    if (!canvas || !canvas.isConnected) return;
     const points = runs.map(run => ({
       x: Number(run.linear_meters),
       y: Number(run.elapsed_seconds),
       vehicles: Math.max(1, Number(run.vehicle_count) || 1),
       tone: toneFor(run.status)
     })).filter(point => Number.isFinite(point.x) && Number.isFinite(point.y));
-    const ratio = Math.max(1, window.devicePixelRatio || 1);
+    const ratio = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
     const width = Math.max(620, canvas.clientWidth || 1000);
     const height = 340;
     canvas.width = Math.round(width * ratio);
     canvas.height = Math.round(height * ratio);
     const ctx = canvas.getContext('2d');
-    ctx.scale(ratio, ratio);
+    if (!ctx) return;
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
     ctx.clearRect(0, 0, width, height);
     const styles = getComputedStyle(document.documentElement);
     const ink = styles.getPropertyValue('--ink').trim() || '#102A3A';
@@ -332,23 +371,34 @@
     ctx.fillStyle = ink;
   }
 
-  async function refreshHistoryAnalytics() {
-    if (!ensureHistoryAnalytics()) return;
-    try {
-      analyticsRuns = await api('/api/history?limit=200');
-      renderStatusTags(analyticsRuns);
-      drawScatter(analyticsRuns);
-      if (typeof window.renderDashboard === 'function') window.renderDashboard();
-    } catch (_) {
-      renderStatusTags([]);
-      drawScatter([]);
-    }
+  async function refreshHistoryAnalytics({force = false} = {}) {
+    if (!ensureHistoryAnalytics()) return null;
+    if (historyRequest && !force) return historyRequest;
+    historyRequest = (async () => {
+      try {
+        analyticsRuns = await api('/api/history?limit=200');
+        renderStatusTags(analyticsRuns);
+        drawScatter(analyticsRuns);
+        if (typeof window.renderDashboard === 'function') window.renderDashboard();
+        return analyticsRuns;
+      } catch (_) {
+        analyticsRuns = [];
+        renderStatusTags([]);
+        drawScatter([]);
+        return [];
+      } finally {
+        historyRequest = null;
+      }
+    })();
+    return historyRequest;
   }
 
   function bindNavigationInterception() {
+    if (navigationBound) return;
+    navigationBound = true;
     document.addEventListener('click', event => {
       const promptButton = event.target.closest('[data-workspace-tab="prompts"]');
-      if (promptButton) {
+      if (promptButton && !promptButton.disabled && !promptButton.hidden) {
         event.preventDefault();
         event.stopPropagation();
         event.stopImmediatePropagation();
@@ -356,8 +406,13 @@
         return;
       }
       const historyButton = event.target.closest('[data-tab="history"]');
-      if (historyButton) setTimeout(refreshHistoryAnalytics, 80);
-      if (event.target.closest('#refresh-history')) setTimeout(refreshHistoryAnalytics, 120);
+      if (historyButton && !historyButton.disabled && !historyButton.hidden) {
+        window.setTimeout(() => refreshHistoryAnalytics(), 0);
+      }
+      const refreshButton = event.target.closest('#refresh-history');
+      if (refreshButton && !refreshButton.disabled) {
+        window.setTimeout(() => refreshHistoryAnalytics({force: true}), 0);
+      }
     }, true);
   }
 
@@ -365,16 +420,28 @@
     ensurePromptPanel();
     ensureHistoryAnalytics();
     polishManagementCenter();
-    removeLegacyPromptAdminView();
+    disableLegacyPromptAdminView();
+  }
+
+  function installWithBoundedRetries() {
+    const delays = [0, 50, 200, 700, 1600];
+    delays.forEach(delay => window.setTimeout(installAll, delay));
+  }
+
+  function bindResize() {
+    window.addEventListener('resize', () => {
+      if (!q('#tab-history.active') || !q('#history-scatter')) return;
+      window.cancelAnimationFrame(resizeFrame);
+      resizeFrame = window.requestAnimationFrame(() => drawScatter(analyticsRuns));
+    }, {passive: true});
   }
 
   function init() {
     bindNavigationInterception();
-    installAll();
+    installWithBoundedRetries();
     applyRoleLayout();
-    refreshHistoryAnalytics();
-    new MutationObserver(installAll).observe(document.body, {childList: true, subtree: true});
-    window.addEventListener('resize', () => drawScatter(analyticsRuns));
+    bindResize();
+    if (q('#tab-history.active')) refreshHistoryAnalytics();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, {once: true});

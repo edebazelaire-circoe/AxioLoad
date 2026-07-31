@@ -60,7 +60,9 @@ def test_authentication_assets_are_injected(client: TestClient) -> None:
     assert home.status_code == 200
     assert login.status_code == 200
     for response in (home, login):
-        assert "/static/auth_experience.css?v=0.18.0" in response.text
-        assert "/static/auth_experience.js?v=0.18.0" in response.text
-        assert "/static/password_reset.css?v=0.18.0" in response.text
-        assert "/static/password_reset.js?v=0.18.0" in response.text
+        assert response.text.count("/static/auth_experience.css?v=0.19.1") == 1
+        assert response.text.count("/static/auth_experience.js?v=0.19.1") == 1
+        assert response.text.count("/static/password_reset.css?v=0.19.1") == 1
+        assert response.text.count("/static/password_reset.js?v=0.19.1") == 1
+        assert "auth_experience.js?v=0.18.0" not in response.text
+        assert "password_reset.js?v=0.18.0" not in response.text

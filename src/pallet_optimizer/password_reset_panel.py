@@ -5,8 +5,10 @@ from typing import Any
 
 from fastapi.templating import Jinja2Templates
 
-_STYLE = b'<link rel="stylesheet" href="/static/password_reset.css?v=0.18.0">'
-_SCRIPT = b'<script src="/static/password_reset.js?v=0.18.0"></script>'
+_STYLE = b'<link rel="stylesheet" href="/static/password_reset.css?v=0.19.1">'
+_SCRIPT = b'<script src="/static/password_reset.js?v=0.19.1"></script>'
+_OLD_STYLE = b'<link rel="stylesheet" href="/static/password_reset.css?v=0.18.0">'
+_OLD_SCRIPT = b'<script src="/static/password_reset.js?v=0.18.0"></script>'
 _original_template_response: Callable[..., Any] | None = None
 
 
@@ -25,9 +27,9 @@ def install_password_reset_injection() -> None:
             or b'id="login-form"' in body
             or b'id="change-password-form"' in body
         ):
-            if _STYLE not in body:
-                body = body.replace(b"</head>", _STYLE + b"</head>")
-            body = body.replace(_SCRIPT, b"")
+            for asset in (_OLD_STYLE, _OLD_SCRIPT, _STYLE, _SCRIPT):
+                body = body.replace(asset, b"")
+            body = body.replace(b"</head>", _STYLE + b"</head>")
             body = body.replace(b"</body>", _SCRIPT + b"</body>")
             response.body = body
             response.headers["content-length"] = str(len(body))

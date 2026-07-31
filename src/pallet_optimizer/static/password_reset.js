@@ -3,18 +3,10 @@
 
   const q = (selector, root = document) => root.querySelector(selector);
   const qa = (selector, root = document) => [...root.querySelectorAll(selector)];
-  const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
+  const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, char => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+  }[char]));
   const formatDate = value => value ? new Date(value).toLocaleString('fr-FR') : '—';
-
-  sessionStorage.removeItem('axioload.admin.token');
-  const nativePrompt = window.prompt.bind(window);
-  window.prompt = (message, defaultValue) => {
-    if (String(message || '').toLowerCase().includes('jeton super administrateur')) {
-      location.href = '/login?mode=super_admin';
-      return null;
-    }
-    return nativePrompt(message, defaultValue);
-  };
 
   async function api(url, options = {}) {
     const response = await fetch(url, {...options, credentials: 'same-origin'});
@@ -139,7 +131,7 @@
     const view = document.createElement('section');
     view.id = 'admin-view-passwords';
     view.className = 'admin-view';
-    view.innerHTML = `<div class="admin-toolbar"><div><h3>Demandes de réinitialisation</h3><p>Le super administrateur attribue directement un mot de passe temporaire. Aucun lien ni jeton n’est généré.</p></div><button type="button" class="secondary" data-refresh-passwords>Actualiser</button></div><div data-password-requests></div>`;
+    view.innerHTML = `<div class="admin-toolbar"><div><h3>Demandes de réinitialisation</h3><p>Le super administrateur attribue directement un mot de passe temporaire. Aucun lien ni code de récupération n’est généré.</p></div><button type="button" class="secondary" data-refresh-passwords>Actualiser</button></div><div data-password-requests></div>`;
     content.append(view);
 
     navButton.addEventListener('click', () => {

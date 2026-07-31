@@ -11,15 +11,18 @@ def test_super_admin_assets_and_activation_pages_are_loaded(tmp_path):
     response = client.get("/")
     assert response.status_code == 200
     assert 'id="open-settings"' in response.text
-    units_script = '<script src="/static/units_import.js?v=0.12.3"></script>'
-    workflow_script = '<script src="/static/workflow_layout.js?v=0.12.3"></script>'
-    admin_script = '<script src="/static/admin.js?v=0.12.3"></script>'
+    units_script = '<script src="/static/units_import.js?v=0.12.4"></script>'
+    workflow_script = '<script src="/static/workflow_layout.js?v=0.12.4"></script>'
+    results_script = '<script src="/static/results_enhancements.js?v=0.12.4"></script>'
+    admin_script = '<script src="/static/admin.js?v=0.12.4"></script>'
     assert units_script in response.text
     assert workflow_script in response.text
+    assert results_script in response.text
     assert admin_script in response.text
-    assert response.text.index(units_script) < response.text.index(workflow_script) < response.text.index(admin_script)
-    assert '<link rel="stylesheet" href="/static/admin.css?v=0.12.3">' in response.text
-    assert '<link rel="stylesheet" href="/static/workflow_layout.css?v=0.12.3">' in response.text
+    assert response.text.index(units_script) < response.text.index(workflow_script) < response.text.index(results_script) < response.text.index(admin_script)
+    assert '<link rel="stylesheet" href="/static/admin.css?v=0.12.4">' in response.text
+    assert '<link rel="stylesheet" href="/static/workflow_layout.css?v=0.12.4">' in response.text
+    assert '<link rel="stylesheet" href="/static/results_enhancements.css?v=0.12.4">' in response.text
     assert "history_stability.js" not in response.text
 
     units_response = client.get("/static/units_import.js")
@@ -33,6 +36,18 @@ def test_super_admin_assets_and_activation_pages_are_loaded(tmp_path):
     workflow = workflow_response.text
     for token in ("Flotte disponible", "+ Ajouter un camion", "vehicle_fleet", "calculation-toolbar", "Client"):
         assert token in workflow
+
+    results_response = client.get("/static/results_enhancements.js")
+    assert results_response.status_code == 200
+    results = results_response.text
+    for token in (
+        "État des méthodes de calcul",
+        "Véhicules de la solution",
+        "Contenu des véhicules",
+        "captureFleetSheet",
+        "Contraintes routières poids lourd",
+    ):
+        assert token in results
 
     script_response = client.get("/static/admin.js")
     assert script_response.status_code == 200

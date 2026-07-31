@@ -23,14 +23,15 @@ def _login_super_admin(client: TestClient) -> None:
     assert response.status_code == 200
 
 
-def test_prompt_center_assets_are_injected(tmp_path: Path) -> None:
+def test_prompt_center_assets_are_injected_once_without_dom_monkeypatch(tmp_path: Path) -> None:
     client = TestClient(create_app(tmp_path))
     response = client.get("/")
     assert response.status_code == 200
-    assert "/static/prompt_center_experience.css?v=0.19.0" in response.text
-    assert "/static/prompt_center_guard.js?v=0.19.0" in response.text
-    assert "/static/prompt_center_experience.js?v=0.19.0" in response.text
-    assert response.text.index("prompt_center_guard.js") < response.text.index("prompt_center_experience.js")
+    assert response.text.count("/static/prompt_center_experience.css?v=0.19.1") == 1
+    assert response.text.count("/static/prompt_center_experience.js?v=0.19.1") == 1
+    assert "prompt_center_guard.js" not in response.text
+    assert "prompt_center_experience.css?v=0.19.0" not in response.text
+    assert "prompt_center_experience.js?v=0.19.0" not in response.text
 
 
 def test_company_prompt_center_only_exposes_company_complements(tmp_path: Path) -> None:
@@ -87,27 +88,82 @@ def test_super_admin_can_edit_core_and_all_system_prompts(
     assert profile.json()["version"] == 2
 
 
-def test_frontend_keeps_prompts_out_of_management_center() -> None:
+def test_frontend_navigation_is_guarded_and_idempotent() -> None:
     script = (STATIC / "prompt_center_experience.js").read_text(encoding="utf-8")
-    guard = (STATIC / "prompt_center_guard.js").read_text(encoding="utf-8")
     assert "Centre de gestion" in script
     assert "Nuage des optimisations" in script
     assert "Métrage linéaire" in script
     assert "openAdmin.click" not in script
     assert "data-workspace-tab=\"prompts\"" in script
-    assert "removeLegacyPromptAdminView" in script
+    assert "disableLegacyPromptAdminView" in script
     assert "Coûts" in script
-    assert "document-prompts" in guard
+    assert "button.disabled" in script
+    assert "button.hidden" in script
+    assert "historyButton.disabled" in script
+    assert "refreshButton.disabled" in script
+    assert "managementCenterReady" in script
+    assert "historyAnalyticsReady" in script
 
 
-def test_prompt_center_javascript_syntax() -> None:
+def test_frontend_does_not_install_an_unbounded_dom_observer() -> None:
+    script = (STATIC / "prompt_center_experience.js").read_text(encoding="utf-8")
+    assert "new MutationObserver" not in script
+    assert "observe(document.body" not in script
+    assert "installWithBoundedRetries" in script
+    assert "const delays = [0, 50, 200, 700, 1600]" in script
+    assert "Element.prototype.remove" not in script
+    assert not (STATIC / "prompt_center_guard.js").exists()
+
+
+def test_history_is_loaded_only_when_the_history_page_is_opened() -> None:
+    script = (STATIC / "prompt_center_experience.js").read_text(encoding="utf-8")
+    assert "if (q('#tab-history.active')) refreshHistoryAnalytics();" in script
+    assert "if (historyRequest && !force) return historyRequest;" in script
+    assert "requestAnimationFrame(() => drawScatter(analyticsRuns))" in script
+    assert "Math.min(2, Math.max(1, window.devicePixelRatio || 1))" in script
+
+
+def test_prompt_center_javascript_syntax_and_lightweight_initialization() -> None:
     node = shutil.which("node")
     if not node:
         pytest.skip("Node.js indisponible")
-    for filename in ("prompt_center_guard.js", "prompt_center_experience.js"):
-        subprocess.run(
-            [node, "--check", str(STATIC / filename)],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
+    script_path = STATIC / "prompt_center_experience.js"
+    subprocess.run(
+        [node, "--check", str(script_path)],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    runtime_probe = r"""
+const makeClassList = () => ({add(){}, remove(){}, toggle(){}});
+const makeNode = () => ({
+  dataset: {}, classList: makeClassList(), hidden: false, disabled: false,
+  textContent: '', innerHTML: '', isConnected: true, parentElement: null,
+  setAttribute(){}, append(){}, before(){}, after(){}, addEventListener(){},
+  querySelector(){ return null; }, querySelectorAll(){ return []; }
+});
+const main = makeNode();
+global.document = {
+  readyState: 'complete', body: makeNode(),
+  querySelector(selector){ return selector === 'main' ? main : null; },
+  querySelectorAll(){ return []; }, createElement(){ return makeNode(); },
+  addEventListener(){}
+};
+global.window = {
+  devicePixelRatio: 1,
+  setTimeout(callback){ callback(); return 1; },
+  addEventListener(){}, cancelAnimationFrame(){}, requestAnimationFrame(callback){ callback(); return 1; }
+};
+global.fetch = async () => ({ok: true, status: 200, json: async () => ({mode: 'user', company: {id: 'local'}})});
+global.getComputedStyle = () => ({getPropertyValue(){ return ''; }});
+require(process.argv[1]);
+process.stdout.write('initialized');
+"""
+    completed = subprocess.run(
+        [node, "-e", runtime_probe, str(script_path)],
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=2,
+    )
+    assert completed.stdout == "initialized"

@@ -5,9 +5,11 @@ from typing import Any
 
 from fastapi.templating import Jinja2Templates
 
-_STYLE = b'<link rel="stylesheet" href="/static/prompt_center_experience.css?v=0.19.0">'
-_GUARD_SCRIPT = b'<script src="/static/prompt_center_guard.js?v=0.19.0"></script>'
-_SCRIPT = b'<script src="/static/prompt_center_experience.js?v=0.19.0"></script>'
+_STYLE = b'<link rel="stylesheet" href="/static/prompt_center_experience.css?v=0.19.1">'
+_SCRIPT = b'<script src="/static/prompt_center_experience.js?v=0.19.1"></script>'
+_OLD_STYLE = b'<link rel="stylesheet" href="/static/prompt_center_experience.css?v=0.19.0">'
+_OLD_GUARD = b'<script src="/static/prompt_center_guard.js?v=0.19.0"></script>'
+_OLD_SCRIPT = b'<script src="/static/prompt_center_experience.js?v=0.19.0"></script>'
 _original_template_response: Callable[..., Any] | None = None
 
 
@@ -22,11 +24,10 @@ def install_prompt_center_experience_injection() -> None:
         response = _original_template_response(self, *args, **kwargs)
         body = getattr(response, "body", b"")
         if b'id="open-settings"' in body:
-            if _STYLE not in body:
-                body = body.replace(b"</head>", _STYLE + b"</head>")
-            for script in (_GUARD_SCRIPT, _SCRIPT):
-                body = body.replace(script, b"")
-            body = body.replace(b"</body>", _GUARD_SCRIPT + _SCRIPT + b"</body>")
+            for asset in (_OLD_STYLE, _OLD_GUARD, _OLD_SCRIPT, _STYLE, _SCRIPT):
+                body = body.replace(asset, b"")
+            body = body.replace(b"</head>", _STYLE + b"</head>")
+            body = body.replace(b"</body>", _SCRIPT + b"</body>")
             response.body = body
             response.headers["content-length"] = str(len(body))
         return response

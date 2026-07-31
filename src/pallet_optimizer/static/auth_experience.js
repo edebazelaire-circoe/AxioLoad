@@ -1,0 +1,184 @@
+(() => {
+  'use strict';
+
+  const q = (selector, root = document) => root.querySelector(selector);
+  const qa = (selector, root = document) => [...root.querySelectorAll(selector)];
+
+  function setLabelText(label, text) {
+    if (!label) return;
+    const node = [...label.childNodes].find(child => child.nodeType === Node.TEXT_NODE);
+    if (node) node.textContent = text;
+  }
+
+  function installLoginModes() {
+    const form = q('#login-form');
+    const message = q('#login-message');
+    if (!form || !message || q('.auth-account-switch')) return false;
+
+    const tenantInput = q('[name="tenant_id"]', form);
+    const emailInput = q('[name="email"]', form);
+    const passwordInput = q('[name="password"]', form);
+    const tenantLabel = tenantInput?.closest('label');
+    const emailLabel = emailInput?.closest('label');
+    const eyebrow = q('.login-shell .eyebrow');
+    const title = q('.login-shell h1');
+    const intro = q('.login-shell h1 + p');
+    const help = q('.login-help');
+    if (!tenantInput || !emailInput || !passwordInput || !tenantLabel || !emailLabel) return false;
+
+    const switcher = document.createElement('div');
+    switcher.className = 'auth-account-switch';
+    switcher.setAttribute('role', 'tablist');
+    switcher.innerHTML = `
+      <button type="button" role="tab" data-auth-mode="user">Compte utilisateur</button>
+      <button type="button" role="tab" data-auth-mode="super_admin">Super administrateur</button>`;
+    form.before(switcher);
+
+    const adminNote = document.createElement('div');
+    adminNote.className = 'auth-admin-note';
+    adminNote.textContent = 'Utilisez l’adresse e-mail ou le pseudo configuré pour le compte super administrateur.';
+    form.before(adminNote);
+
+    let mode = new URLSearchParams(location.search).get('mode') === 'super_admin' ? 'super_admin' : 'user';
+
+    const applyMode = nextMode => {
+      mode = nextMode;
+      qa('[data-auth-mode]', switcher).forEach(button => {
+        const active = button.dataset.authMode === mode;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-selected', String(active));
+      });
+      const admin = mode === 'super_admin';
+      tenantLabel.hidden = admin;
+      tenantInput.required = !admin;
+      emailInput.type = admin ? 'text' : 'email';
+      emailInput.autocomplete = 'username';
+      emailInput.placeholder = admin ? 'Adresse e-mail ou pseudo' : '';
+      setLabelText(emailLabel, admin ? 'Adresse e-mail ou pseudo' : 'Adresse e-mail');
+      adminNote.classList.toggle('visible', admin);
+      if (eyebrow) eyebrow.textContent = admin ? 'Administration AxioLoad' : 'Espace client';
+      if (title) title.textContent = admin ? 'Connexion super administrateur' : 'Connexion';
+      if (intro) intro.textContent = admin
+        ? 'Connectez-vous pour gérer les entreprises, les utilisateurs et les paramètres globaux.'
+        : 'Utilisez l’identifiant de votre entreprise reçu lors de l’invitation.';
+      if (help) help.hidden = admin;
+      emailInput.focus();
+    };
+
+    qa('[data-auth-mode]', switcher).forEach(button => {
+      button.addEventListener('click', () => applyMode(button.dataset.authMode));
+    });
+    applyMode(mode);
+
+    form.addEventListener('submit', async event => {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      message.classList.add('hidden');
+      const button = q('button[type="submit"]', form);
+      button.disabled = true;
+      try {
+        const admin = mode === 'super_admin';
+        const endpoint = admin ? '/api/auth/super-admin-login' : '/api/auth/login';
+        const payload = admin
+          ? {identifier: emailInput.value.trim(), password: passwordInput.value}
+          : {tenant_id: tenantInput.value.trim(), email: emailInput.value.trim(), password: passwordInput.value};
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(payload),
+        });
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(body.detail || 'Connexion impossible');
+        sessionStorage.removeItem('axioload.admin.token');
+        location.href = '/';
+      } catch (error) {
+        message.textContent = error.message || String(error);
+        message.className = 'message error';
+        message.classList.remove('hidden');
+      } finally {
+        button.disabled = false;
+      }
+    }, {capture: true});
+    return true;
+  }
+
+  function removeDirectAdminAssistanceBanner() {
+    qa('.admin-assistance-banner').forEach(banner => {
+      if (banner.textContent.includes('Entreprise locale')) banner.remove();
+    });
+  }
+
+  function logoutButton(context) {
+    const topbar = q('.topbar');
+    if (!topbar || q('#site-logout')) return;
+    const button = document.createElement('button');
+    button.id = 'site-logout';
+    button.type = 'button';
+    button.className = 'settings-access auth-logout';
+    button.setAttribute('aria-label', 'Se déconnecter');
+    button.innerHTML = `
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 5H5v14h5M14 8l4 4-4 4M8 12h10"/></svg>
+      <span>Se déconnecter</span>`;
+    topbar.append(button);
+    button.addEventListener('click', async () => {
+      button.disabled = true;
+      try {
+        if (context.mode === 'assistance' && context.company?.id !== 'local') {
+          await fetch('/api/admin/assistance/exit', {method: 'POST', credentials: 'same-origin'}).catch(() => null);
+        }
+        await fetch('/api/auth/logout', {method: 'POST', credentials: 'same-origin'});
+      } finally {
+        sessionStorage.removeItem('axioload.admin.token');
+        localStorage.removeItem('axioload.superadmin.active');
+        location.href = '/login';
+      }
+    });
+  }
+
+  async function installApplicationSession() {
+    if (!q('#open-settings')) return false;
+    let context;
+    try {
+      const response = await fetch('/api/company/context', {credentials: 'same-origin'});
+      context = response.ok ? await response.json() : null;
+    } catch (_) {
+      context = null;
+    }
+    if (!context) return false;
+
+    const directAdmin = context.mode === 'assistance' && context.company?.id === 'local'
+      && context.actor && context.actor !== 'Utilisateur local';
+    const assistance = context.mode === 'assistance' && context.company?.id !== 'local';
+    const authenticatedUser = Boolean(context.user);
+    const authenticated = directAdmin || assistance || authenticatedUser;
+
+    if (directAdmin) {
+      localStorage.setItem('axioload.superadmin.active', '1');
+      removeDirectAdminAssistanceBanner();
+      const observer = new MutationObserver(removeDirectAdminAssistanceBanner);
+      observer.observe(document.body, {childList: true, subtree: true});
+      setTimeout(() => observer.disconnect(), 5000);
+    } else if (!assistance) {
+      localStorage.removeItem('axioload.superadmin.active');
+    }
+
+    if (authenticated) logoutButton(context);
+
+    document.addEventListener('click', event => {
+      const adminButton = event.target.closest?.('#open-admin');
+      if (!adminButton || directAdmin || assistance) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      location.href = '/login?mode=super_admin';
+    }, true);
+    return true;
+  }
+
+  const init = () => {
+    installLoginModes();
+    installApplicationSession();
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, {once: true});
+  else init();
+})();

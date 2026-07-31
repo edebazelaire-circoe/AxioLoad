@@ -35,10 +35,17 @@ def test_super_admin_assets_and_activation_pages_are_loaded(tmp_path):
     guard_response = client.get("/static/history_stability.js")
     assert guard_response.status_code == 200
     guard = guard_response.text
-    assert "pathname === '/api/history'" in guard
-    assert "cachedResponse.clone()" in guard
-    assert "if (!inFlight)" in guard
-    assert "mutatesHistory" in guard
+    for token in (
+        "pathname === '/api/history'",
+        "existing.response.clone()",
+        "inFlight.has(cacheKey)",
+        "mutatesHistory",
+        "grantRefresh('user-action')",
+        "MAX_NETWORK_REQUESTS = 3",
+        "circuitIsOpen()",
+        "sessionStorage.removeItem('axioload.admin.token')",
+    ):
+        assert token in guard
 
     assert client.get("/activate").status_code == 200
     assert client.get("/login").status_code == 200

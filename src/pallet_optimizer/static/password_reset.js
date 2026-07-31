@@ -13,7 +13,7 @@
     const body = response.status === 204 ? null : await response.json().catch(() => ({}));
     if (response.status === 401) {
       location.href = '/login?mode=super_admin';
-      throw new Error('Connexion super administrateur requise');
+      throw new Error('Connexion au Centre de gestion requise');
     }
     if (!response.ok) throw new Error(body?.detail || `Erreur ${response.status}`);
     return body;
@@ -40,7 +40,7 @@
 
   async function resetUser(userId, label = 'cet utilisateur') {
     const confirmed = confirm(`Réinitialiser le mot de passe de ${label} ? Toutes ses sessions en cours seront fermées.`);
-    if (!confirmed) return;
+    if (!confirmed) return false;
     const result = await api(`/api/admin/users/${encodeURIComponent(userId)}/password-reset`, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
@@ -50,16 +50,24 @@
       <p>Transmettez ce mot de passe à l’utilisateur par votre canal habituel. Il ne sera plus affiché après fermeture.</p>
       <div class="password-secret">${escapeHtml(result.temporary_password)}</div>
       <div class="admin-actions"><button type="button" class="primary" data-copy-password>Copier</button></div>`);
-    q('[data-copy-password]', overlay)?.addEventListener('click', async () => {
-      await navigator.clipboard.writeText(result.temporary_password);
-      q('[data-copy-password]', overlay).textContent = 'Copié';
+    q('[data-copy-password]', overlay)?.addEventListener('click', async event => {
+      const button = event.currentTarget;
+      if (button.disabled) return;
+      button.disabled = true;
+      try {
+        await navigator.clipboard.writeText(result.temporary_password);
+        button.textContent = 'Copié';
+      } finally {
+        button.disabled = false;
+      }
     });
+    return true;
   }
 
   function installChangePasswordForm() {
     const form = q('#change-password-form');
     const message = q('#change-password-message');
-    if (!form || !message || form.dataset.ready) return;
+    if (!form || !message || form.dataset.ready) return false;
     form.dataset.ready = '1';
     form.addEventListener('submit', async event => {
       event.preventDefault();
@@ -71,6 +79,7 @@
         return;
       }
       const submit = q('[type="submit"]', form);
+      if (!submit || submit.disabled) return;
       submit.disabled = true;
       try {
         await api('/api/auth/change-password', {
@@ -90,9 +99,12 @@
         submit.disabled = false;
       }
     });
+    return true;
   }
 
   async function loadRequests(target) {
+    if (!target || target.dataset.loading === '1') return;
+    target.dataset.loading = '1';
     target.innerHTML = '<div class="admin-empty">Chargement…</div>';
     try {
       const result = await api('/api/admin/password-reset-requests?status=pending');
@@ -103,15 +115,21 @@
           <button type="button" class="primary password-reset-button" data-reset-request="${escapeHtml(item.user_id)}" data-reset-label="${escapeHtml(item.user_name || item.email)}">Réinitialiser</button>
         </article>`).join('')}</div>` : '<div class="admin-empty">Aucune demande en attente.</div>';
       qa('[data-reset-request]', target).forEach(button => button.addEventListener('click', async () => {
+        if (button.disabled) return;
+        button.disabled = true;
         try {
-          await resetUser(button.dataset.resetRequest, button.dataset.resetLabel);
-          await loadRequests(target);
+          const changed = await resetUser(button.dataset.resetRequest, button.dataset.resetLabel);
+          if (changed) await loadRequests(target);
         } catch (error) {
           alert(error.message || String(error));
+        } finally {
+          button.disabled = false;
         }
       }));
     } catch (error) {
       target.innerHTML = `<div class="admin-notice warning">${escapeHtml(error.message || String(error))}</div>`;
+    } finally {
+      target.dataset.loading = '0';
     }
   }
 
@@ -119,7 +137,8 @@
     const panel = q('#tab-admin');
     const nav = q('.admin-nav', panel || document);
     const content = q('.admin-content', panel || document);
-    if (!panel || !nav || !content || q('[data-admin-view="passwords"]', nav)) return false;
+    if (!panel || !nav || !content) return false;
+    if (q('[data-admin-view="passwords"]', nav)) return true;
 
     const navButton = document.createElement('button');
     navButton.type = 'button';
@@ -131,21 +150,25 @@
     const view = document.createElement('section');
     view.id = 'admin-view-passwords';
     view.className = 'admin-view';
-    view.innerHTML = `<div class="admin-toolbar"><div><h3>Demandes de réinitialisation</h3><p>Le super administrateur attribue directement un mot de passe temporaire. Aucun lien ni code de récupération n’est généré.</p></div><button type="button" class="secondary" data-refresh-passwords>Actualiser</button></div><div data-password-requests></div>`;
+    view.innerHTML = `<div class="admin-toolbar"><div><h3>Demandes de réinitialisation</h3><p>Le Centre de gestion attribue directement un mot de passe temporaire. Aucun lien ni code de récupération n’est généré.</p></div><button type="button" class="secondary" data-refresh-passwords>Actualiser</button></div><div data-password-requests></div>`;
     content.append(view);
 
     navButton.addEventListener('click', () => {
+      if (navButton.disabled) return;
       qa('[data-admin-view]', nav).forEach(item => item.classList.toggle('active', item === navButton));
       qa('.admin-view', content).forEach(item => item.classList.toggle('active', item === view));
       loadRequests(q('[data-password-requests]', view));
     });
-    q('[data-refresh-passwords]', view)?.addEventListener('click', () => loadRequests(q('[data-password-requests]', view)));
+    q('[data-refresh-passwords]', view)?.addEventListener('click', event => {
+      if (event.currentTarget.disabled) return;
+      loadRequests(q('[data-password-requests]', view));
+    });
     return true;
   }
 
   function decorateUserRows() {
     const target = q('#admin-company-users');
-    if (!target) return;
+    if (!target) return false;
     qa('tr[data-user]', target).forEach(row => {
       if (q('[data-direct-password-reset]', row)) return;
       const statusText = row.textContent || '';
@@ -160,26 +183,42 @@
       button.textContent = 'Réinitialiser le mot de passe';
       actions.append(button);
       button.addEventListener('click', async () => {
+        if (button.disabled) return;
+        button.disabled = true;
         const label = q('strong', row)?.textContent || 'cet utilisateur';
         try { await resetUser(row.dataset.user, label); }
         catch (error) { alert(error.message || String(error)); }
+        finally { button.disabled = false; }
       });
     });
+    return true;
+  }
+
+  function installUserRowsObserver() {
+    const target = q('#admin-company-users');
+    if (!target || target.dataset.passwordObserverReady === '1') return Boolean(target);
+    target.dataset.passwordObserverReady = '1';
+    let scheduled = false;
+    new MutationObserver(() => {
+      if (scheduled) return;
+      scheduled = true;
+      requestAnimationFrame(() => {
+        scheduled = false;
+        decorateUserRows();
+      });
+    }).observe(target, {childList: true, subtree: true});
+    decorateUserRows();
+    return true;
   }
 
   function installAdminFeatures() {
-    const observer = new MutationObserver(() => {
-      installAdminPasswordView();
-      decorateUserRows();
-    });
-    observer.observe(document.body, {childList: true, subtree: true});
     installAdminPasswordView();
-    decorateUserRows();
+    installUserRowsObserver();
   }
 
   const init = () => {
     installChangePasswordForm();
-    installAdminFeatures();
+    [0, 50, 200, 700, 1600].forEach(delay => window.setTimeout(installAdminFeatures, delay));
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, {once: true});
   else init();

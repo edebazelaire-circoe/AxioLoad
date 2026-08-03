@@ -10,7 +10,7 @@ from pallet_optimizer.api import create_app
 def _login_super_admin(client: TestClient) -> None:
     response = client.post(
         "/api/auth/super-admin-login",
-        json={"identifier": "superadmn", "password": "1234"},
+        json={"identifier": "superadmn", "password": "0123456789"},
     )
     assert response.status_code == 200, response.text
 

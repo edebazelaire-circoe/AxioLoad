@@ -238,14 +238,10 @@
         .then(response => response.ok ? response.json() : null)
         .catch(() => null);
     }
-    await contextPromise;
+    const context = await contextPromise;
     const settings = q('#open-settings');
-    if (settings) {
-      settings.hidden = false;
-      settings.classList.remove('hidden');
-      settings.setAttribute('aria-hidden', 'false');
-      settings.tabIndex = 0;
-    }
+    const directManagement = context?.mode === 'assistance' && context?.company?.id === 'local';
+    if (settings) settings.classList.toggle('hidden', Boolean(directManagement));
   }
 
   function ensureHistoryAnalytics() {

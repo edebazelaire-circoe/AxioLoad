@@ -208,9 +208,11 @@
     const assistance = context.mode === 'assistance' && context.company?.id !== 'local';
     const authenticatedUser = Boolean(context.user);
     const authenticated = directAdmin || assistance || authenticatedUser;
+    const managementAllowed = directAdmin || assistance;
 
+    document.body.dataset.managementAccess = String(managementAllowed);
     setControlVisibility(q('#open-settings'), true);
-    setControlVisibility(q('#open-admin'), directAdmin || assistance);
+    setControlVisibility(q('#open-admin'), managementAllowed);
 
     if (directAdmin) {
       localStorage.setItem('axioload.superadmin.active', '1');

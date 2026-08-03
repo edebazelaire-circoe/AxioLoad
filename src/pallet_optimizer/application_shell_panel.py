@@ -7,7 +7,7 @@ from fastapi.templating import Jinja2Templates
 
 _STYLE = b'<link rel="stylesheet" href="/static/application_shell.css?v=0.19.5">'
 _SCRIPT = b'<script src="/static/application_shell.js?v=0.19.5"></script>'
-_LOGOUT_BUTTON = b'''<button id="site-logout" class="settings-access auth-logout" type="button" aria-label="Se d\xc3\xa9connecter">
+_LOGOUT_BUTTON = b'''<button id="site-logout" class="settings-access auth-logout" type="button" data-shell-control="logout" aria-label="Se d\xc3\xa9connecter">
   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 5H5v14h5M14 8l4 4-4 4M8 12h10"/></svg>
   <span>Se d\xc3\xa9connecter</span>
 </button>'''

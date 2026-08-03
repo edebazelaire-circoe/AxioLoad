@@ -21,6 +21,7 @@ def build_default_module_registry() -> ModuleRegistry:
                     "/change-password",
                     "/api/auth",
                     "/api/company",
+                    "/api/platform",
                 ),
                 backend_packages=(
                     "admin_service",

@@ -207,10 +207,14 @@ class ApplicationContainer:
             return self
         validate_runtime_composition(self.steps, self.module_registry)
         self._composing = True
+        executed = set(self._executed_steps)
         try:
             for step in self.steps:
+                if step.name in executed:
+                    continue
                 step.resolve()()
                 self._executed_steps.append(step.name)
+                executed.add(step.name)
             self._composed = True
         finally:
             self._composing = False

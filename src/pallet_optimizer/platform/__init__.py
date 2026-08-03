@@ -14,7 +14,6 @@ from .composition import (
     validate_runtime_composition,
 )
 from .modules import MigrationState, ModuleDescriptor, ModuleKind, ModuleRegistry
-from .shell import build_shell_capabilities
 
 __all__ = [
     "ApplicationContainer",
@@ -25,7 +24,6 @@ __all__ = [
     "ModuleRegistry",
     "RuntimeCompositionStep",
     "build_default_module_registry",
-    "build_shell_capabilities",
     "compose_runtime",
     "get_application_container",
     "validate_runtime_composition",

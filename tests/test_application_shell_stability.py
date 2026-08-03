@@ -23,11 +23,13 @@ def test_shell_and_permanent_logout_are_injected_last(tmp_path: Path) -> None:
 
     assert html.count('id="site-logout"') == 1
     assert 'data-shell-control="logout"' in html
-    assert html.count('/static/application_shell.css?v=0.19.5') == 1
-    assert html.count('/static/application_shell.js?v=0.19.5') == 1
-    assert html.index('id="site-logout"') < html.index('/static/application_shell.js?v=0.19.5')
-    assert html.rfind('/static/application_shell.js?v=0.19.5') > html.rfind('/static/prompt_center_experience.js')
-    assert html.rfind('/static/application_shell.js?v=0.19.5') > html.rfind('/static/admin.js')
+    assert html.count('id="axioload-permission-bootstrap"') == 1
+    assert html.count('/static/application_shell.css?v=0.19.6') == 1
+    assert html.count('/static/application_shell.js?v=0.19.6') == 1
+    assert html.index('id="axioload-permission-bootstrap"') < html.index('/static/app.js')
+    assert html.index('id="site-logout"') < html.index('/static/application_shell.js?v=0.19.6')
+    assert html.rfind('/static/application_shell.js?v=0.19.6') > html.rfind('/static/prompt_center_experience.js')
+    assert html.rfind('/static/application_shell.js?v=0.19.6') > html.rfind('/static/admin.js')
 
 
 def test_shell_javascript_is_syntactically_valid() -> None:
@@ -103,6 +105,9 @@ def test_shell_avoids_global_polling_and_event_blocking() -> None:
     assert "stopPropagation" not in source
     assert "observe(document.body" not in source
     assert "MutationObserver(syncPermissions)" in source
-    assert "attributeFilter: ['hidden']" in source
+    assert "attributeFilter: ['hidden', 'disabled']" in source
+    assert "'aria-hidden', 'class'" not in source
     assert "application-shell-legacy" in source
     assert 'data-shell-control="logout"' in panel
+    assert "window.AxioLoadContextPromise" in panel
+    assert "X-AxioLoad-Suppressed" in panel

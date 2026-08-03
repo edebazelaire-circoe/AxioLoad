@@ -297,12 +297,24 @@ def _exercise_rapid_clicks(page: Page) -> None:
 
 
 def _logout_and_check(page: Page, base_url: str) -> None:
+    context = page.context
+    assert any(cookie["name"] == "axioload_session" for cookie in context.cookies())
+
     page.locator("#site-logout").click()
     page.wait_for_url(f"{base_url}/login**", timeout=5000)
     expect(page.locator("#login-form")).to_be_visible()
-    context = page.context
+
+    assert not any(cookie["name"] == "axioload_session" for cookie in context.cookies())
+
     response = context.request.get(f"{base_url}/api/company/context")
-    assert response.status in {401, 403}, response.text()
+    assert response.status == 200, response.text()
+    anonymous = response.json()
+    assert anonymous["mode"] == "user"
+    assert anonymous["user"] is None
+    assert anonymous["actor"] == "Utilisateur local"
+
+    admin = context.request.get(f"{base_url}/api/admin/bootstrap")
+    assert admin.status in {401, 403}, admin.text()
 
 
 def test_real_browser_user_buttons_dom_and_logout(browser: Browser, live_server: str) -> None:

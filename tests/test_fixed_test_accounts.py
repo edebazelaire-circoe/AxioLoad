@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import shutil
+import subprocess
 import uuid
+from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 
 from pallet_optimizer.admin_service import SUPER_ADMIN_USER_ID
@@ -10,6 +14,8 @@ from pallet_optimizer.fixed_test_accounts import TEST_USER_ID
 from pallet_optimizer.persistence import _connect, _hash_secret, utc_now
 
 
+ROOT = Path(__file__).resolve().parents[1]
+STATIC = ROOT / "src" / "pallet_optimizer" / "static"
 SUPER_ADMIN_EMAIL = "b.olivier@circoe.com"
 TEST_USER_EMAIL = "olivierbaptiste6@gmail.com"
 TEST_PASSWORD = "0123456789"
@@ -42,7 +48,7 @@ def test_fixed_mode_keeps_exactly_two_active_accounts(tmp_path, monkeypatch) -> 
     assert invitation_count == 0
 
 
-def test_both_fixed_accounts_can_login_without_activation_token(tmp_path, monkeypatch) -> None:
+def test_both_fixed_accounts_can_login_without_activation_link(tmp_path, monkeypatch) -> None:
     _enable_fixed_accounts(monkeypatch)
     client = TestClient(create_app(tmp_path))
 
@@ -133,3 +139,42 @@ def test_fixed_mode_blocks_creation_of_a_third_account(tmp_path, monkeypatch) ->
 
     with _connect(client.app.state.registry.registry_path) as db:
         assert db.execute("SELECT COUNT(*) FROM company_users").fetchone()[0] == 2
+
+
+def test_fixed_mode_hides_invitation_actions_without_observer(tmp_path, monkeypatch) -> None:
+    _enable_fixed_accounts(monkeypatch)
+    client = TestClient(create_app(tmp_path))
+    page = client.get("/")
+    assert page.status_code == 200
+    assert "/static/fixed_test_accounts_ui.js?v=0.19.2" in page.text
+
+    script = (STATIC / "fixed_test_accounts_ui.js").read_text(encoding="utf-8")
+    assert "#admin-create-company" in script
+    assert "#admin-add-user" in script
+    assert "[data-resend]" in script
+    assert "MutationObserver" not in script
+
+    node = shutil.which("node")
+    if node:
+        subprocess.run(
+            [node, "--check", str(STATIC / "fixed_test_accounts_ui.js")],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+
+
+def test_fixed_mode_is_not_injected_when_disabled(tmp_path, monkeypatch) -> None:
+    monkeypatch.setenv("PLO_TEST_ACCOUNTS_ONLY", "0")
+    client = TestClient(create_app(tmp_path))
+    assert "/static/fixed_test_accounts_ui.js" not in client.get("/").text
+
+
+def test_docker_compose_contains_only_the_requested_test_credentials() -> None:
+    compose = (ROOT / "docker-compose.yml").read_text(encoding="utf-8")
+    assert 'PLO_TEST_ACCOUNTS_ONLY: "1"' in compose
+    assert "PLO_SUPER_ADMIN_EMAIL: b.olivier@circoe.com" in compose
+    assert 'PLO_SUPER_ADMIN_PASSWORD: "0123456789"' in compose
+    assert "PLO_TEST_USER_EMAIL: olivierbaptiste6@gmail.com" in compose
+    assert 'PLO_TEST_USER_PASSWORD: "0123456789"' in compose
+    assert "1234" not in compose

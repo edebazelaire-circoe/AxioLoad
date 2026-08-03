@@ -12,6 +12,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from .admin_api import register_admin_routes
+from .admin_base import PERMISSION_CATALOG
 from .admin_service import AdminRepository, WebContext
 from .catalog import default_vehicle_catalog, vehicle_to_payload
 from .domain import DomainError, Severity, to_primitive
@@ -48,6 +49,9 @@ def create_app(data_dir: str | Path | None = None) -> FastAPI:
     module_registry = build_default_module_registry()
 
     app = FastAPI(title="AxioLoad", version=APP_VERSION)
+    # Some legacy route installers still mutate app.version during FastAPI.__init__.
+    # The composition root remains the source of truth until those installers are removed.
+    app.version = APP_VERSION
     app.state.registry = registry
     app.state.repository = repository
     app.state.service = service
@@ -91,14 +95,10 @@ def create_app(data_dir: str | Path | None = None) -> FastAPI:
     def platform_modules(
         context: WebContext = Depends(read_context),
     ) -> dict[str, Any]:
-        if context.is_super_admin:
-            company = admin.get_company(context.tenant_id)
-            permissions = {key: True for key in company["permissions"]}
+        if context.is_super_admin or context.actor_id == "local-user":
+            permissions = {entry["key"]: True for entry in PERMISSION_CATALOG}
         else:
-            permissions = admin.effective_permissions(
-                context.tenant_id,
-                None if context.actor_id == "local-user" else context.actor_id,
-            )
+            permissions = admin.effective_permissions(context.tenant_id, context.actor_id)
         return {
             "version": APP_VERSION,
             "modules": module_registry.manifest(

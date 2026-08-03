@@ -11,9 +11,11 @@ from pallet_optimizer.domain import AxleSpec, VehicleVersion
 @pytest.fixture(autouse=True)
 def legacy_super_admin_test_compatibility(request, monkeypatch):
     """Preserve only the historical tests that predate authenticated sessions."""
+    monkeypatch.setenv("PLO_TEST_ACCOUNTS_ONLY", "0")
     authenticated_test_modules = {
         "test_super_admin_auth.py",
         "test_company_login_and_password_reset.py",
+        "test_fixed_test_accounts.py",
     }
     if request.node.path.name in authenticated_test_modules:
         return

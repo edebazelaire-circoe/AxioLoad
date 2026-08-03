@@ -6,6 +6,7 @@ from pathlib import Path
 from playwright.sync_api import Browser
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+pytest_plugins = ("test_browser_navigation_e2e",)
 
 from test_browser_navigation_e2e import (  # noqa: E402
     _exercise_all_navigation_controls,

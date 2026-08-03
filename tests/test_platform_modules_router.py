@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
 
 from pallet_optimizer.api import create_app
@@ -12,23 +11,15 @@ from pallet_optimizer.version import APP_VERSION
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def _platform_routes(app) -> list[APIRoute]:
-    return [
-        route
-        for route in app.routes
-        if isinstance(route, APIRoute) and route.path == "/api/platform/modules"
-    ]
-
-
 def test_platform_modules_is_registered_once_by_an_api_router(tmp_path) -> None:
-    app = create_app(tmp_path)
-    routes = _platform_routes(app)
+    schema = create_app(tmp_path).openapi()
+    matching_paths = [path for path in schema["paths"] if path == "/api/platform/modules"]
 
-    assert len(routes) == 1
-    route = routes[0]
-    assert route.name == "platform_modules"
-    assert route.methods == {"GET"}
-    assert "platform" in route.tags
+    assert matching_paths == ["/api/platform/modules"]
+    operation = schema["paths"]["/api/platform/modules"]
+    assert set(operation) == {"get"}
+    assert operation["get"]["operationId"].startswith("platform_modules")
+    assert "platform" in operation["get"]["tags"]
 
 
 def test_platform_modules_keeps_its_http_contract(tmp_path) -> None:

@@ -25,13 +25,22 @@ STATIC = PACKAGE / "static"
 
 
 def _route_inventory(app) -> tuple[tuple[str, tuple[str, ...]], ...]:
+    """Build a stable inventory from OpenAPI, compatible with nested APIRouters."""
+
     return tuple(
         sorted(
             (
-                route.path,
-                tuple(sorted(getattr(route, "methods", set()))),
+                path,
+                tuple(
+                    sorted(
+                        method.upper()
+                        for method in operations
+                        if method.lower()
+                        in {"get", "post", "put", "patch", "delete", "options", "head", "trace"}
+                    )
+                ),
             )
-            for route in app.routes
+            for path, operations in app.openapi()["paths"].items()
         )
     )
 

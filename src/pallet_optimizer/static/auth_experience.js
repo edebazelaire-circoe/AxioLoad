@@ -184,6 +184,23 @@
     return true;
   }
 
+  function applyRoleButtonVisibility({directAdmin, assistance, authenticatedUser}) {
+    const settingsButton = q('#open-settings');
+    const adminButton = q('#open-admin');
+
+    if (directAdmin && settingsButton) {
+      settingsButton.hidden = false;
+      settingsButton.disabled = false;
+      settingsButton.removeAttribute('aria-hidden');
+    }
+
+    if (authenticatedUser && !directAdmin && !assistance && adminButton) {
+      adminButton.hidden = true;
+      adminButton.disabled = true;
+      adminButton.setAttribute('aria-hidden', 'true');
+    }
+  }
+
   async function installApplicationSession() {
     if (!q('#open-settings')) return false;
     let context;
@@ -200,6 +217,11 @@
     const assistance = context.mode === 'assistance' && context.company?.id !== 'local';
     const authenticatedUser = Boolean(context.user);
     const authenticated = directAdmin || assistance || authenticatedUser;
+    const roleState = {directAdmin, assistance, authenticatedUser};
+
+    [0, 50, 200, 700, 1600].forEach(delay => {
+      window.setTimeout(() => applyRoleButtonVisibility(roleState), delay);
+    });
 
     if (directAdmin) {
       localStorage.setItem('axioload.superadmin.active', '1');

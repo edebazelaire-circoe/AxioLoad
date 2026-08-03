@@ -103,6 +103,7 @@ def test_shell_avoids_global_polling_and_event_blocking() -> None:
     assert "stopPropagation" not in source
     assert "observe(document.body" not in source
     assert "MutationObserver(syncPermissions)" in source
-    assert "attributeFilter: ['hidden']" in source
+    assert "attributeFilter: ['hidden', 'disabled']" in source
+    assert "'aria-hidden', 'class'" not in source
     assert "application-shell-legacy" in source
     assert 'data-shell-control="logout"' in panel

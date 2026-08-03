@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 
 from pallet_optimizer import document_control as dc
 from pallet_optimizer.api import create_app
+from pallet_optimizer.version import APP_VERSION
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -27,8 +28,8 @@ def test_prompt_center_assets_are_injected_once_without_dom_monkeypatch(tmp_path
     client = TestClient(create_app(tmp_path))
     response = client.get("/")
     assert response.status_code == 200
-    assert response.text.count("/static/prompt_center_experience.css?v=0.19.1") == 1
-    assert response.text.count("/static/prompt_center_experience.js?v=0.19.1") == 1
+    assert response.text.count(f"/static/prompt_center_experience.css?v={APP_VERSION}") == 1
+    assert response.text.count(f"/static/prompt_center_experience.js?v={APP_VERSION}") == 1
     assert "prompt_center_guard.js" not in response.text
     assert "prompt_center_experience.css?v=0.19.0" not in response.text
     assert "prompt_center_experience.js?v=0.19.0" not in response.text
@@ -103,6 +104,8 @@ def test_frontend_navigation_is_guarded_and_idempotent() -> None:
     assert "refreshButton.disabled" in script
     assert "managementCenterReady" in script
     assert "historyAnalyticsReady" in script
+    assert "settings.classList.remove('hidden')" in script
+    assert "settings.classList.toggle('hidden', Boolean(directManagement))" not in script
 
 
 def test_frontend_does_not_install_an_unbounded_dom_observer() -> None:

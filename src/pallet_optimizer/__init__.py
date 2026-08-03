@@ -4,13 +4,10 @@ from fastapi import FastAPI
 
 from .document_control_bootstrap import install_document_control_permissions, install_document_control_routes
 
-# Permissions must be extended before admin_service imports the catalog snapshots.
 install_document_control_permissions()
 
 from .document_control_permissions import install_document_control_permission_migration
 
-# Existing companies created before the document-control module need the new
-# permission rows before AdminRepository resolves their effective rights.
 install_document_control_permission_migration()
 
 from . import prompt_center_system as _prompt_center_system
@@ -32,7 +29,7 @@ from .prompt_center_system import install_prompt_center_system
 from .scaling import install_unlimited_item_count
 from .super_admin_routes import install_super_admin_routes
 
-__version__ = "0.19.5"
+__version__ = "0.19.6"
 
 install_super_admin_routes()
 install_password_reset_system()
@@ -52,5 +49,4 @@ install_document_control_routes()
 install_document_control_system()
 _prompt_center_system._original_fastapi_init = FastAPI.__init__
 install_prompt_center_system()
-# Installed last so it receives the fully composed HTML and owns navigation/session controls.
 install_application_shell_injection()

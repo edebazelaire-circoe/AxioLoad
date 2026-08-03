@@ -17,7 +17,7 @@ Objectif : décrire les modules sans modifier les fonctions visibles.
 
 Objectif : remplacer le démarrage implicite par une composition explicite.
 
-Réalisé dans la première PR de cette étape :
+Réalisé :
 
 - création d’un `ApplicationContainer` léger ;
 - inventaire ordonné et versionné des installateurs historiques ;
@@ -25,11 +25,13 @@ Réalisé dans la première PR de cette étape :
 - composition idempotente et reprenable en cas d’échec partiel ;
 - conservation stricte des URL existantes ;
 - tests comparant l’inventaire des routes avant et après recomposition ;
-- retrait des appels `install_*` dispersés dans le fichier racine du paquet.
+- retrait des appels `install_*` dispersés dans le fichier racine du paquet ;
+- conversion de `/api/platform/modules` en premier `APIRouter` explicite ;
+- contrôle automatique de la méthode HTTP, de l’URL, du schéma OpenAPI et de la réponse JSON.
 
 À poursuivre dans les PR suivantes :
 
-- conversion d’un premier ensemble de routes en `APIRouter` explicite ;
+- conversion progressive des autres routes transverses en `APIRouter` ;
 - suppression progressive des modifications globales de `FastAPI.__init__` ;
 - rattachement du conteneur à l’instance FastAPI ;
 - remplacement des injections de templates par un shell de composants déclaré.

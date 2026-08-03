@@ -40,23 +40,18 @@ def _remove_other_account_references(db: Any) -> None:
     placeholders = "?,?"
 
     if _table_exists(db, "password_reset_requests"):
-        db.execute(
-            f"DELETE FROM password_reset_requests WHERE user_id NOT IN ({placeholders})",
-            allowed,
-        )
+        db.execute("DELETE FROM password_reset_requests")
     if _table_exists(db, "invitations"):
         # Fixed test accounts are active immediately. No activation link is retained.
         db.execute("DELETE FROM invitations")
     if _table_exists(db, "user_permissions"):
-        db.execute(
-            f"DELETE FROM user_permissions WHERE user_id NOT IN ({placeholders})",
-            allowed,
-        )
+        db.execute("DELETE FROM user_permissions")
     if _table_exists(db, "user_sessions"):
-        db.execute(
-            f"DELETE FROM user_sessions WHERE user_id NOT IN ({placeholders})",
-            allowed,
-        )
+        # A restart requires a fresh login with the fixed credentials. No former
+        # browser session survives the account reset.
+        db.execute("DELETE FROM user_sessions")
+    if _table_exists(db, "assistance_sessions"):
+        db.execute("DELETE FROM assistance_sessions")
     if _table_exists(db, "activity_events"):
         db.execute(
             f"DELETE FROM activity_events WHERE user_id IS NOT NULL AND user_id NOT IN ({placeholders})",
@@ -123,11 +118,6 @@ def _upsert_test_user(admin: AdminRepository) -> None:
                 parameters,
             )
 
-        # The test user inherits the complete permission set of the local company.
-        if _table_exists(db, "user_permissions"):
-            db.execute("DELETE FROM user_permissions WHERE user_id=?", (TEST_USER_ID,))
-        if _table_exists(db, "password_reset_requests"):
-            db.execute("DELETE FROM password_reset_requests")
         db.execute(
             "UPDATE tenants SET status='active',active=1,updated_at=? WHERE id='local'",
             (now,),

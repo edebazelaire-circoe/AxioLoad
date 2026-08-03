@@ -108,7 +108,7 @@ def build_default_module_registry() -> ModuleRegistry:
                 order=40,
                 depends_on=("core",),
                 route_prefixes=("/api/admin",),
-                backend_packages=("admin_service", "admin_integrations", "admin_dashboard"),
+                backend_packages=("admin_service", "admin_integrations", "admin_panel"),
                 frontend_assets=("admin.js", "fixed_test_accounts_ui.js"),
             ),
         )

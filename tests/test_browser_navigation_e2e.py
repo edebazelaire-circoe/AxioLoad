@@ -115,7 +115,15 @@ def _open_authenticated_page(
     page.on("pageerror", lambda error: errors.append(f"pageerror: {error}"))
     page.on(
         "console",
-        lambda message: errors.append(f"console: {message.text}") if message.type == "error" else None,
+        lambda message: errors.append(f"console: {message.text}")
+        if message.type == "error" and not message.text.startswith("Failed to load resource:")
+        else None,
+    )
+    page.on(
+        "response",
+        lambda http_response: errors.append(f"http {http_response.status}: {http_response.url}")
+        if http_response.status >= 400
+        else None,
     )
     page.goto("/", wait_until="networkidle")
     page.wait_for_function("document.body.dataset.applicationShellReady === 'true'")

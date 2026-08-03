@@ -7,7 +7,6 @@ import sys
 import time
 import urllib.request
 from collections.abc import Iterator
-from pathlib import Path
 
 import pytest
 from playwright.sync_api import Browser, Page, expect, sync_playwright
@@ -126,7 +125,7 @@ def _open_authenticated_page(
 
 def _dom_snapshot(page: Page) -> dict[str, object]:
     return page.evaluate(
-        """
+        r"""
         () => {
           const visible = element => {
             if (!element || element.hidden) return false;
@@ -169,7 +168,7 @@ def _assert_dom_stable(page: Page, expected_panel: str, expected_workspace: str 
           const active = [...document.querySelectorAll('.tab-panel.active')];
           return active.length === 1 && active[0].id === expected;
         }""",
-        expected_panel,
+        arg=expected_panel,
     )
     page.wait_for_timeout(80)
     snapshot = _dom_snapshot(page)

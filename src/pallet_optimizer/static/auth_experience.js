@@ -17,6 +17,14 @@
     message.classList.remove('hidden');
   }
 
+  function setControlVisibility(control, visible) {
+    if (!control) return;
+    control.hidden = !visible;
+    control.classList.toggle('hidden', !visible);
+    control.setAttribute('aria-hidden', String(!visible));
+    control.tabIndex = visible ? 0 : -1;
+  }
+
   function installLoginModes() {
     const form = q('#login-form');
     const message = q('#login-message');
@@ -184,6 +192,54 @@
     return true;
   }
 
+  function activateWorkspacePanel(workspace) {
+    const groups = {
+      database: ['vehicles', 'prompts'],
+      optimization: ['data', 'results', 'history', 'route', 'total'],
+      documents: ['document-control'],
+    };
+    const names = groups[workspace];
+    if (!names) return;
+
+    const current = names.find(name => q(`[data-tab="${name}"]`)?.classList.contains('active'));
+    const targetName = current || names[0];
+    const targetButton = q(`[data-tab="${targetName}"]`);
+    const targetPanel = q(`#tab-${targetName}`);
+    if (!targetButton || !targetPanel) return;
+
+    document.body.dataset.workspace = workspace;
+    qa('[data-workspace]').forEach(button => {
+      const active = button.dataset.workspace === workspace;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-pressed', String(active));
+    });
+    const nav = q('nav.tabs');
+    if (nav) nav.dataset.workspace = workspace;
+
+    qa('[data-workspace-group]').forEach(button => {
+      const visible = button.dataset.workspaceGroup === workspace;
+      button.hidden = !visible;
+      button.classList.toggle('workspace-group-hidden', !visible);
+    });
+    qa('[data-tab]').forEach(button => {
+      const active = button === targetButton;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-selected', String(active));
+    });
+    qa('.tab-panel').forEach(panel => panel.classList.toggle('active', panel === targetPanel));
+  }
+
+  function bindDirectAdminWorkspaceNavigation() {
+    if (document.body.dataset.superAdminWorkspaceNavigation === 'true') return;
+    document.body.dataset.superAdminWorkspaceNavigation = 'true';
+    document.addEventListener('click', event => {
+      const workspaceButton = event.target.closest?.('[data-workspace]');
+      if (!workspaceButton || workspaceButton.disabled || workspaceButton.hidden) return;
+      const workspace = workspaceButton.dataset.workspace;
+      window.setTimeout(() => activateWorkspacePanel(workspace), 0);
+    });
+  }
+
   async function installApplicationSession() {
     if (!q('#open-settings')) return false;
     let context;
@@ -200,9 +256,14 @@
     const assistance = context.mode === 'assistance' && context.company?.id !== 'local';
     const authenticatedUser = Boolean(context.user);
     const authenticated = directAdmin || assistance || authenticatedUser;
+    const managementAllowed = directAdmin || assistance;
+
+    setControlVisibility(q('#open-settings'), true);
+    setControlVisibility(q('#open-admin'), managementAllowed);
 
     if (directAdmin) {
       localStorage.setItem('axioload.superadmin.active', '1');
+      bindDirectAdminWorkspaceNavigation();
       [0, 50, 200, 700, 1600].forEach(delay => window.setTimeout(removeDirectAdminAssistanceBanner, delay));
     } else if (!assistance) {
       localStorage.removeItem('axioload.superadmin.active');

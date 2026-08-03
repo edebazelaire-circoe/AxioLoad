@@ -11,6 +11,11 @@ TEST_USER_ID = "axioload-test-user"
 DEFAULT_TEST_USER_EMAIL = "olivierbaptiste6@gmail.com"
 DEFAULT_TEST_USER_PASSWORD = "0123456789"
 
+
+class FixedTestAccountsModeError(PermissionError, ValueError):
+    """Operation forbidden while the fixed two-account test mode is enabled."""
+
+
 _original_init: Callable[..., Any] | None = None
 _original_ensure_super_admin_account: Callable[..., Any] | None = None
 _original_create_company_invitation: Callable[..., Any] | None = None
@@ -167,7 +172,7 @@ def install_fixed_test_accounts() -> None:
 
     def create_company_invitation(self: AdminRepository, *args: Any, **kwargs: Any) -> Any:
         if fixed_test_accounts_enabled():
-            raise PermissionError(
+            raise FixedTestAccountsModeError(
                 "Mode de test à deux comptes : la création d’une entreprise est temporairement désactivée"
             )
         assert _original_create_company_invitation is not None
@@ -175,7 +180,7 @@ def install_fixed_test_accounts() -> None:
 
     def invite_user(self: AdminRepository, *args: Any, **kwargs: Any) -> Any:
         if fixed_test_accounts_enabled():
-            raise PermissionError(
+            raise FixedTestAccountsModeError(
                 "Mode de test à deux comptes : l’ajout d’un utilisateur est temporairement désactivé"
             )
         assert _original_invite_user is not None
@@ -183,7 +188,7 @@ def install_fixed_test_accounts() -> None:
 
     def resend_invitation(self: AdminRepository, *args: Any, **kwargs: Any) -> Any:
         if fixed_test_accounts_enabled():
-            raise PermissionError(
+            raise FixedTestAccountsModeError(
                 "Mode de test à deux comptes : aucune invitation n’est utilisée"
             )
         assert _original_resend_invitation is not None

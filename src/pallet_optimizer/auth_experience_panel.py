@@ -5,10 +5,10 @@ from typing import Any
 
 from fastapi.templating import Jinja2Templates
 
-_STYLE = b'<link rel="stylesheet" href="/static/auth_experience.css?v=0.19.3">'
-_SCRIPT = b'<script src="/static/auth_experience.js?v=0.19.3"></script>'
-_OLD_STYLE = b'<link rel="stylesheet" href="/static/auth_experience.css?v=0.19.1">'
-_OLD_SCRIPT = b'<script src="/static/auth_experience.js?v=0.19.1"></script>'
+_STYLE = b'<link rel="stylesheet" href="/static/auth_experience.css?v=0.19.4">'
+_SCRIPT = b'<script src="/static/auth_experience.js?v=0.19.4"></script>'
+_OLD_STYLE = b'<link rel="stylesheet" href="/static/auth_experience.css?v=0.19.3">'
+_OLD_SCRIPT = b'<script src="/static/auth_experience.js?v=0.19.3"></script>'
 _original_template_response: Callable[..., Any] | None = None
 
 

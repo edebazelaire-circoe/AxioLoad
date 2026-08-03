@@ -32,8 +32,9 @@
 
   function applySuperAdminShell() {
     document.body.dataset.superAdminShell = 'true';
+    document.body.dataset.userShell = 'false';
     setControlVisibility(q('#open-settings'), true);
-    setControlVisibility(q('#open-admin'), false);
+    setControlVisibility(q('#open-admin'), true);
     closeAdminPanel();
 
     if (document.body.dataset.superAdminNavigationBound !== 'true') {
@@ -42,6 +43,13 @@
         if (event.target.closest?.('[data-workspace]')) closeAdminPanel();
       }, true);
     }
+  }
+
+  function applyUserShell() {
+    document.body.dataset.superAdminShell = 'false';
+    document.body.dataset.userShell = 'true';
+    setControlVisibility(q('#open-settings'), true);
+    setControlVisibility(q('#open-admin'), false);
   }
 
   function installLoginModes() {
@@ -235,8 +243,12 @@
         removeDirectAdminAssistanceBanner();
         applySuperAdminShell();
       }, delay));
+    } else if (!assistance && authenticatedUser) {
+      applyUserShell();
+      localStorage.removeItem('axioload.superadmin.active');
     } else if (!assistance) {
       document.body.dataset.superAdminShell = 'false';
+      document.body.dataset.userShell = 'false';
       localStorage.removeItem('axioload.superadmin.active');
     }
 

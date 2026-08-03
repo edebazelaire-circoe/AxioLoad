@@ -5,8 +5,8 @@ from typing import Any
 
 from fastapi.templating import Jinja2Templates
 
-_STYLE = b'<link rel="stylesheet" href="/static/application_shell.css?v=0.19.5">'
-_SCRIPT = b'<script src="/static/application_shell.js?v=0.19.5"></script>'
+_STYLE = b'<link rel="stylesheet" href="/static/application_shell.css?v=0.19.6">'
+_SCRIPT = b'<script src="/static/application_shell.js?v=0.19.6"></script>'
 _PERMISSION_BOOTSTRAP = b'''<script id="axioload-permission-bootstrap">
 (() => {
   'use strict';

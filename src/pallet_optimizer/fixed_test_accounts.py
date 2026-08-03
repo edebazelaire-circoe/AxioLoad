@@ -12,6 +12,7 @@ DEFAULT_TEST_USER_EMAIL = "olivierbaptiste6@gmail.com"
 DEFAULT_TEST_USER_PASSWORD = "0123456789"
 
 _original_init: Callable[..., Any] | None = None
+_original_ensure_super_admin_account: Callable[..., Any] | None = None
 _original_create_company_invitation: Callable[..., Any] | None = None
 _original_invite_user: Callable[..., Any] | None = None
 _original_resend_invitation: Callable[..., Any] | None = None
@@ -137,6 +138,7 @@ def _upsert_test_user(admin: AdminRepository) -> None:
 
 def install_fixed_test_accounts() -> None:
     global _original_init
+    global _original_ensure_super_admin_account
     global _original_create_company_invitation
     global _original_invite_user
     global _original_resend_invitation
@@ -145,9 +147,17 @@ def install_fixed_test_accounts() -> None:
         return
 
     _original_init = AdminRepository.__init__
+    _original_ensure_super_admin_account = AdminRepository._ensure_super_admin_account
     _original_create_company_invitation = AdminRepository.create_company_invitation
     _original_invite_user = AdminRepository.invite_user
     _original_resend_invitation = AdminRepository.resend_invitation
+
+    def ensure_super_admin_account(self: AdminRepository) -> None:
+        if fixed_test_accounts_enabled():
+            with _connect(self.registry.registry_path) as db:
+                _remove_other_account_references(db)
+        assert _original_ensure_super_admin_account is not None
+        _original_ensure_super_admin_account(self)
 
     def repository_init(self: AdminRepository, registry: Any) -> None:
         assert _original_init is not None
@@ -179,6 +189,7 @@ def install_fixed_test_accounts() -> None:
         assert _original_resend_invitation is not None
         return _original_resend_invitation(self, *args, **kwargs)
 
+    AdminRepository._ensure_super_admin_account = ensure_super_admin_account  # type: ignore[method-assign]
     AdminRepository.__init__ = repository_init  # type: ignore[method-assign]
     AdminRepository.create_company_invitation = create_company_invitation  # type: ignore[method-assign]
     AdminRepository.invite_user = invite_user  # type: ignore[method-assign]

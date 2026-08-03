@@ -270,9 +270,7 @@
     return !source
       || source.hidden
       || source.disabled
-      || source.hasAttribute('hidden')
-      || source.getAttribute('aria-hidden') === 'true'
-      || source.classList.contains('hidden');
+      || source.hasAttribute('hidden');
   }
 
   function activateOnlyPanel(panelId) {
@@ -534,7 +532,7 @@
     state.permissionObserver = new MutationObserver(syncPermissions);
     sources.forEach(source => state.permissionObserver.observe(source, {
       attributes: true,
-      attributeFilter: ['hidden', 'disabled', 'aria-hidden', 'class']
+      attributeFilter: ['hidden', 'disabled']
     }));
     syncPermissions();
   }

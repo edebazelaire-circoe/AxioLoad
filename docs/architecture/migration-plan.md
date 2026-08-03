@@ -3,7 +3,7 @@
 Chaque étape est livrée dans une Pull Request indépendante. Une étape n’est fusionnée que si
 la CI est verte et si les contrats de l’étape précédente restent valides.
 
-## Étape 1 — Fondation et contrats
+## Étape 1 — Fondation et contrats · terminée
 
 Objectif : décrire les modules sans modifier les fonctions visibles.
 
@@ -13,15 +13,26 @@ Objectif : décrire les modules sans modifier les fonctions visibles.
 - documentation de l’architecture cible ;
 - aucun déplacement de route, de donnée ou d’écran.
 
-## Étape 2 — Composition du backend
+## Étape 2 — Composition du backend · en cours
 
 Objectif : remplacer le démarrage implicite par une composition explicite.
 
+Réalisé dans la première PR de cette étape :
+
 - création d’un `ApplicationContainer` léger ;
-- enregistrement ordonné des routeurs ;
+- inventaire ordonné et versionné des installateurs historiques ;
+- séparation des phases permissions, backend, frontend et routes ;
+- composition idempotente et reprenable en cas d’échec partiel ;
 - conservation stricte des URL existantes ;
+- tests comparant l’inventaire des routes avant et après recomposition ;
+- retrait des appels `install_*` dispersés dans le fichier racine du paquet.
+
+À poursuivre dans les PR suivantes :
+
+- conversion d’un premier ensemble de routes en `APIRouter` explicite ;
 - suppression progressive des modifications globales de `FastAPI.__init__` ;
-- tests comparant l’inventaire des routes avant et après migration.
+- rattachement du conteneur à l’instance FastAPI ;
+- remplacement des injections de templates par un shell de composants déclaré.
 
 ## Étape 3 — Socle commun
 

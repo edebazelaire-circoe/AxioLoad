@@ -5,10 +5,16 @@ from typing import Any
 
 from fastapi.templating import Jinja2Templates
 
-_STYLE = b'<link rel="stylesheet" href="/static/auth_experience.css?v=0.19.1">'
-_SCRIPT = b'<script src="/static/auth_experience.js?v=0.19.1"></script>'
-_OLD_STYLE = b'<link rel="stylesheet" href="/static/auth_experience.css?v=0.18.0">'
-_OLD_SCRIPT = b'<script src="/static/auth_experience.js?v=0.18.0"></script>'
+from .version import APP_VERSION
+
+_STYLE = f'<link rel="stylesheet" href="/static/auth_experience.css?v={APP_VERSION}">'.encode()
+_SCRIPT = f'<script src="/static/auth_experience.js?v={APP_VERSION}"></script>'.encode()
+_LEGACY_ASSETS = (
+    b'<link rel="stylesheet" href="/static/auth_experience.css?v=0.18.0">',
+    b'<script src="/static/auth_experience.js?v=0.18.0"></script>',
+    b'<link rel="stylesheet" href="/static/auth_experience.css?v=0.19.1">',
+    b'<script src="/static/auth_experience.js?v=0.19.1"></script>',
+)
 _original_template_response: Callable[..., Any] | None = None
 
 
@@ -23,7 +29,7 @@ def install_auth_experience_injection() -> None:
         response = _original_template_response(self, *args, **kwargs)
         body = getattr(response, "body", b"")
         if b'id="open-settings"' in body or b'id="login-form"' in body:
-            for asset in (_OLD_STYLE, _OLD_SCRIPT, _STYLE, _SCRIPT):
+            for asset in (*_LEGACY_ASSETS, _STYLE, _SCRIPT):
                 body = body.replace(asset, b"")
             body = body.replace(b"</head>", _STYLE + b"</head>")
             body = body.replace(b"</body>", _SCRIPT + b"</body>")

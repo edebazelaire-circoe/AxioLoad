@@ -72,12 +72,17 @@ def test_platform_modules_openapi_contract_is_unchanged(tmp_path) -> None:
 
 def test_platform_route_is_no_longer_declared_inline_in_api_module() -> None:
     api_source = (ROOT / "src" / "pallet_optimizer" / "api.py").read_text(encoding="utf-8")
-    router_source = (ROOT / "src" / "pallet_optimizer" / "platform" / "routes.py").read_text(
+    router_source = (ROOT / "src" / "pallet_optimizer" / "platform_router.py").read_text(
         encoding="utf-8"
     )
+    platform_alias = (
+        ROOT / "src" / "pallet_optimizer" / "platform" / "routes.py"
+    ).read_text(encoding="utf-8")
 
     assert '@app.get("/api/platform/modules")' not in api_source
     assert "app.include_router(" in api_source
     assert "APIRouter" in router_source
     assert 'prefix="/api/platform"' in router_source
     assert '@router.get("/modules"' in router_source
+    assert "FastAPI" not in platform_alias
+    assert "AdminRepository" not in platform_alias

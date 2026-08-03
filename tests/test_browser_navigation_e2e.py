@@ -146,6 +146,17 @@ def _dom_snapshot(page: Page) -> dict[str, object]:
             duplicateIds: Object.entries(counts).filter(([, count]) => count > 1),
             workspace: document.body.dataset.workspace || null,
             shellRole: document.body.dataset.shellRole || null,
+            shellCurrent: window.AxioLoadShell?.current?.() || null,
+            activeButtons: [...document.querySelectorAll('button.active')]
+              .map(button => ({
+                id: button.id || null,
+                text: button.textContent.trim().replace(/\s+/g, ' '),
+                shellControl: button.dataset.shellControl || null,
+                shellWorkspace: button.dataset.shellWorkspace || null,
+                shellTab: button.dataset.shellTab || null,
+                shellView: button.dataset.shellView || null,
+                legacy: button.dataset.shellLegacy || null,
+              })),
             visibleButtons: [...document.querySelectorAll('button')]
               .filter(visible)
               .map(button => ({
@@ -163,14 +174,7 @@ def _dom_snapshot(page: Page) -> dict[str, object]:
 
 
 def _assert_dom_stable(page: Page, expected_panel: str, expected_workspace: str | None = None) -> None:
-    page.wait_for_function(
-        """expected => {
-          const active = [...document.querySelectorAll('.tab-panel.active')];
-          return active.length === 1 && active[0].id === expected;
-        }""",
-        arg=expected_panel,
-    )
-    page.wait_for_timeout(80)
+    page.wait_for_timeout(300)
     snapshot = _dom_snapshot(page)
     assert snapshot["activePanels"] == [expected_panel], snapshot
     assert snapshot["visibleActivePanels"] == [expected_panel], snapshot

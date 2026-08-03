@@ -177,4 +177,4 @@ def test_docker_compose_contains_only_the_requested_test_credentials() -> None:
     assert 'PLO_SUPER_ADMIN_PASSWORD: "0123456789"' in compose
     assert "PLO_TEST_USER_EMAIL: olivierbaptiste6@gmail.com" in compose
     assert 'PLO_TEST_USER_PASSWORD: "0123456789"' in compose
-    assert "1234" not in compose
+    assert 'PLO_SUPER_ADMIN_PASSWORD: "1234"' not in compose

@@ -17,6 +17,33 @@
     message.classList.remove('hidden');
   }
 
+  function setControlVisibility(control, visible) {
+    if (!control) return;
+    control.hidden = !visible;
+    control.classList.toggle('hidden', !visible);
+    control.setAttribute('aria-hidden', String(!visible));
+    control.tabIndex = visible ? 0 : -1;
+  }
+
+  function closeAdminPanel() {
+    q('#tab-admin')?.classList.remove('active');
+    q('#open-admin')?.classList.remove('active');
+  }
+
+  function applySuperAdminShell() {
+    document.body.dataset.superAdminShell = 'true';
+    setControlVisibility(q('#open-settings'), true);
+    setControlVisibility(q('#open-admin'), false);
+    closeAdminPanel();
+
+    if (document.body.dataset.superAdminNavigationBound !== 'true') {
+      document.body.dataset.superAdminNavigationBound = 'true';
+      document.addEventListener('click', event => {
+        if (event.target.closest?.('[data-workspace]')) closeAdminPanel();
+      }, true);
+    }
+  }
+
   function installLoginModes() {
     const form = q('#login-form');
     const message = q('#login-message');
@@ -203,8 +230,13 @@
 
     if (directAdmin) {
       localStorage.setItem('axioload.superadmin.active', '1');
-      [0, 50, 200, 700, 1600].forEach(delay => window.setTimeout(removeDirectAdminAssistanceBanner, delay));
+      applySuperAdminShell();
+      [0, 50, 200, 700, 1600].forEach(delay => window.setTimeout(() => {
+        removeDirectAdminAssistanceBanner();
+        applySuperAdminShell();
+      }, delay));
     } else if (!assistance) {
+      document.body.dataset.superAdminShell = 'false';
       localStorage.removeItem('axioload.superadmin.active');
     }
 

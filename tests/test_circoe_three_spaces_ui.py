@@ -8,6 +8,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from pallet_optimizer.api import create_app
+from pallet_optimizer.version import APP_VERSION
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -118,8 +119,8 @@ def test_versioned_assets_are_loaded(tmp_path) -> None:
     assert response.status_code == 200
     expected = (
         "/static/admin.js?v=0.18.0",
-        "/static/auth_experience.css?v=0.19.1",
-        "/static/auth_experience.js?v=0.19.1",
+        f"/static/auth_experience.css?v={APP_VERSION}",
+        f"/static/auth_experience.js?v={APP_VERSION}",
         "/static/document_control_experience.css?v=0.19.1",
         "/static/document_control_experience_v2.js?v=0.19.1",
         "/static/document_control_permission_ui.js?v=0.19.1",
@@ -127,6 +128,8 @@ def test_versioned_assets_are_loaded(tmp_path) -> None:
         "/static/optimization_experience.js?v=0.19.1",
         "/static/password_reset.css?v=0.19.1",
         "/static/password_reset.js?v=0.19.1",
+        f"/static/prompt_center_experience.css?v={APP_VERSION}",
+        f"/static/prompt_center_experience.js?v={APP_VERSION}",
     )
     for asset in expected:
         assert response.text.count(asset) == 1

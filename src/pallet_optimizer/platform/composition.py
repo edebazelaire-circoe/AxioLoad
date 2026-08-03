@@ -162,7 +162,7 @@ RUNTIME_COMPOSITION_STEPS: tuple[RuntimeCompositionStep, ...] = (
         "prompt-center-system",
         "reference_data",
         CompositionPhase.ROUTES,
-        "pallet_optimizer.platform.composition:_install_prompt_center_system",
+        "pallet_optimizer.legacy_prompt_center_adapter:install_legacy_prompt_center_system",
     ),
 )
 
@@ -223,14 +223,6 @@ class ApplicationContainer:
     def manifest(self) -> list[dict[str, str | bool]]:
         executed = set(self._executed_steps)
         return [step.to_manifest(step.name in executed) for step in self.steps]
-
-
-def _install_prompt_center_system() -> None:
-    from fastapi import FastAPI
-
-    prompt_center_system = import_module("pallet_optimizer.prompt_center_system")
-    prompt_center_system._original_fastapi_init = FastAPI.__init__
-    prompt_center_system.install_prompt_center_system()
 
 
 _APPLICATION_CONTAINER = ApplicationContainer()

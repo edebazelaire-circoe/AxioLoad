@@ -5,6 +5,8 @@ from typing import Any
 
 from fastapi.templating import Jinja2Templates
 
+from .fixed_test_accounts import fixed_test_accounts_enabled
+
 _ADMIN_STYLE = b'<link rel="stylesheet" href="/static/admin.css?v=0.18.0">'
 _WORKFLOW_STYLE = b'<link rel="stylesheet" href="/static/workflow_layout.css?v=0.18.0">'
 _RESULTS_STYLE = b'<link rel="stylesheet" href="/static/results_enhancements.css?v=0.18.0">'
@@ -12,6 +14,7 @@ _UNITS_IMPORT_SCRIPT = b'<script src="/static/units_import.js?v=0.18.0"></script
 _WORKFLOW_SCRIPT = b'<script src="/static/workflow_layout.js?v=0.18.0"></script>'
 _RESULTS_SCRIPT = b'<script src="/static/results_enhancements.js?v=0.18.0"></script>'
 _ADMIN_SCRIPT = b'<script src="/static/admin.js?v=0.18.0"></script>'
+_FIXED_TEST_SCRIPT = b'<script src="/static/fixed_test_accounts_ui.js?v=0.19.2"></script>'
 _original_template_response: Callable[..., Any] = Jinja2Templates.TemplateResponse
 
 
@@ -28,6 +31,9 @@ def install_admin_panel_injection() -> None:
                 if style not in body:
                     body = body.replace(b"</head>", style + b"</head>")
             scripts = _UNITS_IMPORT_SCRIPT + _WORKFLOW_SCRIPT + _RESULTS_SCRIPT + _ADMIN_SCRIPT
+            body = body.replace(_FIXED_TEST_SCRIPT, b"")
+            if fixed_test_accounts_enabled():
+                scripts += _FIXED_TEST_SCRIPT
             for script in (_UNITS_IMPORT_SCRIPT, _WORKFLOW_SCRIPT, _RESULTS_SCRIPT, _ADMIN_SCRIPT):
                 body = body.replace(script, b"")
             body = body.replace(b"</body>", scripts + b"</body>")

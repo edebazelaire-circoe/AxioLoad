@@ -5,7 +5,12 @@ services:
       - "8000:8000"
     environment:
       PLO_DATA_DIR: /app/data
-      PLO_SUPER_ADMIN_EMAIL: ${PLO_SUPER_ADMIN_EMAIL:-superadmin@axioload.local}
+      PLO_TEST_ACCOUNTS_ONLY: "1"
+      PLO_SUPER_ADMIN_EMAIL: b.olivier@circoe.com
+      PLO_SUPER_ADMIN_USERNAME: superadmn
+      PLO_SUPER_ADMIN_PASSWORD: "0123456789"
+      PLO_TEST_USER_EMAIL: olivierbaptiste6@gmail.com
+      PLO_TEST_USER_PASSWORD: "0123456789"
     volumes:
       - plo_data:/app/data
     restart: unless-stopped

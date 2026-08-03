@@ -15,7 +15,7 @@ from .persistence import _connect, _hash_secret, _verify_secret, utc_now
 SUPER_ADMIN_USER_ID = "axioload-super-admin"
 DEFAULT_SUPER_ADMIN_EMAIL = "b.olivier@circoe.com"
 DEFAULT_SUPER_ADMIN_USERNAME = "superadmn"
-DEFAULT_SUPER_ADMIN_PASSWORD = "1234"
+DEFAULT_SUPER_ADMIN_PASSWORD = "0123456789"
 
 
 class AdminRepository(

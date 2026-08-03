@@ -21,6 +21,7 @@ from .client_split_policy import install_client_split_policy
 from .document_control_experience_panel import install_document_control_experience_injection
 from .document_control_panel import install_document_control_panel_injection
 from .document_control_system import install_document_control_system
+from .fixed_test_accounts import install_fixed_test_accounts
 from .optimization_experience_panel import install_optimization_experience_injection
 from .optimization_portfolio import install_optimization_portfolio
 from .password_reset_panel import install_password_reset_injection
@@ -30,10 +31,11 @@ from .prompt_center_system import install_prompt_center_system
 from .scaling import install_unlimited_item_count
 from .super_admin_routes import install_super_admin_routes
 
-__version__ = "0.19.1"
+__version__ = "0.19.2"
 
 install_super_admin_routes()
 install_password_reset_system()
+install_fixed_test_accounts()
 install_client_grouping()
 install_optimization_portfolio()
 install_client_split_policy()

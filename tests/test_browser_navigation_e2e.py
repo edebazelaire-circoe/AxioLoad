@@ -315,12 +315,16 @@ def _exercise_rapid_clicks(page: Page) -> None:
             for (const control of controls) control.click();
           }
           const final = controls.find(control => control.dataset.shellWorkspace === 'optimization') || controls[0];
+          if (!final) throw new Error('Aucun espace autorisé disponible pour le test de rafale');
           final.click();
           const workspace = final.dataset.shellWorkspace;
           const defaultNames = workspace === 'optimization'
             ? ['data', 'results', 'history', 'route', 'total']
             : workspace === 'database' ? ['vehicles'] : [];
-          const tab = defaultNames.find(name => visible(document.querySelector(`[data-shell-tab="${name}"]`)));
+          const tab = defaultNames.find(name => {
+            const control = document.querySelector(`[data-shell-tab="${name}"]`);
+            return control && !control.hidden && control.getAttribute('aria-hidden') !== 'true';
+          });
           return {
             panel: workspace === 'documents' ? 'tab-document-control' : `tab-${tab}`,
             workspace,
@@ -330,21 +334,32 @@ def _exercise_rapid_clicks(page: Page) -> None:
     )
     _assert_dom_stable(page, workspace_result["panel"], workspace_result["workspace"])
 
+    optimization = page.locator('.workspace-card[data-shell-workspace="optimization"]')
+    if not optimization.is_visible():
+        return
+
+    optimization.click()
+    allowed_tabs = page.evaluate(
+        """() => ['data', 'results', 'history', 'route', 'total'].filter(name => {
+          const control = document.querySelector(`[data-shell-tab="${name}"]`);
+          return control && !control.hidden && !control.disabled
+            && control.getAttribute('aria-hidden') !== 'true';
+        })"""
+    )
+    assert allowed_tabs
+    _assert_dom_stable(page, f"tab-{allowed_tabs[0]}", "optimization")
+
     tab_result = page.evaluate(
-        """
-        () => {
-          const visible = element => element && !element.hidden
-            && getComputedStyle(element).display !== 'none';
-          const controls = [...document.querySelectorAll('[data-shell-tab]')]
-            .filter(control => control.dataset.shellWorkspace === 'optimization' && visible(control));
+        """names => {
+          const controls = names.map(name => document.querySelector(`[data-shell-tab="${name}"]`));
           for (let round = 0; round < 30; round += 1) {
             for (const control of controls) control.click();
           }
           const final = controls.find(control => control.dataset.shellTab === 'data') || controls[0];
           final.click();
           return {panel: `tab-${final.dataset.shellTab}`, workspace: final.dataset.shellWorkspace};
-        }
-        """
+        }""",
+        allowed_tabs,
     )
     _assert_dom_stable(page, tab_result["panel"], tab_result["workspace"])
 

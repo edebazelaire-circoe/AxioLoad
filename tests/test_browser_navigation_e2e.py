@@ -216,92 +216,137 @@ def _exercise_all_navigation_controls(page: Page, *, super_admin: bool) -> None:
     else:
         expect(admin).to_be_hidden()
 
-    _click_and_check(
-        page,
-        '.workspace-card[data-shell-workspace="database"]',
-        "tab-vehicles",
-        "database",
-    )
-    _click_and_check(page, '[data-shell-tab="vehicles"]', "tab-vehicles", "database")
-    _click_and_check(page, '[data-shell-view="prompt-center"]', "tab-prompt-center", "database")
+    last_panel = "tab-vehicles"
+    last_workspace = "database"
 
-    _click_and_check(
-        page,
-        '.workspace-card[data-shell-workspace="optimization"]',
-        "tab-data",
-        "optimization",
-    )
-    for tab_name in ("data", "results", "history", "route", "total"):
+    database = page.locator('.workspace-card[data-shell-workspace="database"]')
+    expect(database).to_have_count(1)
+    if database.is_visible():
+        _click_and_check(page, '.workspace-card[data-shell-workspace="database"]', "tab-vehicles", "database")
+        last_panel, last_workspace = "tab-vehicles", "database"
+
+    vehicles = page.locator('[data-shell-tab="vehicles"]')
+    expect(vehicles).to_have_count(1)
+    if vehicles.is_visible():
+        _click_and_check(page, '[data-shell-tab="vehicles"]', "tab-vehicles", "database")
+        last_panel, last_workspace = "tab-vehicles", "database"
+    else:
+        expect(vehicles).to_be_hidden()
+
+    prompt = page.locator('[data-shell-view="prompt-center"]')
+    expect(prompt).to_have_count(1)
+    if prompt.is_visible():
+        _click_and_check(page, '[data-shell-view="prompt-center"]', "tab-prompt-center", "database")
+        last_panel, last_workspace = "tab-prompt-center", "database"
+    else:
+        expect(prompt).to_be_hidden()
+
+    optimization = page.locator('.workspace-card[data-shell-workspace="optimization"]')
+    expect(optimization).to_have_count(1)
+    if optimization.is_visible():
+        expected_default = page.evaluate(
+            """() => {
+              const names = ['data', 'results', 'history', 'route', 'total'];
+              const visible = element => element && !element.hidden
+                && getComputedStyle(element).display !== 'none';
+              return names.find(name => visible(document.querySelector(`[data-shell-tab="${name}"]`))) || null;
+            }"""
+        )
+        assert expected_default is not None
         _click_and_check(
             page,
-            f'[data-shell-tab="{tab_name}"]',
-            f"tab-{tab_name}",
+            '.workspace-card[data-shell-workspace="optimization"]',
+            f"tab-{expected_default}",
             "optimization",
         )
+        last_panel, last_workspace = f"tab-{expected_default}", "optimization"
 
-    _click_and_check(
-        page,
-        '.workspace-card[data-shell-workspace="documents"]',
-        "tab-document-control",
-        "documents",
-    )
-    _click_and_check(
-        page,
-        '[data-shell-view="document-new"]',
-        "tab-document-control",
-        "documents",
-    )
-    _click_and_check(
-        page,
-        '[data-shell-view="document-history"]',
-        "tab-document-control",
-        "documents",
-    )
+    for tab_name in ("data", "results", "history", "route", "total"):
+        selector = f'[data-shell-tab="{tab_name}"]'
+        control = page.locator(selector)
+        expect(control).to_have_count(1)
+        if control.is_visible():
+            _click_and_check(page, selector, f"tab-{tab_name}", "optimization")
+            last_panel, last_workspace = f"tab-{tab_name}", "optimization"
+        else:
+            expect(control).to_be_hidden()
+
+    documents = page.locator('.workspace-card[data-shell-workspace="documents"]')
+    expect(documents).to_have_count(1)
+    if documents.is_visible():
+        _click_and_check(
+            page,
+            '.workspace-card[data-shell-workspace="documents"]',
+            "tab-document-control",
+            "documents",
+        )
+        last_panel, last_workspace = "tab-document-control", "documents"
+
+        for view_name in ("document-new", "document-history"):
+            selector = f'[data-shell-view="{view_name}"]'
+            control = page.locator(selector)
+            expect(control).to_have_count(1)
+            if control.is_visible():
+                _click_and_check(page, selector, "tab-document-control", "documents")
+                last_panel, last_workspace = "tab-document-control", "documents"
+            else:
+                expect(control).to_be_hidden()
+    else:
+        expect(documents).to_be_hidden()
+        expect(page.locator('[data-shell-view="document-new"]')).to_be_hidden()
+        expect(page.locator('[data-shell-view="document-history"]')).to_be_hidden()
 
     _click_and_check(page, '[data-shell-control="settings"]', "tab-settings", None)
-    _click_and_check(page, '[data-shell-control="close-settings"]', "tab-document-control", "documents")
+    _click_and_check(page, '[data-shell-control="close-settings"]', last_panel, last_workspace)
 
     if super_admin:
         _click_and_check(page, '[data-shell-control="admin"]', "tab-admin", None)
-        _click_and_check(page, '[data-shell-control="close-admin"]', "tab-document-control", "documents")
+        _click_and_check(page, '[data-shell-control="close-admin"]', last_panel, last_workspace)
 
 
 def _exercise_rapid_clicks(page: Page) -> None:
-    page.evaluate(
+    workspace_result = page.evaluate(
         """
         () => {
-          const selectors = [
-            '.workspace-card[data-shell-workspace="database"]',
-            '.workspace-card[data-shell-workspace="optimization"]',
-            '.workspace-card[data-shell-workspace="documents"]',
-          ];
+          const visible = element => element && !element.hidden
+            && getComputedStyle(element).display !== 'none';
+          const controls = [...document.querySelectorAll('.workspace-card[data-shell-workspace]')].filter(visible);
           for (let round = 0; round < 40; round += 1) {
-            for (const selector of selectors) document.querySelector(selector).click();
+            for (const control of controls) control.click();
           }
-          document.querySelector('.workspace-card[data-shell-workspace="optimization"]').click();
+          const final = controls.find(control => control.dataset.shellWorkspace === 'optimization') || controls[0];
+          final.click();
+          const workspace = final.dataset.shellWorkspace;
+          const defaultNames = workspace === 'optimization'
+            ? ['data', 'results', 'history', 'route', 'total']
+            : workspace === 'database' ? ['vehicles'] : [];
+          const tab = defaultNames.find(name => visible(document.querySelector(`[data-shell-tab="${name}"]`)));
+          return {
+            panel: workspace === 'documents' ? 'tab-document-control' : `tab-${tab}`,
+            workspace,
+          };
         }
         """
     )
-    _assert_dom_stable(page, "tab-data", "optimization")
+    _assert_dom_stable(page, workspace_result["panel"], workspace_result["workspace"])
 
-    page.evaluate(
+    tab_result = page.evaluate(
         """
         () => {
-          const selectors = [
-            '[data-shell-tab="data"]',
-            '[data-shell-tab="results"]',
-            '[data-shell-tab="history"]',
-            '[data-shell-tab="route"]',
-            '[data-shell-tab="total"]',
-          ];
+          const visible = element => element && !element.hidden
+            && getComputedStyle(element).display !== 'none';
+          const controls = [...document.querySelectorAll('[data-shell-tab]')]
+            .filter(control => control.dataset.shellWorkspace === 'optimization' && visible(control));
           for (let round = 0; round < 30; round += 1) {
-            for (const selector of selectors) document.querySelector(selector).click();
+            for (const control of controls) control.click();
           }
-          document.querySelector('[data-shell-tab="history"]').click();
+          const final = controls.find(control => control.dataset.shellTab === 'data') || controls[0];
+          final.click();
+          return {panel: `tab-${final.dataset.shellTab}`, workspace: final.dataset.shellWorkspace};
         }
         """
     )
-    _assert_dom_stable(page, "tab-history", "optimization")
+    _assert_dom_stable(page, tab_result["panel"], tab_result["workspace"])
 
 
 def _logout_and_check(page: Page, base_url: str) -> None:

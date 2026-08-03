@@ -58,6 +58,8 @@
     },
     generation: 0,
     context: null,
+    bootObserver: null,
+    permissionObserver: null,
     legacy: {
       tabs: {}, workspace: {}, settings: null, admin: null,
       closeSettings: null, closeAdmin: null,
@@ -79,18 +81,19 @@
     return control;
   }
 
+  function shellId(source, shellControl) {
+    if (source?.id) return `shell-${source.id}`;
+    return `shell-${String(shellControl).replace(/[^a-z0-9]+/gi, '-').toLowerCase()}`;
+  }
+
   function cloneControl(source, shellControl, {strip = []} = {}) {
     if (!source || source.dataset.shellLegacy === '1' || source.dataset.shellControl) return null;
     const clone = source.cloneNode(true);
-    const originalId = source.id;
     markLegacy(source);
-    if (originalId) {
-      source.id = `legacy-${originalId}`;
-      clone.id = originalId;
-    }
+    clone.id = shellId(source, shellControl);
     strip.forEach(attribute => clone.removeAttribute(attribute));
     clone.dataset.shellControl = shellControl;
-    clone.classList.remove('application-shell-legacy', 'workspace-group-hidden', 'hidden');
+    clone.classList.remove('application-shell-legacy', 'workspace-group-hidden', 'hidden', 'active');
     clone.hidden = false;
     clone.removeAttribute('aria-hidden');
     clone.tabIndex = 0;
@@ -100,14 +103,14 @@
 
   function upgradeTopbarControls() {
     if (!state.visible.settings) {
-      const source = q('#open-settings:not([data-shell-control])');
+      const source = q('#open-settings:not([data-shell-legacy])');
       if (source) {
         state.legacy.settings = source;
         state.visible.settings = cloneControl(source, 'settings');
       }
     }
     if (!state.visible.admin) {
-      const source = q('#open-admin:not([data-shell-control])');
+      const source = q('#open-admin:not([data-shell-legacy])');
       if (source) {
         state.legacy.admin = source;
         state.visible.admin = cloneControl(source, 'admin');
@@ -115,14 +118,14 @@
       }
     }
     if (!state.visible.closeSettings) {
-      const source = q('#close-settings:not([data-shell-control])');
+      const source = q('#close-settings:not([data-shell-legacy])');
       if (source) {
         state.legacy.closeSettings = source;
         state.visible.closeSettings = cloneControl(source, 'close-settings');
       }
     }
     if (!state.visible.closeAdmin) {
-      const source = q('#close-admin:not([data-shell-control])');
+      const source = q('#close-admin:not([data-shell-legacy])');
       if (source) {
         state.legacy.closeAdmin = source;
         state.visible.closeAdmin = cloneControl(source, 'close-admin');
@@ -131,16 +134,15 @@
   }
 
   function upgradePrimaryTabs() {
-    qa('nav.tabs .tab[data-tab]').forEach(source => {
-      if (source.dataset.shellLegacy === '1' || source.dataset.shellControl) return;
+    qa('nav.tabs .tab[data-tab]:not([data-shell-legacy])').forEach(source => {
       const name = source.dataset.tab;
       if (name === 'document-control') {
         state.legacy.documentTab = markLegacy(source);
         return;
       }
-      if (!TAB_WORKSPACES[name]) return;
+      if (!TAB_WORKSPACES[name] || state.visible.tabs[name]) return;
       state.legacy.tabs[name] = source;
-      const clone = cloneControl(source, `tab:${name}`);
+      const clone = cloneControl(source, `tab:${name}`, {strip: ['data-tab', 'data-workspace-group']});
       if (!clone) return;
       clone.dataset.shellTab = name;
       clone.dataset.shellWorkspace = TAB_WORKSPACES[name];
@@ -151,11 +153,11 @@
   function upgradeWorkspaceControls() {
     const switcher = q('#workspace-switcher');
     if (!switcher) return;
-    qa('[data-workspace]', switcher).forEach(source => {
-      if (source.dataset.shellLegacy === '1' || source.dataset.shellControl) return;
+    qa('[data-workspace]:not([data-shell-legacy])', switcher).forEach(source => {
       const name = source.dataset.workspace;
+      if (!name || state.visible.workspace[name]) return;
       state.legacy.workspace[name] = source;
-      const clone = cloneControl(source, `workspace:${name}`);
+      const clone = cloneControl(source, `workspace:${name}`, {strip: ['data-workspace']});
       if (!clone) return;
       clone.dataset.shellWorkspace = name;
       state.visible.workspace[name] = clone;
@@ -164,27 +166,42 @@
 
   function upgradeSyntheticTabs() {
     if (!state.visible.prompt) {
-      const source = q('[data-workspace-tab="prompts"]:not([data-shell-control])');
+      const source = q('[data-workspace-tab="prompts"]:not([data-shell-legacy])');
       if (source) {
         state.legacy.prompt = source;
-        state.visible.prompt = cloneControl(source, 'view:prompt-center', {strip: ['data-workspace-tab']});
-        if (state.visible.prompt) state.visible.prompt.dataset.shellView = 'prompt-center';
+        state.visible.prompt = cloneControl(source, 'view:prompt-center', {
+          strip: ['data-workspace-tab', 'data-workspace-group']
+        });
+        if (state.visible.prompt) {
+          state.visible.prompt.dataset.shellView = 'prompt-center';
+          state.visible.prompt.dataset.shellWorkspace = 'database';
+        }
       }
     }
     if (!state.visible.documentNew) {
-      const source = q('[data-workspace-tab="document-new"]:not([data-shell-control])');
+      const source = q('[data-workspace-tab="document-new"]:not([data-shell-legacy])');
       if (source) {
         state.legacy.documentNew = source;
-        state.visible.documentNew = cloneControl(source, 'view:document-new', {strip: ['data-workspace-tab']});
-        if (state.visible.documentNew) state.visible.documentNew.dataset.shellView = 'document-new';
+        state.visible.documentNew = cloneControl(source, 'view:document-new', {
+          strip: ['data-workspace-tab', 'data-workspace-group']
+        });
+        if (state.visible.documentNew) {
+          state.visible.documentNew.dataset.shellView = 'document-new';
+          state.visible.documentNew.dataset.shellWorkspace = 'documents';
+        }
       }
     }
     if (!state.visible.documentHistory) {
-      const source = q('[data-workspace-tab="document-history"]:not([data-shell-control])');
+      const source = q('[data-workspace-tab="document-history"]:not([data-shell-legacy])');
       if (source) {
         state.legacy.documentHistory = source;
-        state.visible.documentHistory = cloneControl(source, 'view:document-history', {strip: ['data-workspace-tab']});
-        if (state.visible.documentHistory) state.visible.documentHistory.dataset.shellView = 'document-history';
+        state.visible.documentHistory = cloneControl(source, 'view:document-history', {
+          strip: ['data-workspace-tab', 'data-workspace-group']
+        });
+        if (state.visible.documentHistory) {
+          state.visible.documentHistory.dataset.shellView = 'document-history';
+          state.visible.documentHistory.dataset.shellWorkspace = 'documents';
+        }
       }
     }
   }
@@ -194,6 +211,21 @@
     upgradePrimaryTabs();
     upgradeWorkspaceControls();
     upgradeSyntheticTabs();
+  }
+
+  function controlsReady() {
+    return Boolean(
+      state.visible.settings
+      && state.visible.admin
+      && state.visible.closeSettings
+      && state.visible.closeAdmin
+      && state.legacy.documentTab
+      && Object.keys(state.visible.tabs).length === Object.keys(TAB_WORKSPACES).length
+      && Object.keys(state.visible.workspace).length === 3
+      && state.visible.prompt
+      && state.visible.documentNew
+      && state.visible.documentHistory
+    );
   }
 
   function arrangeTopbar() {
@@ -228,6 +260,14 @@
     return route.kind === 'settings' || route.kind === 'admin' ? state.returnRoute : route;
   }
 
+  function panelIdFor(route) {
+    if (route.kind === 'tab') return `tab-${route.name}`;
+    if (route.kind === 'prompt') return 'tab-prompt-center';
+    if (route.kind === 'document') return 'tab-document-control';
+    if (route.kind === 'settings') return 'tab-settings';
+    return 'tab-admin';
+  }
+
   function syncChrome(route = state.current) {
     const base = baseRoute(route);
     const workspace = base.workspace || 'database';
@@ -243,10 +283,12 @@
 
     const normalControls = [
       ...Object.values(state.visible.tabs),
-      state.visible.prompt, state.visible.documentNew, state.visible.documentHistory
+      state.visible.prompt,
+      state.visible.documentNew,
+      state.visible.documentHistory
     ].filter(Boolean);
     normalControls.forEach(control => {
-      const group = control.dataset.workspaceGroup || control.dataset.shellWorkspace;
+      const group = control.dataset.shellWorkspace;
       control.classList.toggle('workspace-group-hidden', group !== workspace);
       control.classList.remove('active');
       control.setAttribute('aria-selected', 'false');
@@ -269,6 +311,12 @@
     state.visible.admin?.classList.toggle('active', route.kind === 'admin');
   }
 
+  function enforceRoute(route, generation) {
+    if (generation !== state.generation) return;
+    activateOnlyPanel(panelIdFor(route));
+    syncChrome(route);
+  }
+
   function remember(route) {
     if (route.kind === 'tab' || route.kind === 'prompt' || route.kind === 'document') {
       state.last[route.workspace] = route;
@@ -287,41 +335,28 @@
 
     if (route.kind === 'tab') {
       state.legacy.tabs[route.name]?.click();
-      activateOnlyPanel(`tab-${route.name}`);
     } else if (route.kind === 'prompt') {
       state.legacy.prompt?.click();
-      activateOnlyPanel('tab-prompt-center');
     } else if (route.kind === 'document') {
       const legacy = route.name === 'document-history'
         ? state.legacy.documentHistory
         : state.legacy.documentNew;
       if (legacy) legacy.click();
       else state.legacy.documentTab?.click();
-      activateOnlyPanel('tab-document-control');
-      window.requestAnimationFrame(() => {
-        if (generation !== state.generation || state.current.kind !== 'document') return;
-        const inner = route.name === 'document-history' ? q('#dc-history-view') : q('#dc-new-view');
-        if (inner && !inner.disabled && !inner.hidden) inner.click();
-        activateOnlyPanel('tab-document-control');
-        syncChrome(route);
-      });
     } else if (route.kind === 'settings') {
       state.legacy.settings?.click();
-      activateOnlyPanel('tab-settings');
     } else if (route.kind === 'admin') {
       state.legacy.admin?.click();
-      activateOnlyPanel('tab-admin');
     }
 
-    syncChrome(route);
-    queueMicrotask(() => {
-      if (generation !== state.generation) return;
-      const panelId = route.kind === 'tab' ? `tab-${route.name}`
-        : route.kind === 'prompt' ? 'tab-prompt-center'
-          : route.kind === 'document' ? 'tab-document-control'
-            : route.kind === 'settings' ? 'tab-settings' : 'tab-admin';
-      activateOnlyPanel(panelId);
-      syncChrome(route);
+    enforceRoute(route, generation);
+    queueMicrotask(() => enforceRoute(route, generation));
+    window.requestAnimationFrame(() => {
+      if (route.kind === 'document' && generation === state.generation) {
+        const inner = route.name === 'document-history' ? q('#dc-history-view') : q('#dc-new-view');
+        if (inner && !inner.disabled && !inner.hidden) inner.click();
+      }
+      enforceRoute(route, generation);
     });
   }
 
@@ -339,12 +374,12 @@
     const control = event.target.closest?.('[data-shell-workspace],[data-shell-tab],[data-shell-view],[data-shell-control]');
     if (!control || control.disabled || control.hidden || control.getAttribute('aria-hidden') === 'true') return;
 
-    if (control.id === 'site-logout') {
+    if (control.dataset.shellControl === 'logout') {
       event.preventDefault();
       logout(control);
       return;
     }
-    if (control.dataset.shellWorkspace && control.classList.contains('workspace-card')) {
+    if (control.dataset.shellControl?.startsWith('workspace:')) {
       event.preventDefault();
       navigation.schedule(routeForWorkspace(control.dataset.shellWorkspace));
       return;
@@ -410,9 +445,9 @@
   }
 
   function bindPermissionSync() {
-    if (!state.legacy.documentTab || state.legacy.documentTab.dataset.shellPermissionObserved === '1') return;
-    state.legacy.documentTab.dataset.shellPermissionObserved = '1';
-    new MutationObserver(syncPermissions).observe(state.legacy.documentTab, {
+    if (!state.legacy.documentTab || state.permissionObserver) return;
+    state.permissionObserver = new MutationObserver(syncPermissions);
+    state.permissionObserver.observe(state.legacy.documentTab, {
       attributes: true,
       attributeFilter: ['hidden']
     });
@@ -423,9 +458,9 @@
     state.context = context;
     const role = roleFromContext(context);
     document.body.dataset.shellRole = role;
-    setVisible(state.visible.settings, true);
+    setVisible(state.visible.settings, role !== 'anonymous');
     setVisible(state.visible.admin, role === 'super_admin');
-    setVisible(q('#site-logout'), true);
+    setVisible(q('#site-logout'), role !== 'anonymous');
     arrangeTopbar();
   }
 
@@ -449,38 +484,45 @@
   }
 
   function finalize() {
-    if (state.initialized) return;
+    if (state.initialized || !controlsReady()) return false;
     state.initialized = true;
+    state.bootObserver?.disconnect();
+    state.bootObserver = null;
     arrangeTopbar();
     bindPermissionSync();
     document.addEventListener('click', handleNavigationClick);
     state.current = initialRoute();
     if (state.current.kind !== 'settings' && state.current.kind !== 'admin') state.returnRoute = state.current;
     remember(baseRoute());
-    const panelId = state.current.kind === 'tab' ? `tab-${state.current.name}`
-      : state.current.kind === 'prompt' ? 'tab-prompt-center'
-        : state.current.kind === 'document' ? 'tab-document-control'
-          : state.current.kind === 'settings' ? 'tab-settings' : 'tab-admin';
-    activateOnlyPanel(panelId);
-    syncChrome(state.current);
+    enforceRoute(state.current, state.generation);
     setVisible(q('#site-logout'), true);
     loadContext();
     document.body.dataset.applicationShellReady = 'true';
     window.AxioLoadShell = {
       navigate: route => navigation.schedule(route),
       current: () => ({...state.current}),
-      context: () => state.context
+      context: () => state.context,
+      audit: () => ({
+        activePanels: qa('.tab-panel.active').map(panel => panel.id),
+        role: document.body.dataset.shellRole || null,
+        workspace: document.body.dataset.workspace || null
+      })
     };
+    return true;
   }
 
-  function boot(attempt = 0) {
+  function tryBoot() {
     upgradeControls();
-    const ready = Boolean(state.visible.settings && Object.keys(state.visible.tabs).length);
-    if (ready || attempt >= 3) {
-      finalize();
-      return;
-    }
-    window.requestAnimationFrame(() => boot(attempt + 1));
+    return finalize();
+  }
+
+  function boot() {
+    if (tryBoot() || state.bootObserver) return;
+    const nav = q('nav.tabs');
+    const root = nav?.parentElement || document.documentElement;
+    state.bootObserver = new MutationObserver(() => tryBoot());
+    state.bootObserver.observe(root, {childList: true, subtree: true});
+    window.addEventListener('load', tryBoot, {once: true});
   }
 
   const init = () => boot();

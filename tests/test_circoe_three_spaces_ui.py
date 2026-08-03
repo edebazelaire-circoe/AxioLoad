@@ -118,8 +118,8 @@ def test_versioned_assets_are_loaded(tmp_path) -> None:
     assert response.status_code == 200
     expected = (
         "/static/admin.js?v=0.18.0",
-        "/static/auth_experience.css?v=0.19.1",
-        "/static/auth_experience.js?v=0.19.1",
+        "/static/auth_experience.css?v=0.19.4",
+        "/static/auth_experience.js?v=0.19.4",
         "/static/document_control_experience.css?v=0.19.1",
         "/static/document_control_experience_v2.js?v=0.19.1",
         "/static/document_control_permission_ui.js?v=0.19.1",

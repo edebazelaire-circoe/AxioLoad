@@ -1,54 +1,9 @@
 """AxioLoad transport loading optimizer."""
 
-from fastapi import FastAPI
-
-from .document_control_bootstrap import install_document_control_permissions, install_document_control_routes
-
-# Permissions must be extended before admin_service imports the catalog snapshots.
-install_document_control_permissions()
-
-from .document_control_permissions import install_document_control_permission_migration
-
-# Existing companies created before the document-control module need the new
-# permission rows before AdminRepository resolves their effective rights.
-install_document_control_permission_migration()
-
-from . import prompt_center_system as _prompt_center_system
-from .admin_panel import install_admin_panel_injection
-from .auth_experience_panel import install_auth_experience_injection
-from .client_grouping import install_client_grouping
-from .client_split_policy import install_client_split_policy
-from .document_control_experience_panel import install_document_control_experience_injection
-from .document_control_panel import install_document_control_panel_injection
-from .document_control_system import install_document_control_system
-from .fixed_test_accounts import install_fixed_test_accounts
-from .optimization_experience_panel import install_optimization_experience_injection
-from .optimization_portfolio import install_optimization_portfolio
-from .password_reset_panel import install_password_reset_injection
-from .password_reset_system import install_password_reset_system
-from .prompt_center_experience_panel import install_prompt_center_experience_injection
-from .prompt_center_system import install_prompt_center_system
-from .scaling import install_unlimited_item_count
-from .super_admin_routes import install_super_admin_routes
+from .platform import compose_runtime
 from .version import APP_VERSION
 
 __version__ = APP_VERSION
 
-install_super_admin_routes()
-install_password_reset_system()
-install_fixed_test_accounts()
-install_client_grouping()
-install_optimization_portfolio()
-install_client_split_policy()
-install_unlimited_item_count()
-install_admin_panel_injection()
-install_document_control_panel_injection()
-install_document_control_experience_injection()
-install_optimization_experience_injection()
-install_auth_experience_injection()
-install_password_reset_injection()
-install_prompt_center_experience_injection()
-install_document_control_routes()
-install_document_control_system()
-_prompt_center_system._original_fastapi_init = FastAPI.__init__
-install_prompt_center_system()
+# All legacy installers are now composed from one ordered and testable root.
+compose_runtime()

@@ -17,6 +17,14 @@
     message.classList.remove('hidden');
   }
 
+  function setControlVisibility(control, visible) {
+    if (!control) return;
+    control.hidden = !visible;
+    control.classList.toggle('hidden', !visible);
+    control.setAttribute('aria-hidden', String(!visible));
+    control.tabIndex = visible ? 0 : -1;
+  }
+
   function installLoginModes() {
     const form = q('#login-form');
     const message = q('#login-message');
@@ -200,6 +208,9 @@
     const assistance = context.mode === 'assistance' && context.company?.id !== 'local';
     const authenticatedUser = Boolean(context.user);
     const authenticated = directAdmin || assistance || authenticatedUser;
+
+    setControlVisibility(q('#open-settings'), true);
+    setControlVisibility(q('#open-admin'), directAdmin || assistance);
 
     if (directAdmin) {
       localStorage.setItem('axioload.superadmin.active', '1');

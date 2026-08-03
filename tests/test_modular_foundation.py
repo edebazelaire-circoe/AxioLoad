@@ -161,9 +161,12 @@ def test_runtime_exposes_the_manifest_without_changing_existing_navigation(tmp_p
 
     page = client.get("/")
     assert page.status_code == 200
-    assert "Base de données" in page.text
-    assert "Optimisation" in page.text
-    assert "Contrôle documentaire" in page.text
+    assert 'data-tab="vehicles"' in page.text
+    assert 'data-tab="data"' in page.text
+    assert 'data-tab="results"' in page.text
+    assert 'data-tab="history"' in page.text
+    assert 'data-tab="route"' in page.text
+    assert 'data-tab="total"' in page.text
     assert f"enhancements.css?v={APP_VERSION}" in page.text
     assert f"enhancements.js?v={APP_VERSION}" in page.text
 

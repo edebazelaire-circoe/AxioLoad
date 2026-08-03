@@ -46,15 +46,20 @@
     route: 'optimization',
     total: 'optimization'
   };
+  const DEFAULT_ROUTES = {
+    database: {kind: 'tab', name: 'vehicles', workspace: 'database'},
+    optimization: {kind: 'tab', name: 'data', workspace: 'optimization'},
+    documents: {kind: 'document', name: 'document-new', workspace: 'documents'}
+  };
 
   const state = {
     initialized: false,
-    current: {kind: 'tab', name: 'vehicles', workspace: 'database'},
-    returnRoute: {kind: 'tab', name: 'vehicles', workspace: 'database'},
+    current: {...DEFAULT_ROUTES.database},
+    returnRoute: {...DEFAULT_ROUTES.database},
     last: {
-      database: {kind: 'tab', name: 'vehicles', workspace: 'database'},
-      optimization: {kind: 'tab', name: 'data', workspace: 'optimization'},
-      documents: {kind: 'document', name: 'document-new', workspace: 'documents'}
+      database: {...DEFAULT_ROUTES.database},
+      optimization: {...DEFAULT_ROUTES.optimization},
+      documents: {...DEFAULT_ROUTES.documents}
     },
     generation: 0,
     context: null,
@@ -363,11 +368,7 @@
   const navigation = createLastWinsScheduler(applyRoute);
 
   function routeForWorkspace(name) {
-    return state.last[name] || (name === 'optimization'
-      ? {kind: 'tab', name: 'data', workspace: 'optimization'}
-      : name === 'documents'
-        ? {kind: 'document', name: 'document-new', workspace: 'documents'}
-        : {kind: 'tab', name: 'vehicles', workspace: 'database'});
+    return {...(DEFAULT_ROUTES[name] || DEFAULT_ROUTES.database)};
   }
 
   function handleNavigationClick(event) {
@@ -473,16 +474,6 @@
     }
   }
 
-  function initialRoute() {
-    const active = q('.tab-panel.active')?.id || 'tab-vehicles';
-    if (active === 'tab-prompt-center') return {kind: 'prompt', name: 'prompt-center', workspace: 'database'};
-    if (active === 'tab-document-control') return {kind: 'document', name: 'document-new', workspace: 'documents'};
-    if (active === 'tab-settings') return {kind: 'settings', name: 'settings', workspace: 'database'};
-    if (active === 'tab-admin') return {kind: 'admin', name: 'admin', workspace: 'database'};
-    const name = active.replace(/^tab-/, '');
-    return {kind: 'tab', name: TAB_WORKSPACES[name] ? name : 'vehicles', workspace: TAB_WORKSPACES[name] || 'database'};
-  }
-
   function finalize() {
     if (state.initialized || !controlsReady()) return false;
     state.initialized = true;
@@ -491,9 +482,9 @@
     arrangeTopbar();
     bindPermissionSync();
     document.addEventListener('click', handleNavigationClick);
-    state.current = initialRoute();
-    if (state.current.kind !== 'settings' && state.current.kind !== 'admin') state.returnRoute = state.current;
-    remember(baseRoute());
+    state.current = {...DEFAULT_ROUTES.database};
+    state.returnRoute = {...DEFAULT_ROUTES.database};
+    state.last.database = {...DEFAULT_ROUTES.database};
     enforceRoute(state.current, state.generation);
     setVisible(q('#site-logout'), true);
     loadContext();

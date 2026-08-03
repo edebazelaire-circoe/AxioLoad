@@ -17,41 +17,6 @@
     message.classList.remove('hidden');
   }
 
-  function setControlVisibility(control, visible) {
-    if (!control) return;
-    control.hidden = !visible;
-    control.classList.toggle('hidden', !visible);
-    control.setAttribute('aria-hidden', String(!visible));
-    control.tabIndex = visible ? 0 : -1;
-  }
-
-  function closeAdminPanel() {
-    q('#tab-admin')?.classList.remove('active');
-    q('#open-admin')?.classList.remove('active');
-  }
-
-  function applySuperAdminShell() {
-    document.body.dataset.superAdminShell = 'true';
-    document.body.dataset.userShell = 'false';
-    setControlVisibility(q('#open-settings'), true);
-    setControlVisibility(q('#open-admin'), true);
-    closeAdminPanel();
-
-    if (document.body.dataset.superAdminNavigationBound !== 'true') {
-      document.body.dataset.superAdminNavigationBound = 'true';
-      document.addEventListener('click', event => {
-        if (event.target.closest?.('[data-workspace]')) closeAdminPanel();
-      }, true);
-    }
-  }
-
-  function applyUserShell() {
-    document.body.dataset.superAdminShell = 'false';
-    document.body.dataset.userShell = 'true';
-    setControlVisibility(q('#open-settings'), true);
-    setControlVisibility(q('#open-admin'), false);
-  }
-
   function installLoginModes() {
     const form = q('#login-form');
     const message = q('#login-message');
@@ -238,17 +203,8 @@
 
     if (directAdmin) {
       localStorage.setItem('axioload.superadmin.active', '1');
-      applySuperAdminShell();
-      [0, 50, 200, 700, 1600].forEach(delay => window.setTimeout(() => {
-        removeDirectAdminAssistanceBanner();
-        applySuperAdminShell();
-      }, delay));
-    } else if (!assistance && authenticatedUser) {
-      applyUserShell();
-      localStorage.removeItem('axioload.superadmin.active');
+      [0, 50, 200, 700, 1600].forEach(delay => window.setTimeout(removeDirectAdminAssistanceBanner, delay));
     } else if (!assistance) {
-      document.body.dataset.superAdminShell = 'false';
-      document.body.dataset.userShell = 'false';
       localStorage.removeItem('axioload.superadmin.active');
     }
 

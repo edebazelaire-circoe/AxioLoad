@@ -51,6 +51,7 @@
     optimization: {kind: 'tab', name: 'data', workspace: 'optimization'},
     documents: {kind: 'document', name: 'document-new', workspace: 'documents'}
   };
+  const OPTIMIZATION_ORDER = ['data', 'results', 'history', 'route', 'total'];
 
   const state = {
     initialized: false,
@@ -255,6 +256,25 @@
     control.tabIndex = visible ? 0 : -1;
   }
 
+  function controlAllowed(control) {
+    return Boolean(
+      control
+      && !control.hidden
+      && !control.disabled
+      && control.getAttribute('aria-hidden') !== 'true'
+      && !control.classList.contains('hidden')
+    );
+  }
+
+  function sourceDenied(source) {
+    return !source
+      || source.hidden
+      || source.disabled
+      || source.hasAttribute('hidden')
+      || source.getAttribute('aria-hidden') === 'true'
+      || source.classList.contains('hidden');
+  }
+
   function activateOnlyPanel(panelId) {
     const target = q(`#${panelId}`);
     qa('.tab-panel').forEach(panel => panel.classList.toggle('active', panel === target));
@@ -271,6 +291,43 @@
     if (route.kind === 'document') return 'tab-document-control';
     if (route.kind === 'settings') return 'tab-settings';
     return 'tab-admin';
+  }
+
+  function visibleControlForRoute(route) {
+    if (!route) return null;
+    if (route.kind === 'tab') return state.visible.tabs[route.name];
+    if (route.kind === 'prompt') return state.visible.prompt;
+    if (route.kind === 'document') {
+      return route.name === 'document-history'
+        ? state.visible.documentHistory
+        : state.visible.documentNew;
+    }
+    if (route.kind === 'settings') return state.visible.settings;
+    if (route.kind === 'admin') return state.visible.admin;
+    return null;
+  }
+
+  function firstAllowedRoute(workspace) {
+    if (workspace === 'database') {
+      if (controlAllowed(state.visible.tabs.vehicles)) return {...DEFAULT_ROUTES.database};
+      if (controlAllowed(state.visible.prompt)) return {kind: 'prompt', name: 'prompt-center', workspace: 'database'};
+      return null;
+    }
+    if (workspace === 'optimization') {
+      const name = OPTIMIZATION_ORDER.find(tabName => controlAllowed(state.visible.tabs[tabName]));
+      return name ? {kind: 'tab', name, workspace: 'optimization'} : null;
+    }
+    if (workspace === 'documents' && controlAllowed(state.visible.documentNew)) {
+      return {...DEFAULT_ROUTES.documents};
+    }
+    return null;
+  }
+
+  function fallbackRoute(excludedWorkspace = null) {
+    return ['database', 'optimization', 'documents']
+      .filter(name => name !== excludedWorkspace)
+      .map(firstAllowedRoute)
+      .find(Boolean) || {...DEFAULT_ROUTES.database};
   }
 
   function syncChrome(route = state.current) {
@@ -299,14 +356,7 @@
       control.setAttribute('aria-selected', 'false');
     });
 
-    let activeControl = null;
-    if (route.kind === 'tab') activeControl = state.visible.tabs[route.name];
-    if (route.kind === 'prompt') activeControl = state.visible.prompt;
-    if (route.kind === 'document') {
-      activeControl = route.name === 'document-history'
-        ? state.visible.documentHistory
-        : state.visible.documentNew;
-    }
+    const activeControl = visibleControlForRoute(route);
     if (activeControl) {
       activeControl.classList.add('active');
       activeControl.setAttribute('aria-selected', 'true');
@@ -329,7 +379,12 @@
   }
 
   function applyRoute(route) {
+    if (!route || !controlAllowed(visibleControlForRoute(route))) {
+      const workspace = route?.workspace || 'database';
+      route = firstAllowedRoute(workspace) || fallbackRoute(workspace);
+    }
     if (!route) return;
+
     const generation = ++state.generation;
     if (route.kind === 'settings' || route.kind === 'admin') {
       if (state.current.kind !== 'settings' && state.current.kind !== 'admin') state.returnRoute = state.current;
@@ -368,12 +423,12 @@
   const navigation = createLastWinsScheduler(applyRoute);
 
   function routeForWorkspace(name) {
-    return {...(DEFAULT_ROUTES[name] || DEFAULT_ROUTES.database)};
+    return firstAllowedRoute(name) || fallbackRoute(name);
   }
 
   function handleNavigationClick(event) {
     const control = event.target.closest?.('[data-shell-workspace],[data-shell-tab],[data-shell-view],[data-shell-control]');
-    if (!control || control.disabled || control.hidden || control.getAttribute('aria-hidden') === 'true') return;
+    if (!controlAllowed(control)) return;
 
     if (control.dataset.shellControl === 'logout') {
       event.preventDefault();
@@ -432,26 +487,55 @@
   }
 
   function syncPermissions() {
-    const denied = Boolean(state.legacy.documentTab?.hidden || state.legacy.documentTab?.hasAttribute('hidden'));
-    setVisible(state.visible.workspace.documents, !denied);
-    setVisible(state.visible.documentNew, !denied);
-    setVisible(state.visible.documentHistory, !denied);
+    Object.entries(state.legacy.tabs).forEach(([name, source]) => {
+      setVisible(state.visible.tabs[name], !sourceDenied(source));
+    });
+
+    setVisible(state.visible.prompt, !sourceDenied(state.legacy.prompt));
+
+    const documentsDenied = sourceDenied(state.legacy.documentTab);
+    setVisible(state.visible.documentNew, !documentsDenied && !sourceDenied(state.legacy.documentNew));
+    setVisible(state.visible.documentHistory, !documentsDenied && !sourceDenied(state.legacy.documentHistory));
+
+    const workspaceAllowed = {
+      database: controlAllowed(state.visible.tabs.vehicles) || controlAllowed(state.visible.prompt),
+      optimization: OPTIMIZATION_ORDER.some(name => controlAllowed(state.visible.tabs[name])),
+      documents: controlAllowed(state.visible.documentNew) || controlAllowed(state.visible.documentHistory)
+    };
+    Object.entries(workspaceAllowed).forEach(([name, allowed]) => {
+      setVisible(state.visible.workspace[name], allowed);
+    });
+
     const switcher = q('#workspace-switcher');
     if (switcher) {
-      const visibleCount = Object.values(state.visible.workspace).filter(control => control && !control.hidden).length;
+      const visibleCount = Object.values(state.visible.workspace).filter(controlAllowed).length;
       switcher.dataset.visibleCount = String(visibleCount);
       switcher.classList.toggle('single-workspace', visibleCount === 1);
     }
-    if (denied && baseRoute().workspace === 'documents') navigation.schedule(routeForWorkspace('optimization'));
+
+    const currentBase = baseRoute();
+    if (!controlAllowed(visibleControlForRoute(currentBase))) {
+      const next = firstAllowedRoute(currentBase.workspace) || fallbackRoute(currentBase.workspace);
+      if (next) navigation.schedule(next);
+    } else {
+      syncChrome(state.current);
+    }
   }
 
   function bindPermissionSync() {
-    if (!state.legacy.documentTab || state.permissionObserver) return;
+    if (state.permissionObserver) return;
+    const sources = [
+      ...Object.values(state.legacy.tabs),
+      state.legacy.documentTab,
+      state.legacy.prompt,
+      state.legacy.documentNew,
+      state.legacy.documentHistory
+    ].filter(Boolean);
     state.permissionObserver = new MutationObserver(syncPermissions);
-    state.permissionObserver.observe(state.legacy.documentTab, {
+    sources.forEach(source => state.permissionObserver.observe(source, {
       attributes: true,
-      attributeFilter: ['hidden']
-    });
+      attributeFilter: ['hidden', 'disabled', 'aria-hidden', 'class']
+    }));
     syncPermissions();
   }
 
@@ -482,9 +566,9 @@
     arrangeTopbar();
     bindPermissionSync();
     document.addEventListener('click', handleNavigationClick);
-    state.current = {...DEFAULT_ROUTES.database};
-    state.returnRoute = {...DEFAULT_ROUTES.database};
-    state.last.database = {...DEFAULT_ROUTES.database};
+    state.current = firstAllowedRoute('database') || fallbackRoute();
+    state.returnRoute = {...state.current};
+    state.last.database = {...state.current};
     enforceRoute(state.current, state.generation);
     setVisible(q('#site-logout'), true);
     loadContext();
@@ -496,7 +580,10 @@
       audit: () => ({
         activePanels: qa('.tab-panel.active').map(panel => panel.id),
         role: document.body.dataset.shellRole || null,
-        workspace: document.body.dataset.workspace || null
+        workspace: document.body.dataset.workspace || null,
+        visibleTabs: Object.entries(state.visible.tabs)
+          .filter(([, control]) => controlAllowed(control))
+          .map(([name]) => name)
       })
     };
     return true;

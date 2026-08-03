@@ -12,6 +12,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from .admin_api import register_admin_routes
+from .admin_base import PERMISSION_CATALOG
 from .admin_service import AdminRepository, WebContext
 from .catalog import default_vehicle_catalog, vehicle_to_payload
 from .domain import DomainError, Severity, to_primitive
@@ -21,7 +22,6 @@ from .import_template import build_import_template_xlsx
 from .normalization import normalize_payload, payload_from_csv, payload_from_xlsx
 from .persistence import TenantRegistry, TenantRunRepository
 from .platform import build_default_module_registry
-from .platform.routes import build_platform_router
 from .route_loading_validation import compare_checked, optimise_checked
 from .route_optimization import RouteInputError, geocode as route_geocode_service
 from .service import OptimizationService
@@ -74,14 +74,6 @@ def create_app(data_dir: str | Path | None = None) -> FastAPI:
             raise HTTPException(403, str(exc)) from exc
         return context
 
-    app.include_router(
-        build_platform_router(
-            admin=admin,
-            module_registry=module_registry,
-            read_context=read_context,
-        )
-    )
-
     def write_context(context: WebContext = Depends(web_context)) -> WebContext:
         try:
             admin.assert_company_access(context, write=True)
@@ -98,6 +90,22 @@ def create_app(data_dir: str | Path | None = None) -> FastAPI:
             return context
 
         return dependency
+
+    @app.get("/api/platform/modules")
+    def platform_modules(
+        context: WebContext = Depends(read_context),
+    ) -> dict[str, Any]:
+        if context.is_super_admin or context.actor_id == "local-user":
+            permissions = {entry["key"]: True for entry in PERMISSION_CATALOG}
+        else:
+            permissions = admin.effective_permissions(context.tenant_id, context.actor_id)
+        return {
+            "version": APP_VERSION,
+            "modules": module_registry.manifest(
+                permissions,
+                is_super_admin=context.is_super_admin,
+            ),
+        }
 
     def api_tenant(x_api_key: Annotated[str | None, Header()] = None) -> str:
         if not x_api_key:

@@ -23,13 +23,10 @@ PACKAGE = ROOT / "src" / "pallet_optimizer"
 
 
 def _route_contract(app) -> set[tuple[str, str]]:
-    """Read the public contract from OpenAPI instead of assuming a flat route list."""
-
     return {
-        (method.upper(), path)
-        for path, operations in app.openapi()["paths"].items()
-        for method in operations
-        if method.lower() in {"get", "post", "put", "patch", "delete", "options", "head", "trace"}
+        (method, route.path)
+        for route in app.routes
+        for method in getattr(route, "methods", set())
     }
 
 

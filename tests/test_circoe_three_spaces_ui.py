@@ -118,8 +118,8 @@ def test_versioned_assets_are_loaded(tmp_path) -> None:
     assert response.status_code == 200
     expected = (
         "/static/admin.js?v=0.18.0",
-        "/static/auth_experience.css?v=0.19.1",
-        "/static/auth_experience.js?v=0.19.1",
+        "/static/auth_experience.css?v=0.19.3",
+        "/static/auth_experience.js?v=0.19.3",
         "/static/document_control_experience.css?v=0.19.1",
         "/static/document_control_experience_v2.js?v=0.19.1",
         "/static/document_control_permission_ui.js?v=0.19.1",
@@ -130,4 +130,5 @@ def test_versioned_assets_are_loaded(tmp_path) -> None:
     )
     for asset in expected:
         assert response.text.count(asset) == 1
+    assert "auth_experience.js?v=0.19.1" not in response.text
     assert "document_control_experience.js?v=0.18.0" not in response.text

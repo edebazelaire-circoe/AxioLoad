@@ -20,6 +20,7 @@ from .exports import export_csv, export_json, export_pdf, export_xlsx
 from .import_template import build_import_template_xlsx
 from .normalization import normalize_payload, payload_from_csv, payload_from_xlsx
 from .persistence import TenantRegistry, TenantRunRepository
+from .platform import build_default_module_registry
 from .route_loading_validation import compare_checked, optimise_checked
 from .route_optimization import RouteInputError, geocode as route_geocode_service
 from .service import OptimizationService
@@ -27,6 +28,7 @@ from .stacking import diagnostics_for_payload, install_stacking
 from .total_metrics import install_total_metrics
 from .total_optimization import TotalOptimizationError
 from .total_preprocessing import optimise_total_prepared
+from .version import APP_VERSION
 from .workflow_history import install_history_metadata, validate_optimization
 
 PACKAGE_ROOT = Path(__file__).resolve().parent
@@ -43,12 +45,14 @@ def create_app(data_dir: str | Path | None = None) -> FastAPI:
     repository = TenantRunRepository(registry)
     service = OptimizationService(OptimizationEngine(), repository, registry.list_vehicles)
     admin = AdminRepository(registry)
+    module_registry = build_default_module_registry()
 
-    app = FastAPI(title="AxioLoad", version="0.12.0")
+    app = FastAPI(title="AxioLoad", version=APP_VERSION)
     app.state.registry = registry
     app.state.repository = repository
     app.state.service = service
     app.state.admin = admin
+    app.state.module_registry = module_registry
     app.mount("/static", StaticFiles(directory=PACKAGE_ROOT / "static"), name="static")
     templates = Jinja2Templates(directory=PACKAGE_ROOT / "templates")
     register_admin_routes(app, admin, templates)
@@ -83,6 +87,26 @@ def create_app(data_dir: str | Path | None = None) -> FastAPI:
 
         return dependency
 
+    @app.get("/api/platform/modules")
+    def platform_modules(
+        context: WebContext = Depends(read_context),
+    ) -> dict[str, Any]:
+        if context.is_super_admin:
+            company = admin.get_company(context.tenant_id)
+            permissions = {key: True for key in company["permissions"]}
+        else:
+            permissions = admin.effective_permissions(
+                context.tenant_id,
+                None if context.actor_id == "local-user" else context.actor_id,
+            )
+        return {
+            "version": APP_VERSION,
+            "modules": module_registry.manifest(
+                permissions,
+                is_super_admin=context.is_super_admin,
+            ),
+        }
+
     def api_tenant(x_api_key: Annotated[str | None, Header()] = None) -> str:
         if not x_api_key:
             raise HTTPException(401, "X-API-Key header is required")
@@ -105,12 +129,18 @@ def create_app(data_dir: str | Path | None = None) -> FastAPI:
         rendered = templates.TemplateResponse(
             request,
             "index.html",
-            {"vehicles": vehicles, "app_version": "0.12.0"},
+            {"vehicles": vehicles, "app_version": APP_VERSION},
         )
         html = (
             rendered.body.decode("utf-8")
-            .replace("</head>", '<link rel="stylesheet" href="/static/enhancements.css?v=0.12.0"></head>')
-            .replace("</body>", '<script src="/static/enhancements.js?v=0.12.0"></script></body>')
+            .replace(
+                "</head>",
+                f'<link rel="stylesheet" href="/static/enhancements.css?v={APP_VERSION}"></head>',
+            )
+            .replace(
+                "</body>",
+                f'<script src="/static/enhancements.js?v={APP_VERSION}"></script></body>',
+            )
         )
         return HTMLResponse(html, headers={"Cache-Control": "no-store"})
 

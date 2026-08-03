@@ -1,8 +1,13 @@
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
 from playwright.sync_api import Browser
 
-from tests.test_browser_navigation_e2e import (
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from test_browser_navigation_e2e import (  # noqa: E402
     _exercise_all_navigation_controls,
     _exercise_rapid_clicks,
     _logout_and_check,

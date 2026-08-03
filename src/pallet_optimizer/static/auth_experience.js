@@ -17,6 +17,18 @@
     message.classList.remove('hidden');
   }
 
+  function polishInterfaceCopy() {
+    const vehicleButton = q('[data-tab="vehicles"], [data-workspace-group="database"][data-tab="vehicles"]');
+    if (vehicleButton && vehicleButton.textContent.trim() === '0. Véhicules') {
+      vehicleButton.textContent = 'Véhicules';
+    }
+
+    const promptIntro = q('#tab-prompt-center .prompt-center-heading .section-intro');
+    if (promptIntro) {
+      promptIntro.textContent = 'Cet espace permet de consulter les règles utilisées par l’IA pour comparer les documents et, selon vos droits, d’ajouter les consignes propres à votre entreprise.';
+    }
+  }
+
   function installLoginModes() {
     const form = q('#login-form');
     const message = q('#login-message');
@@ -188,15 +200,20 @@
     const settingsButton = q('#open-settings');
     const adminButton = q('#open-admin');
 
+    document.body.dataset.superAdminShell = String(Boolean(directAdmin));
+    document.body.dataset.userShell = String(Boolean(authenticatedUser && !directAdmin && !assistance));
+
     if (directAdmin && settingsButton) {
       settingsButton.hidden = false;
       settingsButton.disabled = false;
+      settingsButton.classList.remove('hidden');
       settingsButton.removeAttribute('aria-hidden');
     }
 
     if (authenticatedUser && !directAdmin && !assistance && adminButton) {
       adminButton.hidden = true;
       adminButton.disabled = true;
+      adminButton.classList.add('hidden');
       adminButton.setAttribute('aria-hidden', 'true');
     }
   }
@@ -234,17 +251,26 @@
 
     document.addEventListener('click', event => {
       const adminButton = event.target.closest?.('#open-admin');
-      if (!adminButton || adminButton.disabled || adminButton.hidden || directAdmin || assistance) return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      location.href = '/login?mode=super_admin';
+      if (adminButton && !adminButton.disabled && !adminButton.hidden && !directAdmin && !assistance) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        location.href = '/login?mode=super_admin';
+        return;
+      }
+
+      const promptButton = event.target.closest?.('[data-workspace-tab="prompts"], [data-prompt-center]');
+      if (promptButton) {
+        [0, 50, 200].forEach(delay => window.setTimeout(polishInterfaceCopy, delay));
+      }
     }, true);
     return true;
   }
 
   const init = () => {
+    polishInterfaceCopy();
     installLoginModes();
     installApplicationSession();
+    [50, 200, 700].forEach(delay => window.setTimeout(polishInterfaceCopy, delay));
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, {once: true});
   else init();

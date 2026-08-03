@@ -30,8 +30,9 @@ from .prompt_center_experience_panel import install_prompt_center_experience_inj
 from .prompt_center_system import install_prompt_center_system
 from .scaling import install_unlimited_item_count
 from .super_admin_routes import install_super_admin_routes
+from .version import APP_VERSION
 
-__version__ = "0.19.2"
+__version__ = APP_VERSION
 
 install_super_admin_routes()
 install_password_reset_system()

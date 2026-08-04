@@ -61,6 +61,10 @@
     const control = event.target.closest?.(NAVIGATION_SELECTOR);
     if (!control || control.disabled || control.hidden || control.getAttribute('aria-disabled') === 'true') return;
 
+    // Les grands espaces ouvrent ensuite leur véritable sous-onglet avec element.click().
+    // Ces clics internes ne doivent jamais être bloqués par le délai anti-double-clic.
+    if (!event.isTrusted) return;
+
     if (locked) {
       queuedControl = control;
       event.preventDefault();

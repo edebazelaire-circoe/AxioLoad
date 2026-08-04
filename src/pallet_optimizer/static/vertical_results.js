@@ -30,12 +30,11 @@
     return `${Number(value).toLocaleString('fr-FR', {maximumFractionDigits: 2})}${suffix}`;
   };
 
-  function normalizedOutcome(outcome, solution, index) {
-    if (outcome) return outcome;
+  function normalizedOutcome(solution, index) {
     return {
       index: index + 1,
       code: solution?.method_code || `solution-${index + 1}`,
-      name: solution?.method_name || `Méthode de la solution ${solution?.rank || index + 1}`,
+      name: solution?.method_name || `Méthode ${index + 1}`,
       short_label: 'Solution disponible',
       description: solution?.method_description || '',
       execution_note: '',
@@ -88,69 +87,96 @@
       section.id = 'opx-method-portfolio';
       source.before(section);
     }
-    section.className = 'opx-method-portfolio opx-vertical-portfolio';
+    section.className = 'opx-method-portfolio opx-aligned-portfolio';
     section.innerHTML = `<div class="opx-portfolio-heading">
-      <div><span>Comparaison verticale</span><h3>Optimisations et solutions correspondantes</h3></div>
+      <div><span>Comparaison alignée</span><h3>Résultat des cinq modèles</h3></div>
       <strong id="ovr-success-count"></strong>
     </div>
-    <p class="opx-portfolio-intro">Chaque méthode est affichée juste au-dessus de la solution qu’elle a produite. Les résultats sont classés du meilleur plan au moins bien classé.</p>
-    <div id="opx-model-solution-stack" class="opx-model-solution-stack"></div>`;
+    <p class="opx-portfolio-intro">Les cinq modèles restent dans le premier bloc. Le second bloc contient cinq emplacements strictement alignés : une solution exploitable ou l’échec du modèle correspondant.</p>
+    <p class="opx-mobile-scroll-hint">Balayez horizontalement pour comparer les cinq colonnes.</p>
+    <div class="opx-comparison-scroll" role="region" aria-label="Comparaison des cinq modèles et de leurs solutions" tabindex="0">
+      <div class="opx-comparison-board">
+        <div class="opx-row-label">Modèles d’optimisation</div>
+        <div id="opx-model-row" class="opx-five-column-row opx-model-row"></div>
+        <div class="opx-row-label">Solutions correspondantes</div>
+        <div id="opx-solution-row" class="opx-five-column-row opx-solution-row"></div>
+      </div>
+    </div>`;
     return section;
   }
 
-  function buildSolutionRow(outcome, solution, card) {
-    const row = document.createElement('section');
-    row.className = 'opx-model-solution-row has-solution';
-    row.dataset.method = outcome.code || solution.method_code || '';
-    row.innerHTML = `${outcomeCard(outcome)}<div class="opx-solution-below"><div class="opx-solution-below-label"><span>Solution correspondante</span><strong>Solution ${escapeHtml(solution.rank || '')}</strong></div><div class="opx-solution-slot"></div></div>`;
+  function buildSolutionCell(outcome, solution, card) {
+    const cell = document.createElement('article');
+    cell.className = 'opx-solution-cell has-solution';
+    cell.dataset.method = outcome.code || solution.method_code || '';
+    cell.innerHTML = `<div class="opx-solution-cell-label"><span>Modèle ${escapeHtml(outcome.index || '')}</span><strong>Solution ${escapeHtml(solution.rank || '')}</strong></div><div class="opx-solution-slot"></div>`;
     card.dataset.method = solution.method_code || outcome.code || '';
     card.dataset.solutionRank = String(solution.rank || '');
-    q('.opx-solution-slot', row).append(card);
-    return row;
+    q('.opx-solution-slot', cell).append(card);
+    return cell;
   }
 
-  function buildUnsuccessfulRow(outcome) {
-    const row = document.createElement('section');
-    row.className = 'opx-model-solution-row without-solution';
-    row.dataset.method = outcome.code || '';
-    row.innerHTML = `${outcomeCard(outcome)}<div class="opx-no-solution"><strong>Aucune solution classée</strong><span>Ce modèle n’a pas produit de plan valide dans le temps disponible. Les autres solutions restent utilisables.</span></div>`;
-    return row;
+  function buildFailureCell(outcome) {
+    const status = outcome.status || 'failure';
+    const reason = outcome.reason || (status === 'timeout'
+      ? 'Le temps de calcul disponible a été atteint.'
+      : 'Ce modèle n’a pas produit de plan valide.');
+    const cell = document.createElement('article');
+    cell.className = `opx-solution-cell without-solution status-${escapeHtml(status)}`;
+    cell.dataset.method = outcome.code || '';
+    cell.innerHTML = `<div class="opx-solution-cell-label"><span>Modèle ${escapeHtml(outcome.index || '')}</span><strong>${escapeHtml(statusLabels[status] || status)}</strong></div><div class="opx-no-solution"><span class="opx-failure-icon">${icon(status)}</span><strong>Aucune solution disponible</strong><p>${escapeHtml(reason)}</p></div>`;
+    return cell;
+  }
+
+  function orderedOutcomes(solutions, outcomes) {
+    if (outcomes.length) {
+      return [...outcomes].sort((left, right) => Number(left.index || 0) - Number(right.index || 0));
+    }
+    return solutions.map(normalizedOutcome);
   }
 
   function arrangeSolutions() {
     if (arranging || !latestResult) return false;
     const source = q('#solution-cards');
     if (!source) return false;
-    const cards = qa(':scope > .solution-card', source);
-    if (!cards.length) return false;
+
+    const sourceCards = qa(':scope > .solution-card', source);
+    const alreadyMovedCards = qa('#opx-solution-row .solution-card');
+    const cards = sourceCards.length ? sourceCards : alreadyMovedCards;
+    const solutions = Array.isArray(latestResult.solutions) ? latestResult.solutions : [];
+    const outcomes = Array.isArray(latestResult.method_outcomes) ? latestResult.method_outcomes : [];
+    if (cards.length < solutions.length) return false;
 
     arranging = true;
     try {
       const section = ensurePortfolio();
       if (!section) return false;
-      const stack = q('#opx-model-solution-stack', section);
-      const solutions = Array.isArray(latestResult.solutions) ? latestResult.solutions : [];
-      const outcomes = Array.isArray(latestResult.method_outcomes) ? latestResult.method_outcomes : [];
-      const outcomesByCode = new Map(outcomes.map(outcome => [outcome.code, outcome]));
-      const usedMethods = new Set();
+      const modelRow = q('#opx-model-row', section);
+      const solutionRow = q('#opx-solution-row', section);
+      const ordered = orderedOutcomes(solutions, outcomes);
+      const entries = solutions.map((solution, index) => ({solution, card: cards[index]}));
+      const entriesByMethod = new Map(entries.map(entry => [entry.solution.method_code, entry]));
+      const usedEntries = new Set();
 
-      stack.innerHTML = '';
-      solutions.forEach((solution, index) => {
-        const card = cards[index];
-        if (!card) return;
-        const outcome = normalizedOutcome(outcomesByCode.get(solution.method_code), solution, index);
-        usedMethods.add(solution.method_code || outcome.code);
-        stack.append(buildSolutionRow(outcome, solution, card));
+      modelRow.innerHTML = ordered.map(outcomeCard).join('');
+      solutionRow.innerHTML = '';
+
+      ordered.forEach(outcome => {
+        let entry = entriesByMethod.get(outcome.code);
+        if (!entry && outcome.status === 'success') {
+          entry = entries.find(candidate => !usedEntries.has(candidate));
+        }
+        if (entry && entry.card) {
+          usedEntries.add(entry);
+          solutionRow.append(buildSolutionCell(outcome, entry.solution, entry.card));
+        } else {
+          solutionRow.append(buildFailureCell(outcome));
+        }
       });
 
-      outcomes
-        .filter(outcome => !usedMethods.has(outcome.code))
-        .sort((left, right) => Number(left.index || 0) - Number(right.index || 0))
-        .forEach(outcome => stack.append(buildUnsuccessfulRow(outcome)));
-
-      const successCount = outcomes.filter(outcome => outcome.status === 'success').length || solutions.length;
+      const successCount = ordered.filter(outcome => outcome.status === 'success').length || solutions.length;
       const count = q('#ovr-success-count', section);
-      if (count) count.textContent = `${successCount}/${outcomes.length || solutions.length} modèles avec un plan`;
+      if (count) count.textContent = `${successCount}/${ordered.length || solutions.length} modèles avec un plan`;
       source.classList.add('opx-source-solution-cards');
       return true;
     } finally {

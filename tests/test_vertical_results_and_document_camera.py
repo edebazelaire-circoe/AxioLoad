@@ -22,8 +22,8 @@ def test_vertical_result_and_camera_assets_are_injected_once(tmp_path: Path) -> 
 
     assert response.status_code == 200
     expected = (
-        "/static/vertical_results.css?v=0.19.3",
-        "/static/vertical_results.js?v=0.19.3",
+        "/static/vertical_results.css?v=0.19.4",
+        "/static/vertical_results.js?v=0.19.4",
         "/static/document_camera.css?v=0.19.3",
         "/static/document_camera.js?v=0.19.3",
     )
@@ -31,15 +31,19 @@ def test_vertical_result_and_camera_assets_are_injected_once(tmp_path: Path) -> 
         assert response.text.count(asset) == 1
 
 
-def test_vertical_results_script_pairs_each_solution_with_its_model() -> None:
+def test_results_keep_two_aligned_rows_of_five_slots() -> None:
     script = (STATIC / "vertical_results.js").read_text(encoding="utf-8")
+    stylesheet = (STATIC / "vertical_results.css").read_text(encoding="utf-8")
 
-    assert "opx-model-solution-stack" in script
-    assert "buildSolutionRow" in script
+    assert "opx-model-row" in script
+    assert "opx-solution-row" in script
+    assert "buildSolutionCell" in script
+    assert "buildFailureCell" in script
     assert "solution.method_code" in script
-    assert "q('.opx-solution-slot', row).append(card)" in script
-    assert "without-solution" in script
-    assert "Les résultats sont classés du meilleur plan" in script
+    assert "Les cinq modèles restent dans le premier bloc" in script
+    assert "grid-template-columns: repeat(5" in stylesheet
+    assert "opx-comparison-scroll" in stylesheet
+    assert "scroll-snap-type: x proximity" in stylesheet
 
 
 def test_document_camera_requests_rear_camera_and_transfers_a_jpeg() -> None:

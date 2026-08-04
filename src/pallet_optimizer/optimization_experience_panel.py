@@ -9,8 +9,8 @@ _STYLE = b'<link rel="stylesheet" href="/static/optimization_experience.css?v=0.
 _SCRIPT = b'<script src="/static/optimization_experience.js?v=0.19.1"></script>'
 _RESILIENCE_STYLE = b'<link rel="stylesheet" href="/static/optimization_resilience.css?v=0.19.2">'
 _RESILIENCE_SCRIPT = b'<script src="/static/optimization_resilience.js?v=0.19.2"></script>'
-_VERTICAL_STYLE = b'<link rel="stylesheet" href="/static/vertical_results.css?v=0.19.3">'
-_VERTICAL_SCRIPT = b'<script src="/static/vertical_results.js?v=0.19.3"></script>'
+_VERTICAL_STYLE = b'<link rel="stylesheet" href="/static/vertical_results.css?v=0.19.4">'
+_VERTICAL_SCRIPT = b'<script src="/static/vertical_results.js?v=0.19.4"></script>'
 _OLD_STYLE = b'<link rel="stylesheet" href="/static/optimization_experience.css?v=0.18.0">'
 _OLD_SCRIPT = b'<script src="/static/optimization_experience.js?v=0.18.0"></script>'
 _original_template_response: Callable[..., Any] | None = None

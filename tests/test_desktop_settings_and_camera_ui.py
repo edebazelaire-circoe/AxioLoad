@@ -76,6 +76,7 @@ def test_login_and_settings_keep_desktop_layout_on_a_narrow_viewport() -> None:
               const settings = document.querySelector('#tab-settings').getBoundingClientRect();
               const actions = document.querySelector('.company-endpoint-actions');
               const firstAction = actions.querySelector('button').getBoundingClientRect();
+              const modes = [...document.querySelectorAll('#tab-settings .company-ai-mode-choice')].map(node => node.getBoundingClientRect());
               return {
                 bodyMinWidth: parseFloat(getComputedStyle(document.body).minWidth),
                 loginWidth: login.width,
@@ -84,7 +85,8 @@ def test_login_and_settings_keep_desktop_layout_on_a_narrow_viewport() -> None:
                 accountColumns: tracks('.fixed-login-accounts__grid'),
                 settingsWidth: settings.width,
                 settingsColumns: tracks('#tab-settings .settings-sections'),
-                modeColumns: tracks('#tab-settings .company-ai-mode-selector'),
+                modeSameRow: modes.length === 2 && Math.abs(modes[0].y - modes[1].y) < 2,
+                modeSecondAfterFirst: modes.length === 2 && modes[1].x > modes[0].x + modes[0].width,
                 headingDisplay: getComputedStyle(document.querySelector('#tab-settings .panel-heading')).display,
                 actionsDisplay: getComputedStyle(actions).display,
                 actionWidth: firstAction.width,
@@ -102,7 +104,8 @@ def test_login_and_settings_keep_desktop_layout_on_a_narrow_viewport() -> None:
         assert layout["accountColumns"] == 2
         assert layout["settingsWidth"] >= 1120
         assert layout["settingsColumns"] == 2
-        assert layout["modeColumns"] == 2
+        assert layout["modeSameRow"] is True
+        assert layout["modeSecondAfterFirst"] is True
         assert layout["headingDisplay"] == "flex"
         assert layout["actionsDisplay"] == "flex"
         assert layout["actionWidth"] < layout["actionsWidth"]

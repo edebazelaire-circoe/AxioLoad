@@ -9,6 +9,8 @@ _STYLE = b'<link rel="stylesheet" href="/static/auth_experience.css?v=0.19.1">'
 _SCRIPT = b'<script src="/static/auth_experience.js?v=0.19.1"></script>'
 _NAV_STYLE = b'<link rel="stylesheet" href="/static/navigation_guard.css?v=0.19.1">'
 _NAV_SCRIPT = b'<script src="/static/navigation_guard.js?v=0.19.1"></script>'
+_INTEGRITY_STYLE = b'<link rel="stylesheet" href="/static/ui_integrity.css?v=0.19.3">'
+_INTEGRITY_SCRIPT = b'<script src="/static/ui_integrity.js?v=0.19.3"></script>'
 _OLD_STYLE = b'<link rel="stylesheet" href="/static/auth_experience.css?v=0.18.0">'
 _OLD_SCRIPT = b'<script src="/static/auth_experience.js?v=0.18.0"></script>'
 _original_template_response: Callable[..., Any] | None = None
@@ -25,10 +27,19 @@ def install_auth_experience_injection() -> None:
         response = _original_template_response(self, *args, **kwargs)
         body = getattr(response, "body", b"")
         if b'id="open-settings"' in body or b'id="login-form"' in body:
-            for asset in (_OLD_STYLE, _OLD_SCRIPT, _STYLE, _SCRIPT, _NAV_STYLE, _NAV_SCRIPT):
+            for asset in (
+                _OLD_STYLE,
+                _OLD_SCRIPT,
+                _STYLE,
+                _SCRIPT,
+                _NAV_STYLE,
+                _NAV_SCRIPT,
+                _INTEGRITY_STYLE,
+                _INTEGRITY_SCRIPT,
+            ):
                 body = body.replace(asset, b"")
-            body = body.replace(b"</head>", _STYLE + _NAV_STYLE + b"</head>")
-            body = body.replace(b"</body>", _SCRIPT + _NAV_SCRIPT + b"</body>")
+            body = body.replace(b"</head>", _STYLE + _NAV_STYLE + _INTEGRITY_STYLE + b"</head>")
+            body = body.replace(b"</body>", _SCRIPT + _NAV_SCRIPT + _INTEGRITY_SCRIPT + b"</body>")
             response.body = body
             response.headers["content-length"] = str(len(body))
         return response

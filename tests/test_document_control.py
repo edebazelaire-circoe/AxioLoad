@@ -16,14 +16,13 @@ def _png() -> bytes:
 
 
 def test_document_control_does_not_persist_sources_and_exports_history(tmp_path, monkeypatch):
-    monkeypatch.setenv("PLO_DOCUMENT_SECRET_KEY", "test-document-secret")
     app = create_app(tmp_path)
     client = TestClient(app)
     document_repo = DocumentControlRepository(app.state.registry)
-    document_repo.save_ai_config(
+    document_repo.save_endpoint_config(  # type: ignore[attr-defined]
         "local",
-        {"provider":"openai","model":"test-model","api_key":"sk-test-secret","retention_months":6,"vendor_zero_retention_confirmed":True},
-        "test-superadmin",
+        "https://gateway.example/axioload/document-control",
+        "responsable-test",
     )
 
     def fake_call(*args, **kwargs):
@@ -39,6 +38,8 @@ def test_document_control_does_not_persist_sources_and_exports_history(tmp_path,
     assert response.status_code == 200, response.text
     control = response.json()
     assert control["reference"].startswith("CTRL-")
+    assert control["provider"] == "client_endpoint"
+    assert control["model"] == "managed_by_company"
     assert "ordre.png" not in str(control)
     assert "cmr.png" not in str(control)
 
@@ -52,8 +53,7 @@ def test_document_control_does_not_persist_sources_and_exports_history(tmp_path,
     assert client.get(f"/api/document-control/history/{control['id']}/export.xlsx").content.startswith(b"PK")
 
 
-def test_limits_and_locked_prompt_extension(tmp_path, monkeypatch):
-    monkeypatch.setenv("PLO_DOCUMENT_SECRET_KEY", "test-document-secret")
+def test_limits_and_locked_prompt_extension(tmp_path):
     client = TestClient(create_app(tmp_path))
     bootstrap = client.get("/api/document-control/bootstrap")
     assert bootstrap.status_code == 200

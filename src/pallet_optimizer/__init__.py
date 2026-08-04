@@ -18,6 +18,7 @@ from .admin_panel import install_admin_panel_injection
 from .auth_experience_panel import install_auth_experience_injection
 from .client_grouping import install_client_grouping
 from .client_split_policy import install_client_split_policy
+from .company_ai_endpoint import install_company_ai_endpoint
 from .document_control_experience_panel import install_document_control_experience_injection
 from .document_control_panel import install_document_control_panel_injection
 from .document_control_system import install_document_control_system
@@ -53,3 +54,4 @@ install_document_control_routes()
 install_document_control_system()
 _prompt_center_system._original_fastapi_init = FastAPI.__init__
 install_prompt_center_system()
+install_company_ai_endpoint()

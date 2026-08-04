@@ -12,7 +12,7 @@
   }
 
   function scheduleCleanup() {
-    [0, 40, 160, 500].forEach(delay => window.setTimeout(keepDesktopSettings, delay));
+    [0, 50, 200, 700, 1600, 3000].forEach(delay => window.setTimeout(keepDesktopSettings, delay));
   }
 
   document.addEventListener('click', event => {

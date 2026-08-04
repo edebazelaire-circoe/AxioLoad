@@ -76,9 +76,15 @@ def test_primary_manager_can_choose_endpoint_or_api_key(
 
         card = page.locator('.company-endpoint-card')
         card.wait_for(state='visible')
-        assert card.locator('text=Configuration réservée au responsable principal.').is_visible()
-        assert card.locator('text=Passerelle de mon entreprise').is_visible()
-        assert card.locator('text=Clé API OpenAI').is_visible()
+        assert card.get_by_text(
+            'Configuration réservée au responsable principal.', exact=True
+        ).is_visible()
+        assert card.locator(
+            '.company-ai-mode-choice strong', has_text='Passerelle de mon entreprise'
+        ).is_visible()
+        assert card.locator(
+            '.company-ai-mode-choice strong', has_text='Clé API OpenAI'
+        ).is_visible()
         assert card.locator('input[name="company-ai-mode"]').count() == 2
         assert card.locator('input[type="url"]').count() == 1
         assert card.locator('input[type="password"]').count() == 1
@@ -98,7 +104,9 @@ def test_primary_manager_can_choose_endpoint_or_api_key(
         )
         assert card.locator('#company-ai-connection-status strong').inner_text() == 'gateway.example'
 
-        card.locator('input[name="company-ai-mode"][value="openai_api_key"]').check()
+        card.locator(
+            '.company-ai-mode-choice', has_text='Clé API OpenAI'
+        ).click()
         assert api_panel.is_visible()
         assert not endpoint_panel.is_visible()
         model_ids = card.locator('#company-ai-model option').evaluate_all(
@@ -106,7 +114,7 @@ def test_primary_manager_can_choose_endpoint_or_api_key(
         )
         assert set(model_ids) == ALLOWED_OPENAI_MODELS
         assert card.locator('#company-ai-model').input_value() == 'gpt-5-mini'
-        assert card.locator('text=Liste contrôlée par AxioLoad').is_visible()
+        assert card.get_by_text('Liste contrôlée par AxioLoad', exact=True).is_visible()
 
         body_metrics = page.evaluate(
             "() => ({bodyWidth: document.documentElement.scrollWidth, viewportWidth: window.innerWidth})"
@@ -134,7 +142,9 @@ def test_api_key_mode_can_be_saved_without_exposing_the_key(ai_settings_app: str
         page.wait_for_selector('#company-ai-connection-title', state='attached')
         page.locator('#open-settings').click()
         card = page.locator('.company-endpoint-card')
-        card.locator('input[name="company-ai-mode"][value="openai_api_key"]').check()
+        card.locator(
+            '.company-ai-mode-choice', has_text='Clé API OpenAI'
+        ).click()
         card.locator('#company-ai-model').select_option('gpt-4.1')
         card.locator('#company-ai-api-key').fill('sk-proj-browser-test-abcdefghijklmnopqrstuvwxyz')
         card.locator('#company-ai-retention-confirmed').check()

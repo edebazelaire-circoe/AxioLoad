@@ -29,6 +29,10 @@ def test_application_loads_only_the_user_settings_surface(tmp_path: Path) -> Non
 
 
 def test_non_primary_user_gets_redacted_company_status(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setenv(
+        "PLO_DOCUMENT_SECRET_KEY",
+        "axioload-test-secret-for-redacted-company-status",
+    )
     client = TestClient(create_app(tmp_path))
     secret_value = "test-api-key-abcdefghijklmnopqrstuvwxyz"
     saved = client.put(

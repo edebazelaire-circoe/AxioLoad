@@ -1,0 +1,195 @@
+.company-endpoint-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.company-endpoint-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  background: linear-gradient(90deg, #005696, #00a8bf);
+}
+
+.company-endpoint-heading {
+  align-items: flex-start;
+}
+
+.company-endpoint-icon {
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: color-mix(in srgb, #005696 10%, var(--paper));
+  color: #005696;
+  font-size: 1.25rem;
+  font-weight: 900;
+}
+
+.company-endpoint-explanation {
+  margin: 16px 0;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, #005696 24%, var(--line));
+  border-radius: 13px;
+  background: color-mix(in srgb, #005696 5%, var(--paper));
+}
+
+.company-endpoint-explanation strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--ink);
+}
+
+.company-endpoint-explanation p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.company-endpoint-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 15px;
+  padding: 11px 13px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--paper);
+}
+
+.company-endpoint-status > span:last-child {
+  display: grid;
+  gap: 2px;
+}
+
+.company-endpoint-status strong {
+  color: var(--ink);
+  font-size: .88rem;
+}
+
+.company-endpoint-status small {
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.company-endpoint-dot {
+  flex: 0 0 auto;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #8a96a0;
+  box-shadow: 0 0 0 4px color-mix(in srgb, #8a96a0 15%, transparent);
+}
+
+.company-endpoint-dot.ready {
+  background: #26734f;
+  box-shadow: 0 0 0 4px color-mix(in srgb, #26734f 15%, transparent);
+}
+
+.company-endpoint-dot.pending {
+  background: #b87500;
+  box-shadow: 0 0 0 4px color-mix(in srgb, #b87500 15%, transparent);
+}
+
+.company-endpoint-field {
+  display: grid;
+  gap: 7px;
+}
+
+.company-endpoint-field > span {
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.company-endpoint-field input {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+}
+
+.company-endpoint-field input:focus {
+  border-color: #00a8bf;
+  outline: 3px solid rgba(0, 168, 191, .18);
+}
+
+.company-endpoint-field small {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.company-endpoint-contract {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 13px;
+  padding: 9px 11px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+  color: var(--muted);
+  font-size: .78rem;
+}
+
+.company-endpoint-contract code {
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-size: .76rem;
+}
+
+.company-endpoint-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.company-endpoint-actions button {
+  min-height: 43px;
+}
+
+.danger-secondary {
+  border-color: color-mix(in srgb, #a93636 45%, var(--line)) !important;
+  color: #a93636 !important;
+}
+
+.company-endpoint-message {
+  margin-top: 12px;
+}
+
+.company-endpoint-message.info {
+  border-color: color-mix(in srgb, #005696 25%, var(--line));
+  background: color-mix(in srgb, #005696 5%, var(--paper));
+}
+
+.company-endpoint-message.success {
+  border-color: color-mix(in srgb, #26734f 30%, var(--line));
+  background: color-mix(in srgb, #26734f 6%, var(--paper));
+  color: #26734f;
+}
+
+.company-endpoint-message.error {
+  border-color: color-mix(in srgb, #a93636 30%, var(--line));
+  background: color-mix(in srgb, #a93636 6%, var(--paper));
+  color: #a93636;
+}
+
+@media (max-width: 650px) {
+  .company-endpoint-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .company-endpoint-actions button {
+    width: 100%;
+  }
+
+  .company-endpoint-contract {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

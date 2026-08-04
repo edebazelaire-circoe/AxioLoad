@@ -66,7 +66,7 @@ def _assert_only_panel(page: Page, workspace: str, panel_id: str, *, settle_ms: 
           document.querySelector(panelId)?.classList.contains('active') &&
           document.querySelectorAll('main > .tab-panel.active').length === 1
         """,
-        [workspace, panel_id],
+        arg=[workspace, panel_id],
         timeout=10_000,
     )
     if settle_ms:

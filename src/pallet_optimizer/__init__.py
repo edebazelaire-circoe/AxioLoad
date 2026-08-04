@@ -20,6 +20,7 @@ from .client_grouping import install_client_grouping
 from .client_split_policy import install_client_split_policy
 from .company_ai_dual_mode import install_company_ai_dual_mode
 from .company_ai_endpoint import install_company_ai_endpoint
+from .company_ai_privacy import install_company_ai_privacy
 from .document_control_experience_panel import install_document_control_experience_injection
 from .document_control_panel import install_document_control_panel_injection
 from .document_control_system import install_document_control_system
@@ -57,3 +58,4 @@ _prompt_center_system._original_fastapi_init = FastAPI.__init__
 install_prompt_center_system()
 install_company_ai_endpoint()
 install_company_ai_dual_mode()
+install_company_ai_privacy()

@@ -19,6 +19,16 @@ jobs:
         with:
           python-version: "3.13"
       - run: python -m pip install -e '.[dev]'
+      - name: Install Chromium for real UI tests
+        run: python -m playwright install --with-deps chromium
       - run: python -m compileall -q src
       - run: pytest
+      - name: Upload browser trace on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: workspace-navigation-debug
+          path: test-results
+          if-no-files-found: ignore
+          retention-days: 7
       - run: docker build -t pallet-loading-optimizer:test .

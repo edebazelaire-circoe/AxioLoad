@@ -11,7 +11,7 @@ def _payload() -> dict:
         "dimension_unit": "mm",
         "weight_unit": "kg",
         "seed": 7,
-        "budget_seconds": 15,
+        "budget_seconds": 5,
         "requested_solutions": 5,
         "vehicle_policy": {
             "mode": "forced",

@@ -164,7 +164,9 @@ def test_comparison_remains_readable_on_tablet_and_phone(
         _open_results(page, vertical_camera_app)
         _render_five_models(page)
 
-        metrics = page.locator('.opx-comparison-scroll').evaluate(
+        comparison = page.locator('#tab-results .opx-comparison-scroll:visible')
+        comparison.wait_for(state="visible")
+        metrics = comparison.evaluate(
             "element => ({clientWidth: element.clientWidth, scrollWidth: element.scrollWidth, bodyWidth: document.documentElement.scrollWidth, viewportWidth: window.innerWidth})"
         )
         first_model = page.locator('#opx-model-row .ovr-model-card').first.bounding_box()
@@ -175,7 +177,7 @@ def test_comparison_remains_readable_on_tablet_and_phone(
         assert first_model['width'] >= minimum_card_width
         assert abs(first_model['x'] - first_solution['x']) < 2
 
-        page.locator('.opx-comparison-scroll').evaluate("element => element.scrollTo({left: element.scrollWidth, behavior: 'instant'})")
+        comparison.evaluate("element => element.scrollTo({left: element.scrollWidth, behavior: 'instant'})")
         page.wait_for_timeout(100)
         assert page.locator('#opx-model-row .ovr-model-card').nth(4).is_visible()
         assert page.locator('#opx-solution-row .opx-solution-cell').nth(4).is_visible()

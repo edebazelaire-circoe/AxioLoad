@@ -1,7 +1,14 @@
 /* AxioLoad keeps a desktop workspace for login and settings, including on narrow screens. */
+body:has(#login-form) {
+  display: block !important;
+  min-width: 1160px;
+  overflow-x: auto;
+}
+
 .login-shell {
   width: 1080px !important;
   max-width: none !important;
+  margin: 24px auto !important;
 }
 
 .login-shell .login-form {

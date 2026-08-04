@@ -58,6 +58,11 @@
   line-height: 1;
 }
 
+.dc-camera-status.dc-hidden,
+.dc-camera-preview.dc-hidden {
+  display: none !important;
+}
+
 .dc-camera-status {
   max-width: 420px;
   padding: 7px 9px;

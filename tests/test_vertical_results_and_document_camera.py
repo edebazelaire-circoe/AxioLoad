@@ -59,7 +59,7 @@ def test_document_camera_requests_rear_camera_and_transfers_a_jpeg() -> None:
     assert "observer.observe(main" in script
     assert "observe(document.body" not in script
     assert "dc-camera-hint" not in script
-    assert "dc-camera-status" not in script
+    assert 'dc-camera-status dc-hidden' in script
 
 
 def test_camera_jpeg_is_accepted_by_document_preparation() -> None:

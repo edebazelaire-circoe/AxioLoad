@@ -33,7 +33,8 @@ def install_auth_experience_injection() -> None:
         response = _original_template_response(self, *args, **kwargs)
         body = getattr(response, "body", b"")
         is_login = b'id="login-form"' in body
-        if b'id="open-settings"' in body or is_login:
+        is_application = b'id="open-settings"' in body
+        if is_application or is_login:
             for asset in (
                 _OLD_STYLE,
                 _OLD_SCRIPT,
@@ -51,9 +52,10 @@ def install_auth_experience_injection() -> None:
                 body = body.replace(asset, b"")
             styles = _STYLE + _NAV_STYLE + _INTEGRITY_STYLE
             scripts = _SCRIPT + _NAV_SCRIPT + _INTEGRITY_SCRIPT
-            if is_login and fixed_test_accounts_enabled():
-                styles += _FIXED_TEST_STYLE
+            if fixed_test_accounts_enabled():
                 scripts += _FIXED_TEST_SCRIPT
+                if is_login:
+                    styles += _FIXED_TEST_STYLE
             body = body.replace(b"</head>", styles + b"</head>")
             body = body.replace(b"</body>", scripts + b"</body>")
             response.body = body

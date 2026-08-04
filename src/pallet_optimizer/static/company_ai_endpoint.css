@@ -49,7 +49,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 15px;
+  margin-bottom: 16px;
   padding: 11px 13px;
   border: 1px solid var(--line);
   border-radius: 11px;
@@ -90,6 +90,103 @@
   box-shadow: 0 0 0 4px color-mix(in srgb, #b87500 15%, transparent);
 }
 
+.company-ai-mode-selector {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0 0 16px;
+  padding: 0;
+  border: 0;
+}
+
+.company-ai-mode-selector legend {
+  grid-column: 1 / -1;
+  margin-bottom: 2px;
+  color: var(--ink);
+  font-size: .82rem;
+  font-weight: 850;
+}
+
+.company-ai-mode-choice {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: 11px;
+  min-height: 112px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: var(--paper);
+  cursor: pointer;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+  touch-action: manipulation;
+}
+
+.company-ai-mode-choice:hover {
+  border-color: color-mix(in srgb, #00a8bf 50%, var(--line));
+}
+
+.company-ai-mode-choice.selected {
+  border-color: #00a8bf;
+  background: color-mix(in srgb, #00a8bf 5%, var(--paper));
+  box-shadow: 0 0 0 3px rgba(0, 168, 191, .12);
+}
+
+.company-ai-mode-choice input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.company-ai-mode-choice:focus-within {
+  outline: 3px solid rgba(0, 168, 191, .2);
+  outline-offset: 2px;
+}
+
+.company-ai-mode-icon {
+  display: grid;
+  place-items: center;
+  width: 35px;
+  height: 35px;
+  border-radius: 10px;
+  background: color-mix(in srgb, #005696 9%, var(--paper));
+  color: #005696;
+  font-size: 1.05rem;
+  font-weight: 900;
+}
+
+.company-ai-mode-choice > span:last-child {
+  display: grid;
+  gap: 5px;
+}
+
+.company-ai-mode-choice strong {
+  color: var(--ink);
+  font-size: .9rem;
+  line-height: 1.3;
+}
+
+.company-ai-mode-choice small {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.company-ai-mode-panel {
+  display: grid;
+  gap: 13px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--ink) 2%, var(--paper));
+}
+
+.company-ai-mode-panel[hidden] {
+  display: none !important;
+}
+
 .company-endpoint-field {
   display: grid;
   gap: 7px;
@@ -100,7 +197,8 @@
   font-weight: 800;
 }
 
-.company-endpoint-field input {
+.company-endpoint-field input,
+.company-endpoint-field select {
   width: 100%;
   min-height: 46px;
   padding: 10px 12px;
@@ -111,7 +209,8 @@
   font: inherit;
 }
 
-.company-endpoint-field input:focus {
+.company-endpoint-field input:focus,
+.company-endpoint-field select:focus {
   border-color: #00a8bf;
   outline: 3px solid rgba(0, 168, 191, .18);
 }
@@ -126,7 +225,6 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-top: 13px;
   padding: 9px 11px;
   border-radius: 9px;
   background: color-mix(in srgb, var(--ink) 4%, transparent);
@@ -138,6 +236,55 @@
   overflow-wrap: anywhere;
   color: var(--ink);
   font-size: .76rem;
+}
+
+.company-ai-model-note {
+  display: grid;
+  gap: 3px;
+  padding: 10px 12px;
+  border-left: 3px solid #00a8bf;
+  border-radius: 8px;
+  background: color-mix(in srgb, #00a8bf 5%, var(--paper));
+}
+
+.company-ai-model-note strong {
+  color: var(--ink);
+  font-size: .8rem;
+}
+
+.company-ai-model-note span {
+  color: var(--muted);
+  font-size: .78rem;
+  line-height: 1.45;
+}
+
+.company-ai-retention-confirmation {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: 9px;
+  padding: 11px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+  cursor: pointer;
+}
+
+.company-ai-retention-confirmation input {
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  accent-color: #005696;
+}
+
+.company-ai-retention-confirmation span {
+  color: var(--muted);
+  font-size: .8rem;
+  line-height: 1.5;
+}
+
+.company-ai-retention-confirmation code {
+  color: var(--ink);
 }
 
 .company-endpoint-actions {
@@ -178,6 +325,16 @@
   color: #a93636;
 }
 
+@media (max-width: 760px) {
+  .company-ai-mode-selector {
+    grid-template-columns: 1fr;
+  }
+
+  .company-ai-mode-choice {
+    min-height: 0;
+  }
+}
+
 @media (max-width: 650px) {
   .company-endpoint-actions {
     display: grid;
@@ -191,5 +348,9 @@
   .company-endpoint-contract {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .company-ai-mode-panel {
+    padding: 13px;
   }
 }

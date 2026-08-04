@@ -13,6 +13,8 @@ _NAV_STYLE = b'<link rel="stylesheet" href="/static/navigation_guard.css?v=0.19.
 _NAV_SCRIPT = b'<script src="/static/navigation_guard.js?v=0.19.1"></script>'
 _INTEGRITY_STYLE = b'<link rel="stylesheet" href="/static/ui_integrity.css?v=0.19.3">'
 _INTEGRITY_SCRIPT = b'<script src="/static/ui_integrity.js?v=0.19.3"></script>'
+_DESKTOP_STYLE = b'<link rel="stylesheet" href="/static/desktop_workspace.css?v=0.19.6">'
+_DESKTOP_SCRIPT = b'<script src="/static/desktop_workspace.js?v=0.19.6"></script>'
 _FIXED_TEST_STYLE = b'<link rel="stylesheet" href="/static/fixed_test_accounts.css?v=0.19.5">'
 _FIXED_TEST_SCRIPT = b'<script src="/static/fixed_test_accounts_ui.js?v=0.19.5"></script>'
 _OLD_FIXED_TEST_STYLE = b'<link rel="stylesheet" href="/static/fixed_test_accounts.css?v=0.19.2">'
@@ -44,14 +46,16 @@ def install_auth_experience_injection() -> None:
                 _NAV_SCRIPT,
                 _INTEGRITY_STYLE,
                 _INTEGRITY_SCRIPT,
+                _DESKTOP_STYLE,
+                _DESKTOP_SCRIPT,
                 _OLD_FIXED_TEST_STYLE,
                 _OLD_FIXED_TEST_SCRIPT,
                 _FIXED_TEST_STYLE,
                 _FIXED_TEST_SCRIPT,
             ):
                 body = body.replace(asset, b"")
-            styles = _STYLE + _NAV_STYLE + _INTEGRITY_STYLE
-            scripts = _SCRIPT + _NAV_SCRIPT + _INTEGRITY_SCRIPT
+            styles = _STYLE + _NAV_STYLE + _INTEGRITY_STYLE + _DESKTOP_STYLE
+            scripts = _SCRIPT + _NAV_SCRIPT + _INTEGRITY_SCRIPT + _DESKTOP_SCRIPT
             if fixed_test_accounts_enabled():
                 scripts += _FIXED_TEST_SCRIPT
                 if is_login:

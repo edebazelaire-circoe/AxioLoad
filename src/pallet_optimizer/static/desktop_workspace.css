@@ -1,0 +1,84 @@
+/* AxioLoad keeps a desktop workspace for login and settings, including on narrow screens. */
+.login-shell {
+  width: 1080px !important;
+  max-width: none !important;
+}
+
+.login-shell .login-form {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  align-items: end;
+}
+
+.login-shell .login-actions {
+  grid-column: 1 / -1;
+  justify-content: flex-end;
+}
+
+.login-shell .auth-account-switch,
+.login-shell .fixed-login-accounts__grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+.login-shell .auth-admin-note {
+  grid-column: 1 / -1;
+}
+
+#tab-settings.settings-page {
+  width: 100%;
+  min-width: 1120px;
+  max-width: 1450px !important;
+}
+
+#tab-settings .panel-heading {
+  display: flex !important;
+}
+
+#tab-settings .settings-sections {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+#tab-settings .settings-card.full-width {
+  grid-column: 1 / -1 !important;
+}
+
+#tab-settings .settings-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+#tab-settings .settings-form label:first-child,
+#tab-settings .settings-form label:nth-child(2),
+#tab-settings .settings-form .settings-actions {
+  grid-column: 1 / -1 !important;
+}
+
+#tab-settings .theme-options,
+#tab-settings .company-ai-mode-selector {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+#tab-settings .company-ai-mode-choice {
+  min-height: 112px !important;
+}
+
+#tab-settings .company-endpoint-actions {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  justify-content: flex-end;
+}
+
+#tab-settings .company-endpoint-actions button,
+#tab-settings .settings-actions button,
+#tab-settings .primary {
+  width: auto !important;
+}
+
+#tab-settings .company-endpoint-contract {
+  flex-direction: row !important;
+  align-items: center !important;
+}
+
+/* The prompt library is maintained in Base de données > Prompts only. */
+#dc-prompt-settings {
+  display: none !important;
+}

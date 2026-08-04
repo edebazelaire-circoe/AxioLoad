@@ -116,6 +116,10 @@ def test_five_solution_slots_are_aligned_with_the_five_models(vertical_camera_ap
         assert solutions.nth(4).locator('.opx-no-solution').is_visible()
 
         for index in range(5):
+            solutions.nth(index).scroll_into_view_if_needed()
+            solutions.nth(index).wait_for(state="visible")
+            models.nth(index).wait_for(state="visible")
+            page.wait_for_timeout(20)
             model_box = models.nth(index).bounding_box()
             solution_box = solutions.nth(index).bounding_box()
             assert model_box and solution_box

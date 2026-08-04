@@ -76,7 +76,26 @@ def test_browser_removes_superadmin_editor_and_uses_user_settings() -> None:
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(headless=True)
         page = browser.new_page(viewport={"width": 1280, "height": 900})
-        page.add_init_script(
+        page.set_content(
+            """
+            <main>
+              <section id="tab-settings">
+                <div class="settings-sections">
+                  <section class="settings-card full-width">
+                    <h3 id="api-settings-title">Gestion des clés API</h3>
+                  </section>
+                </div>
+              </section>
+            </main>
+            <div id="admin-company-api">
+              <section id="dc-admin-ai" class="admin-card dc-admin-ai">
+                <h3>IA de contrôle documentaire</h3>
+                <input id="dc-a-key" type="password">
+              </section>
+            </div>
+            """
+        )
+        page.evaluate(
             """() => {
               window.fetch = async url => {
                 const path = String(url);
@@ -102,25 +121,6 @@ def test_browser_removes_superadmin_editor_and_uses_user_settings() -> None:
                 return new Response('{}', {status: 404, headers: {'Content-Type': 'application/json'}});
               };
             }"""
-        )
-        page.set_content(
-            """
-            <main>
-              <section id="tab-settings">
-                <div class="settings-sections">
-                  <section class="settings-card full-width">
-                    <h3 id="api-settings-title">Gestion des clés API</h3>
-                  </section>
-                </div>
-              </section>
-            </main>
-            <div id="admin-company-api">
-              <section id="dc-admin-ai" class="admin-card dc-admin-ai">
-                <h3>IA de contrôle documentaire</h3>
-                <input id="dc-a-key" type="password">
-              </section>
-            </div>
-            """
         )
         page.add_script_tag(path=str(SURFACE_SCRIPT))
 

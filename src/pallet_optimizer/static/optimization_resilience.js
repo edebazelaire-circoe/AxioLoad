@@ -2,7 +2,6 @@
   'use strict';
 
   const q = (selector, root = document) => root.querySelector(selector);
-  const qa = (selector, root = document) => [...root.querySelectorAll(selector)];
 
   function arrangeCalculationActions() {
     const panel = q('#tab-data');
@@ -15,7 +14,10 @@
 
     actions.classList.add('opx-resilient-actions');
     budget.classList.add('opx-resilient-budget');
-    actions.append(add, duplicate, budget, optimize);
+
+    const expected = [add, duplicate, budget, optimize];
+    const alreadyOrdered = expected.every((element, index) => actions.children[index] === element);
+    if (!alreadyOrdered) actions.append(...expected);
 
     const oldBudgetRow = q('#opx-budget-row', panel);
     if (oldBudgetRow && !oldBudgetRow.children.length) oldBudgetRow.remove();

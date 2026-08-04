@@ -3,28 +3,10 @@
 
   const q = (selector, root = document) => root.querySelector(selector);
   const qa = (selector, root = document) => [...root.querySelectorAll(selector)];
-  let requestedPanel = null;
-  let reconciliationFrame = 0;
-
-  function usable(element) {
-    return Boolean(
-      element &&
-      element.isConnected &&
-      !element.hidden &&
-      !element.disabled &&
-      element.getAttribute('aria-disabled') !== 'true'
-    );
-  }
-
-  function panelForControl(control) {
-    if (!control) return null;
-    if (control.id === 'open-settings') return q('#tab-settings');
-    if (control.id === 'open-admin') return q('#tab-admin');
-    const tabName = control.dataset?.tab;
-    return tabName ? q(`#tab-${CSS.escape(tabName)}`) : null;
-  }
+  let accessibilityFrame = 0;
 
   function syncPanelAccessibility() {
+    accessibilityFrame = 0;
     qa('main > .tab-panel').forEach(panel => {
       const active = panel.classList.contains('active');
       panel.setAttribute('aria-hidden', String(!active));
@@ -32,29 +14,9 @@
     });
   }
 
-  function reconcilePanels() {
-    reconciliationFrame = 0;
-    const panels = qa('main > .tab-panel');
-    const activePanels = panels.filter(panel => panel.classList.contains('active'));
-    const preferred = requestedPanel && requestedPanel.isConnected ? requestedPanel : null;
-    requestedPanel = null;
-
-    if (preferred && activePanels.includes(preferred)) {
-      activePanels.forEach(panel => panel.classList.toggle('active', panel === preferred));
-    } else if (activePanels.length > 1) {
-      const visible = activePanels.filter(panel => getComputedStyle(panel).display !== 'none');
-      const keep = visible.at(-1) || activePanels.at(-1);
-      activePanels.forEach(panel => panel.classList.toggle('active', panel === keep));
-    }
-
-    syncPanelAccessibility();
-  }
-
-  function scheduleReconciliation(panel = null) {
-    if (panel) requestedPanel = panel;
-    if (reconciliationFrame) cancelAnimationFrame(reconciliationFrame);
-    queueMicrotask(syncPanelAccessibility);
-    reconciliationFrame = requestAnimationFrame(reconcilePanels);
+  function scheduleAccessibilitySync() {
+    if (accessibilityFrame) cancelAnimationFrame(accessibilityFrame);
+    accessibilityFrame = requestAnimationFrame(syncPanelAccessibility);
   }
 
   function activateChoiceFromCard(event) {
@@ -62,6 +24,7 @@
     if (!choice || event.target.matches('input, select, textarea, button, a')) return;
     const input = q('input:not(:disabled)', choice);
     if (!input) return;
+
     if (input.type === 'radio') {
       if (!input.checked) {
         input.checked = true;
@@ -76,12 +39,7 @@
 
   document.addEventListener('click', event => {
     activateChoiceFromCard(event);
-
-    const control = event.target.closest?.(
-      '.tab[data-tab], #open-settings, #open-admin, #close-settings, #close-admin, [data-workspace], [data-workspace-group]'
-    );
-    if (!usable(control)) return;
-    scheduleReconciliation(panelForControl(control));
+    scheduleAccessibilitySync();
   }, false);
 
   document.addEventListener('keydown', event => {
@@ -92,14 +50,10 @@
     choice.click();
   });
 
-  const observer = new MutationObserver(records => {
-    if (records.some(record => record.type === 'attributes' && record.attributeName === 'class')) {
-      scheduleReconciliation();
-    }
-  });
+  window.addEventListener('axioload:navigation:changed', scheduleAccessibilitySync);
+  window.addEventListener('pageshow', scheduleAccessibilitySync);
 
   function init() {
-    qa('main > .tab-panel').forEach(panel => observer.observe(panel, {attributes: true, attributeFilter: ['class']}));
     syncPanelAccessibility();
   }
 

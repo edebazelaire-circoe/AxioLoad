@@ -7,6 +7,7 @@ from fastapi.templating import Jinja2Templates
 
 _STYLE = b'<link rel="stylesheet" href="/static/prompt_center_experience.css?v=0.19.1">'
 _SCRIPT = b'<script src="/static/prompt_center_experience.js?v=0.19.1"></script>'
+_WORKSPACE_NAVIGATION_SCRIPT = b'<script src="/static/workspace_navigation_fix.js?v=0.19.4"></script>'
 _OLD_STYLE = b'<link rel="stylesheet" href="/static/prompt_center_experience.css?v=0.19.0">'
 _OLD_GUARD = b'<script src="/static/prompt_center_guard.js?v=0.19.0"></script>'
 _OLD_SCRIPT = b'<script src="/static/prompt_center_experience.js?v=0.19.0"></script>'
@@ -24,10 +25,20 @@ def install_prompt_center_experience_injection() -> None:
         response = _original_template_response(self, *args, **kwargs)
         body = getattr(response, "body", b"")
         if b'id="open-settings"' in body:
-            for asset in (_OLD_STYLE, _OLD_GUARD, _OLD_SCRIPT, _STYLE, _SCRIPT):
+            for asset in (
+                _OLD_STYLE,
+                _OLD_GUARD,
+                _OLD_SCRIPT,
+                _STYLE,
+                _SCRIPT,
+                _WORKSPACE_NAVIGATION_SCRIPT,
+            ):
                 body = body.replace(asset, b"")
             body = body.replace(b"</head>", _STYLE + b"</head>")
-            body = body.replace(b"</body>", _SCRIPT + b"</body>")
+            body = body.replace(
+                b"</body>",
+                _SCRIPT + _WORKSPACE_NAVIGATION_SCRIPT + b"</body>",
+            )
             response.body = body
             response.headers["content-length"] = str(len(body))
         return response

@@ -59,6 +59,7 @@ def test_login_and_settings_keep_desktop_layout_on_a_narrow_viewport() -> None:
             </section>
             """
         )
+        page.add_style_tag(content='.login-form{display:grid;gap:14px}')
         for stylesheet in (
             "app.css",
             "auth_experience.css",

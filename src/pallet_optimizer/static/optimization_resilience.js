@@ -71,13 +71,6 @@
   function init() {
     installResultCapture();
     [0, 50, 200, 700, 1600].forEach(delay => window.setTimeout(arrangeCalculationActions, delay));
-
-    const panel = q('#tab-data');
-    if (panel && panel.dataset.opxResilienceObserver !== '1') {
-      panel.dataset.opxResilienceObserver = '1';
-      const observer = new MutationObserver(() => arrangeCalculationActions());
-      observer.observe(panel, {childList: true, subtree: true});
-    }
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, {once: true});

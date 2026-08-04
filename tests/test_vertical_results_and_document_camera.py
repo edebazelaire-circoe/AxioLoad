@@ -24,8 +24,8 @@ def test_vertical_result_and_camera_assets_are_injected_once(tmp_path: Path) -> 
     expected = (
         "/static/vertical_results.css?v=0.19.4",
         "/static/vertical_results.js?v=0.19.4",
-        "/static/document_camera.css?v=0.19.3",
-        "/static/document_camera.js?v=0.19.3",
+        "/static/document_camera.css?v=0.19.6",
+        "/static/document_camera.js?v=0.19.6",
     )
     for asset in expected:
         assert response.text.count(asset) == 1
@@ -49,13 +49,17 @@ def test_results_keep_two_aligned_rows_of_five_slots() -> None:
 def test_document_camera_requests_rear_camera_and_transfers_a_jpeg() -> None:
     script = (STATIC / "document_camera.js").read_text(encoding="utf-8")
 
-    assert 'accept="image/*"' in script
-    assert 'capture="environment"' in script
+    assert "camera.accept = 'image/*'" in script
+    assert "camera.setAttribute('capture', 'environment')" in script
+    assert "document.body.append(camera)" in script
+    assert "data-dc-camera-trigger" in script
     assert "new DataTransfer()" in script
     assert "normalizeCameraPhoto" in script
     assert "target.required = false" in script
     assert "observer.observe(main" in script
     assert "observe(document.body" not in script
+    assert "dc-camera-hint" not in script
+    assert 'dc-camera-status dc-hidden' in script
 
 
 def test_camera_jpeg_is_accepted_by_document_preparation() -> None:

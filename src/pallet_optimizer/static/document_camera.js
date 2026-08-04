@@ -77,27 +77,82 @@
     preview.classList.add('dc-hidden');
   }
 
+  function updateSourceLabel(target, file, source = 'file') {
+    const label = target.closest('label');
+    if (!label) return;
+    const state = q('.dc-file-state', label);
+    label.classList.toggle('has-file', Boolean(file));
+    if (!state) return;
+    if (!file) {
+      state.textContent = 'PDF, JPG ou PNG';
+      return;
+    }
+    state.textContent = `${source === 'camera' ? 'Photo' : 'Fichier'} : ${file.name}`;
+  }
+
   function updateSelection(target, wrapper, source = 'file') {
     clearPreview(wrapper);
-    const file = target.files?.[0];
     const status = q('.dc-camera-status', wrapper);
+    const file = target.files?.[0];
+    updateSourceLabel(target, file, source);
     if (!file) {
-      status.textContent = 'Aucun document sélectionné.';
-      status.classList.remove('has-file');
+      if (status) {
+        status.textContent = '';
+        status.classList.remove('has-file');
+        status.classList.add('dc-hidden');
+      }
       return;
     }
 
-    const sizeMb = file.size / (1024 * 1024);
-    status.textContent = `${source === 'camera' ? 'Photo prête' : 'Fichier prêt'} : ${file.name} (${sizeMb.toLocaleString('fr-FR', {maximumFractionDigits: 1})} Mo)`;
-    status.classList.add('has-file');
-
-    if (file.type.startsWith('image/')) {
-      const preview = q('.dc-camera-preview', wrapper);
-      const url = URL.createObjectURL(file);
-      preview.dataset.objectUrl = url;
-      preview.innerHTML = `<img src="${url}" alt="Aperçu de ${sideLabel(target.name)}"><span>${source === 'camera' ? 'Photo prise avec l’appareil' : 'Image sélectionnée'}</span>`;
-      preview.classList.remove('dc-hidden');
+    if (status) {
+      const sizeMb = file.size / (1024 * 1024);
+      status.textContent = `${source === 'camera' ? 'Photo prête' : 'Fichier prêt'} : ${file.name} (${sizeMb.toLocaleString('fr-FR', {maximumFractionDigits: 1})} Mo)`;
+      status.classList.add('has-file');
+      status.classList.remove('dc-hidden');
     }
+
+    if (!file.type.startsWith('image/')) return;
+    const preview = q('.dc-camera-preview', wrapper);
+    const url = URL.createObjectURL(file);
+    preview.dataset.objectUrl = url;
+    preview.innerHTML = `<img src="${url}" alt="Aperçu de ${sideLabel(target.name)}"><span>${source === 'camera' ? 'Photo prise avec l’appareil' : 'Image sélectionnée'}</span>`;
+    preview.classList.remove('dc-hidden');
+  }
+
+  function createCameraInput(target, wrapper) {
+    const camera = document.createElement('input');
+    camera.type = 'file';
+    camera.accept = 'image/*';
+    camera.setAttribute('capture', 'environment');
+    camera.className = 'dc-camera-input';
+    camera.dataset.dcCameraFor = target.name;
+    camera.setAttribute('aria-label', `Prendre une photo pour ${sideLabel(target.name)}`);
+    camera.hidden = true;
+    document.body.append(camera);
+
+    camera.addEventListener('change', async () => {
+      const selected = camera.files?.[0];
+      if (!selected) return;
+      const label = target.closest('label');
+      const sourceState = q('.dc-file-state', label || document);
+      const status = q('.dc-camera-status', wrapper);
+      if (sourceState) sourceState.textContent = 'Préparation de la photo…';
+      if (status) {
+        status.textContent = 'Préparation de la photo…';
+        status.classList.remove('dc-hidden', 'has-file');
+      }
+      try {
+        const jpeg = await normalizeCameraPhoto(selected, target.name.replace('_file', ''));
+        assignFile(target, jpeg);
+        updateSelection(target, wrapper, 'camera');
+      } catch (error) {
+        updateSelection(target, wrapper);
+        showMessage(error.message || String(error), true);
+      } finally {
+        camera.value = '';
+      }
+    });
+    return camera;
   }
 
   function enhanceFileInput(target) {
@@ -114,44 +169,20 @@
     wrapper.className = 'dc-camera-tools';
     wrapper.dataset.for = target.name;
     wrapper.innerHTML = `<div class="dc-camera-actions">
-      <label class="dc-camera-button">
+      <button type="button" class="dc-camera-button" data-dc-camera-trigger="${target.name}" aria-label="Prendre une photo pour ${sideLabel(target.name)}">
         <span class="dc-camera-icon" aria-hidden="true">📷</span>
         <span>Prendre une photo</span>
-        <input type="file" accept="image/*" capture="environment" data-dc-camera-for="${target.name}" aria-label="Prendre une photo pour ${sideLabel(target.name)}">
-      </label>
+      </button>
     </div>
-    <small class="dc-camera-hint">Sur téléphone ou tablette, ce bouton ouvre directement l’appareil photo arrière.</small>
-    <div class="dc-camera-status" role="status">Aucun document sélectionné.</div>
+    <div class="dc-camera-status dc-hidden" role="status"></div>
     <div class="dc-camera-preview dc-hidden"></div>`;
     sourceLabel.after(wrapper);
 
-    const camera = q('[data-dc-camera-for]', wrapper);
-    let assigningCamera = false;
+    const trigger = q('[data-dc-camera-trigger]', wrapper);
+    const camera = createCameraInput(target, wrapper);
+    trigger.addEventListener('click', () => camera.click());
 
-    camera.addEventListener('change', async () => {
-      const selected = camera.files?.[0];
-      if (!selected) return;
-      const status = q('.dc-camera-status', wrapper);
-      status.textContent = 'Préparation de la photo…';
-      status.classList.remove('has-file');
-      try {
-        const jpeg = await normalizeCameraPhoto(selected, target.name.replace('_file', ''));
-        assigningCamera = true;
-        assignFile(target, jpeg);
-        assigningCamera = false;
-        updateSelection(target, wrapper, 'camera');
-      } catch (error) {
-        assigningCamera = false;
-        camera.value = '';
-        updateSelection(target, wrapper);
-        showMessage(error.message || String(error), true);
-      }
-    });
-
-    target.addEventListener('change', () => {
-      if (!assigningCamera) camera.value = '';
-      updateSelection(target, wrapper, assigningCamera ? 'camera' : 'file');
-    });
+    target.addEventListener('change', () => updateSelection(target, wrapper, 'file'));
     return true;
   }
 

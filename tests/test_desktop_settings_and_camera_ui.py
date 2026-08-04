@@ -34,7 +34,7 @@ def test_login_and_settings_keep_desktop_layout_on_a_narrow_viewport() -> None:
             <main class="login-shell">
               <div class="auth-account-switch"><button>Utilisateur</button><button>Superadmin</button></div>
               <div class="fixed-login-accounts__grid"><article>Compte 1</article><article>Compte 2</article></div>
-              <form class="login-form">
+              <form id="login-form" class="login-form">
                 <label>Entreprise<input></label><label>E-mail<input></label><label>Mot de passe<input></label>
                 <div class="login-actions"><button>Connexion</button></div>
               </form>
@@ -76,6 +76,7 @@ def test_login_and_settings_keep_desktop_layout_on_a_narrow_viewport() -> None:
               const actions = document.querySelector('.company-endpoint-actions');
               const firstAction = actions.querySelector('button').getBoundingClientRect();
               return {
+                bodyMinWidth: parseFloat(getComputedStyle(document.body).minWidth),
                 loginWidth: login.width,
                 loginColumns: tracks('.login-form'),
                 authColumns: tracks('.auth-account-switch'),
@@ -93,6 +94,7 @@ def test_login_and_settings_keep_desktop_layout_on_a_narrow_viewport() -> None:
             }"""
         )
 
+        assert layout["bodyMinWidth"] >= 1160
         assert layout["loginWidth"] >= 1000
         assert layout["loginColumns"] == 3
         assert layout["authColumns"] == 2

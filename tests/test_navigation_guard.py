@@ -26,14 +26,17 @@ def test_navigation_guard_never_delays_valid_clicks() -> None:
     assert "aria-disabled" in source
 
 
-def test_ui_integrity_covers_cards_and_single_active_panel() -> None:
+def test_ui_integrity_only_handles_click_surfaces_and_accessibility() -> None:
     root = __import__("pathlib").Path(__file__).parents[1]
     script = (root / "src/pallet_optimizer/static/ui_integrity.js").read_text(encoding="utf-8")
     stylesheet = (root / "src/pallet_optimizer/static/ui_integrity.css").read_text(encoding="utf-8")
     assert "activateChoiceFromCard" in script
     assert "label.theme-choice" in script
     assert "label.total-mode-toggle" in script
-    assert "activePanels.length > 1" in script
     assert "aria-hidden" in script
+    assert "axioload:navigation:changed" in script
+    assert "MutationObserver" not in script
+    assert "reconcilePanels" not in script
+    assert "activePanels.length > 1" not in script
     assert ".workspace-group-hidden" in stylesheet
     assert "pointer-events: none" in stylesheet

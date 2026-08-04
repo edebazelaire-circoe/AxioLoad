@@ -1,0 +1,80 @@
+.workspace-group-hidden {
+  display: none !important;
+}
+
+button,
+[role="button"],
+label.theme-choice,
+label.total-mode-toggle,
+.admin-permission-row:has(input[type="checkbox"]) {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+label.theme-choice,
+label.total-mode-toggle,
+.admin-permission-row:has(input[type="checkbox"]) {
+  cursor: pointer;
+  user-select: none;
+}
+
+label.theme-choice > :not(input),
+label.theme-choice > :not(input) *,
+label.total-mode-toggle > :not(input),
+label.total-mode-toggle > :not(input) *,
+.admin-permission-row > div,
+.admin-permission-row > div *,
+.admin-permission-row > span,
+.admin-permission-row > span * {
+  pointer-events: none !important;
+}
+
+label.theme-choice input,
+label.total-mode-toggle input,
+.admin-permission-row input,
+.admin-permission-row select {
+  position: relative;
+  z-index: 1;
+  pointer-events: auto;
+}
+
+button.tab > *,
+button.workspace-card > *,
+button.workspace-card > * *,
+button.settings-access > *,
+button.settings-access > * *,
+button[data-admin-view] > *,
+button[data-admin-view] > * *,
+button[data-detail-tab] > *,
+button[data-detail-tab] > * *,
+button.primary > .opx-icon,
+button.secondary > .opx-icon,
+button.primary > .ax-icon,
+button.secondary > .ax-icon {
+  pointer-events: none;
+}
+
+label.theme-choice:focus-within,
+label.total-mode-toggle:focus-within,
+.admin-permission-row:has(input:focus-visible) {
+  outline: 3px solid rgba(0, 168, 191, .32);
+  outline-offset: 2px;
+}
+
+main > .tab-panel[aria-hidden="true"]:not(.active) {
+  pointer-events: none;
+}
+
+.navigation-loading-indicator {
+  display: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tab,
+  .workspace-card,
+  .settings-access,
+  .primary,
+  .secondary {
+    transition: none !important;
+  }
+}

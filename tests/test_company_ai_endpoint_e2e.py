@@ -12,6 +12,7 @@ import uvicorn
 from playwright.sync_api import sync_playwright
 
 from pallet_optimizer.api import create_app
+from pallet_optimizer.company_ai_dual_mode import ALLOWED_OPENAI_MODELS
 
 
 def _free_port() -> int:
@@ -21,7 +22,8 @@ def _free_port() -> int:
 
 
 @pytest.fixture
-def endpoint_settings_app(tmp_path: Path) -> Iterator[str]:
+def ai_settings_app(tmp_path: Path, monkeypatch) -> Iterator[str]:
+    monkeypatch.setenv("PLO_DOCUMENT_SECRET_KEY", "axioload-browser-test-secret")
     port = _free_port()
     server = uvicorn.Server(
         uvicorn.Config(
@@ -47,7 +49,7 @@ def endpoint_settings_app(tmp_path: Path) -> Iterator[str]:
     else:
         server.should_exit = True
         thread.join(timeout=5)
-        pytest.fail("Le serveur AxioLoad n'a pas démarré pour le test endpoint.")
+        pytest.fail("Le serveur AxioLoad n'a pas démarré pour le test de connexion IA.")
 
     yield url
 
@@ -57,12 +59,16 @@ def endpoint_settings_app(tmp_path: Path) -> Iterator[str]:
 
 
 @pytest.mark.parametrize("width,height", ((1280, 900), (390, 844)))
-def test_primary_manager_sees_endpoint_only_setting(endpoint_settings_app: str, width: int, height: int) -> None:
+def test_primary_manager_can_choose_endpoint_or_api_key(
+    ai_settings_app: str,
+    width: int,
+    height: int,
+) -> None:
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(headless=True)
         page = browser.new_page(viewport={"width": width, "height": height})
-        page.goto(endpoint_settings_app, wait_until="networkidle")
-        page.wait_for_selector('#company-ai-endpoint-title', state='attached')
+        page.goto(ai_settings_app, wait_until="networkidle")
+        page.wait_for_selector('#company-ai-connection-title', state='attached')
         page.locator('#open-settings').click()
         page.wait_for_function(
             "() => document.querySelector('#tab-settings')?.classList.contains('active')"
@@ -70,20 +76,37 @@ def test_primary_manager_sees_endpoint_only_setting(endpoint_settings_app: str, 
 
         card = page.locator('.company-endpoint-card')
         card.wait_for(state='visible')
-        assert card.locator('text=Votre entreprise garde la main.').is_visible()
-        assert card.locator('text=Seul le responsable de l’entreprise').is_visible()
+        assert card.locator('text=Configuration réservée au responsable principal.').is_visible()
+        assert card.locator('text=Passerelle de mon entreprise').is_visible()
+        assert card.locator('text=Clé API OpenAI').is_visible()
+        assert card.locator('input[name="company-ai-mode"]').count() == 2
         assert card.locator('input[type="url"]').count() == 1
-        assert card.locator('input[type="password"]').count() == 0
+        assert card.locator('input[type="password"]').count() == 1
+        assert card.locator('select#company-ai-model').count() == 1
         assert card.locator('#dc-a-key').count() == 0
-        assert card.locator('select').count() == 0
+
+        endpoint_panel = card.locator('#company-ai-endpoint-panel')
+        api_panel = card.locator('#company-ai-api-panel')
+        assert endpoint_panel.is_visible()
+        assert not api_panel.is_visible()
 
         input_field = card.locator('#company-ai-endpoint-url')
         input_field.fill('https://gateway.example/axioload/document-control')
-        card.locator('#company-ai-endpoint-save').click()
+        card.locator('#company-ai-connection-save').click()
         page.wait_for_function(
-            "() => document.querySelector('#company-ai-endpoint-message')?.textContent.includes('Endpoint enregistré')"
+            "() => document.querySelector('#company-ai-connection-message')?.textContent.includes('Configuration enregistrée')"
         )
-        assert card.locator('#company-ai-endpoint-status strong').inner_text() == 'gateway.example'
+        assert card.locator('#company-ai-connection-status strong').inner_text() == 'gateway.example'
+
+        card.locator('input[name="company-ai-mode"][value="openai_api_key"]').check()
+        assert api_panel.is_visible()
+        assert not endpoint_panel.is_visible()
+        model_ids = card.locator('#company-ai-model option').evaluate_all(
+            "options => options.map(option => option.value)"
+        )
+        assert set(model_ids) == ALLOWED_OPENAI_MODELS
+        assert card.locator('#company-ai-model').input_value() == 'gpt-5-mini'
+        assert card.locator('text=Liste contrôlée par AxioLoad').is_visible()
 
         body_metrics = page.evaluate(
             "() => ({bodyWidth: document.documentElement.scrollWidth, viewportWidth: window.innerWidth})"
@@ -92,12 +115,37 @@ def test_primary_manager_sees_endpoint_only_setting(endpoint_settings_app: str, 
 
         if width <= 650:
             card_box = card.bounding_box()
-            save_box = card.locator('#company-ai-endpoint-save').bounding_box()
-            test_box = card.locator('#company-ai-endpoint-test').bounding_box()
+            save_box = card.locator('#company-ai-connection-save').bounding_box()
+            test_box = card.locator('#company-ai-connection-test').bounding_box()
             assert card_box and save_box and test_box
             assert save_box['height'] >= 43
             assert test_box['height'] >= 43
             assert save_box['width'] >= card_box['width'] - 50
             assert test_box['width'] >= card_box['width'] - 50
 
+        browser.close()
+
+
+def test_api_key_mode_can_be_saved_without_exposing_the_key(ai_settings_app: str) -> None:
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch(headless=True)
+        page = browser.new_page(viewport={"width": 1280, "height": 900})
+        page.goto(ai_settings_app, wait_until="networkidle")
+        page.wait_for_selector('#company-ai-connection-title', state='attached')
+        page.locator('#open-settings').click()
+        card = page.locator('.company-endpoint-card')
+        card.locator('input[name="company-ai-mode"][value="openai_api_key"]').check()
+        card.locator('#company-ai-model').select_option('gpt-4.1')
+        card.locator('#company-ai-api-key').fill('sk-proj-browser-test-abcdefghijklmnopqrstuvwxyz')
+        card.locator('#company-ai-retention-confirmed').check()
+        card.locator('#company-ai-connection-save').click()
+        page.wait_for_function(
+            "() => document.querySelector('#company-ai-connection-message')?.textContent.includes('Configuration enregistrée')"
+        )
+
+        assert card.locator('#company-ai-connection-status strong').inner_text().startswith('gpt-4.1')
+        key_input = card.locator('#company-ai-api-key')
+        assert key_input.input_value() == ''
+        assert 'déjà enregistrée' in (key_input.get_attribute('placeholder') or '')
+        assert 'abcdefghijklmnopqrstuvwxyz' not in page.content()
         browser.close()

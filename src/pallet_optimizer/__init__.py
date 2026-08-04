@@ -26,6 +26,7 @@ from .document_control_experience_panel import install_document_control_experien
 from .document_control_panel import install_document_control_panel_injection
 from .document_control_system import install_document_control_system
 from .fixed_test_accounts import install_fixed_test_accounts
+from .fixed_test_login_gate import install_fixed_test_login_gate
 from .optimization_experience_panel import install_optimization_experience_injection
 from .optimization_portfolio import install_optimization_portfolio
 from .optimization_resilience import install_partial_model_success_policy
@@ -41,6 +42,7 @@ __version__ = "0.19.2"
 install_super_admin_routes()
 install_password_reset_system()
 install_fixed_test_accounts()
+install_fixed_test_login_gate()
 install_client_grouping()
 install_optimization_portfolio()
 install_partial_model_success_policy()

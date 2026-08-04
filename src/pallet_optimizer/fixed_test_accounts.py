@@ -4,10 +4,12 @@ import os
 from collections.abc import Callable
 from typing import Any
 
-from .admin_service import AdminRepository, SUPER_ADMIN_USER_ID
+from .admin_service import AdminRepository, PERMISSION_KEYS, SUPER_ADMIN_USER_ID
 from .persistence import _connect, _hash_secret, utc_now
 
 TEST_USER_ID = "axioload-test-user"
+TEST_TENANT_ID = "axioload-test-company"
+TEST_COMPANY_NAME = "Entreprise test AxioLoad"
 DEFAULT_TEST_USER_EMAIL = "olivierbaptiste6@gmail.com"
 DEFAULT_TEST_USER_PASSWORD = "0123456789"
 
@@ -86,7 +88,16 @@ def _upsert_test_user(admin: AdminRepository) -> None:
     salt, digest = _hash_secret(password)
     now = utc_now()
 
-    admin.ensure_company("local", "Entreprise locale", status="active", grant_all=True)
+    # The super administrator keeps the technical local tenant. The company test
+    # account receives its own tenant so both sessions expose genuinely different
+    # views and data boundaries.
+    admin.ensure_company(TEST_TENANT_ID, TEST_COMPANY_NAME, status="active", grant_all=True)
+    admin.set_company_permissions(
+        TEST_TENANT_ID,
+        {key: True for key in PERMISSION_KEYS},
+        actor="system",
+        audit=False,
+    )
 
     with _connect(admin.registry.registry_path) as db:
         _remove_other_account_references(db)
@@ -102,20 +113,20 @@ def _upsert_test_user(admin: AdminRepository) -> None:
         if existing:
             db.execute(
                 f"""UPDATE company_users
-                    SET tenant_id='local',first_name='Baptiste',last_name='Olivier',
-                        email=?,role='member',status='active',active=1,
+                    SET tenant_id=?,first_name='Baptiste',last_name='Olivier',
+                        email=?,role='primary',status='active',active=1,
                         password_salt=?,password_digest=?,activated_at=COALESCE(activated_at,?),
                         disabled_at=NULL{must_change_update}
                     WHERE id=?""",
-                (email, salt, digest, now, TEST_USER_ID),
+                (TEST_TENANT_ID, email, salt, digest, now, TEST_USER_ID),
             )
         else:
             fields = (
                 "id,tenant_id,first_name,last_name,email,role,status,active,"
                 "password_salt,password_digest,created_at,activated_at"
             )
-            values = "?, 'local','Baptiste','Olivier',?,'member','active',1,?,?,?,?"
-            parameters: list[Any] = [TEST_USER_ID, email, salt, digest, now, now]
+            values = "?, ?, 'Baptiste','Olivier',?,'primary','active',1,?,?,?,?"
+            parameters: list[Any] = [TEST_USER_ID, TEST_TENANT_ID, email, salt, digest, now, now]
             if "must_change_password" in columns:
                 fields += ",must_change_password"
                 values += ",0"
@@ -125,8 +136,8 @@ def _upsert_test_user(admin: AdminRepository) -> None:
             )
 
         db.execute(
-            "UPDATE tenants SET status='active',active=1,updated_at=? WHERE id='local'",
-            (now,),
+            "UPDATE tenants SET status='active',active=1,updated_at=? WHERE id=?",
+            (now, TEST_TENANT_ID),
         )
 
     # Remove unused legacy credentials from tenant databases. Portal accounts live

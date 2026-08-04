@@ -5,12 +5,18 @@ from typing import Any
 
 from fastapi.templating import Jinja2Templates
 
+from .fixed_test_accounts import fixed_test_accounts_enabled
+
 _STYLE = b'<link rel="stylesheet" href="/static/auth_experience.css?v=0.19.1">'
 _SCRIPT = b'<script src="/static/auth_experience.js?v=0.19.1"></script>'
 _NAV_STYLE = b'<link rel="stylesheet" href="/static/navigation_guard.css?v=0.19.1">'
 _NAV_SCRIPT = b'<script src="/static/navigation_guard.js?v=0.19.1"></script>'
 _INTEGRITY_STYLE = b'<link rel="stylesheet" href="/static/ui_integrity.css?v=0.19.3">'
 _INTEGRITY_SCRIPT = b'<script src="/static/ui_integrity.js?v=0.19.3"></script>'
+_FIXED_TEST_STYLE = b'<link rel="stylesheet" href="/static/fixed_test_accounts.css?v=0.19.5">'
+_FIXED_TEST_SCRIPT = b'<script src="/static/fixed_test_accounts_ui.js?v=0.19.5"></script>'
+_OLD_FIXED_TEST_STYLE = b'<link rel="stylesheet" href="/static/fixed_test_accounts.css?v=0.19.2">'
+_OLD_FIXED_TEST_SCRIPT = b'<script src="/static/fixed_test_accounts_ui.js?v=0.19.2"></script>'
 _OLD_STYLE = b'<link rel="stylesheet" href="/static/auth_experience.css?v=0.18.0">'
 _OLD_SCRIPT = b'<script src="/static/auth_experience.js?v=0.18.0"></script>'
 _original_template_response: Callable[..., Any] | None = None
@@ -26,7 +32,9 @@ def install_auth_experience_injection() -> None:
         assert _original_template_response is not None
         response = _original_template_response(self, *args, **kwargs)
         body = getattr(response, "body", b"")
-        if b'id="open-settings"' in body or b'id="login-form"' in body:
+        is_login = b'id="login-form"' in body
+        is_application = b'id="open-settings"' in body
+        if is_application or is_login:
             for asset in (
                 _OLD_STYLE,
                 _OLD_SCRIPT,
@@ -36,10 +44,20 @@ def install_auth_experience_injection() -> None:
                 _NAV_SCRIPT,
                 _INTEGRITY_STYLE,
                 _INTEGRITY_SCRIPT,
+                _OLD_FIXED_TEST_STYLE,
+                _OLD_FIXED_TEST_SCRIPT,
+                _FIXED_TEST_STYLE,
+                _FIXED_TEST_SCRIPT,
             ):
                 body = body.replace(asset, b"")
-            body = body.replace(b"</head>", _STYLE + _NAV_STYLE + _INTEGRITY_STYLE + b"</head>")
-            body = body.replace(b"</body>", _SCRIPT + _NAV_SCRIPT + _INTEGRITY_SCRIPT + b"</body>")
+            styles = _STYLE + _NAV_STYLE + _INTEGRITY_STYLE
+            scripts = _SCRIPT + _NAV_SCRIPT + _INTEGRITY_SCRIPT
+            if fixed_test_accounts_enabled():
+                scripts += _FIXED_TEST_SCRIPT
+                if is_login:
+                    styles += _FIXED_TEST_STYLE
+            body = body.replace(b"</head>", styles + b"</head>")
+            body = body.replace(b"</body>", scripts + b"</body>")
             response.body = body
             response.headers["content-length"] = str(len(body))
         return response

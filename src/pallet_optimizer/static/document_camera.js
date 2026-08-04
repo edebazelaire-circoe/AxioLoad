@@ -92,10 +92,26 @@
 
   function updateSelection(target, wrapper, source = 'file') {
     clearPreview(wrapper);
+    const status = q('.dc-camera-status', wrapper);
     const file = target.files?.[0];
     updateSourceLabel(target, file, source);
-    if (!file || !file.type.startsWith('image/')) return;
+    if (!file) {
+      if (status) {
+        status.textContent = '';
+        status.classList.remove('has-file');
+        status.classList.add('dc-hidden');
+      }
+      return;
+    }
 
+    if (status) {
+      const sizeMb = file.size / (1024 * 1024);
+      status.textContent = `${source === 'camera' ? 'Photo prête' : 'Fichier prêt'} : ${file.name} (${sizeMb.toLocaleString('fr-FR', {maximumFractionDigits: 1})} Mo)`;
+      status.classList.add('has-file');
+      status.classList.remove('dc-hidden');
+    }
+
+    if (!file.type.startsWith('image/')) return;
     const preview = q('.dc-camera-preview', wrapper);
     const url = URL.createObjectURL(file);
     preview.dataset.objectUrl = url;
@@ -118,8 +134,13 @@
       const selected = camera.files?.[0];
       if (!selected) return;
       const label = target.closest('label');
-      const state = q('.dc-file-state', label || document);
-      if (state) state.textContent = 'Préparation de la photo…';
+      const sourceState = q('.dc-file-state', label || document);
+      const status = q('.dc-camera-status', wrapper);
+      if (sourceState) sourceState.textContent = 'Préparation de la photo…';
+      if (status) {
+        status.textContent = 'Préparation de la photo…';
+        status.classList.remove('dc-hidden', 'has-file');
+      }
       try {
         const jpeg = await normalizeCameraPhoto(selected, target.name.replace('_file', ''));
         assignFile(target, jpeg);
@@ -153,6 +174,7 @@
         <span>Prendre une photo</span>
       </button>
     </div>
+    <div class="dc-camera-status dc-hidden" role="status"></div>
     <div class="dc-camera-preview dc-hidden"></div>`;
     sourceLabel.after(wrapper);
 

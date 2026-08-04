@@ -115,17 +115,35 @@ def test_five_solution_slots_are_aligned_with_the_five_models(vertical_camera_ap
         assert solutions.nth(3).locator('.solution-card-title').inner_text() == 'Solution 3'
         assert solutions.nth(4).locator('.opx-no-solution').is_visible()
 
-        for index in range(5):
-            solutions.nth(index).scroll_into_view_if_needed()
-            solutions.nth(index).wait_for(state="visible")
-            models.nth(index).wait_for(state="visible")
-            page.wait_for_timeout(20)
-            model_box = models.nth(index).bounding_box()
-            solution_box = solutions.nth(index).bounding_box()
-            assert model_box and solution_box
-            assert abs(model_box['x'] - solution_box['x']) < 2
-            assert abs(model_box['width'] - solution_box['width']) < 2
-            assert solution_box['y'] > model_box['y'] + model_box['height']
+        boxes = page.evaluate(
+            """() => {
+                const models = [...document.querySelectorAll('#opx-model-row .ovr-model-card')];
+                const solutions = [...document.querySelectorAll('#opx-solution-row .opx-solution-cell')];
+                if (models.length !== 5 || solutions.length !== 5) return [];
+                return models.map((model, index) => {
+                    const modelBox = model.getBoundingClientRect();
+                    const solutionBox = solutions[index].getBoundingClientRect();
+                    return {
+                        modelX: modelBox.x,
+                        modelY: modelBox.y,
+                        modelWidth: modelBox.width,
+                        modelHeight: modelBox.height,
+                        solutionX: solutionBox.x,
+                        solutionY: solutionBox.y,
+                        solutionWidth: solutionBox.width,
+                        solutionHeight: solutionBox.height
+                    };
+                });
+            }"""
+        )
+        assert len(boxes) == 5
+        for box in boxes:
+            assert box['modelWidth'] > 0
+            assert box['solutionWidth'] > 0
+            assert box['solutionHeight'] > 0
+            assert abs(box['modelX'] - box['solutionX']) < 2
+            assert abs(box['modelWidth'] - box['solutionWidth']) < 2
+            assert box['solutionY'] > box['modelY'] + box['modelHeight']
 
         browser.close()
 
@@ -146,7 +164,9 @@ def test_comparison_remains_readable_on_tablet_and_phone(
         _open_results(page, vertical_camera_app)
         _render_five_models(page)
 
-        metrics = page.locator('.opx-comparison-scroll').evaluate(
+        comparison = page.locator('#tab-results .opx-comparison-scroll:visible')
+        comparison.wait_for(state="visible")
+        metrics = comparison.evaluate(
             "element => ({clientWidth: element.clientWidth, scrollWidth: element.scrollWidth, bodyWidth: document.documentElement.scrollWidth, viewportWidth: window.innerWidth})"
         )
         first_model = page.locator('#opx-model-row .ovr-model-card').first.bounding_box()
@@ -157,7 +177,7 @@ def test_comparison_remains_readable_on_tablet_and_phone(
         assert first_model['width'] >= minimum_card_width
         assert abs(first_model['x'] - first_solution['x']) < 2
 
-        page.locator('.opx-comparison-scroll').evaluate("element => element.scrollTo({left: element.scrollWidth, behavior: 'instant'})")
+        comparison.evaluate("element => element.scrollTo({left: element.scrollWidth, behavior: 'instant'})")
         page.wait_for_timeout(100)
         assert page.locator('#opx-model-row .ovr-model-card').nth(4).is_visible()
         assert page.locator('#opx-solution-row .opx-solution-cell').nth(4).is_visible()

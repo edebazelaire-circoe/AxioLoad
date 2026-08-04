@@ -64,7 +64,7 @@ def test_company_endpoint_healthcheck_has_no_provider_key(tmp_path, monkeypatch)
         captured["timeout"] = timeout
         return _FakeResponse({"ok": True, "message": "Passerelle prête"})
 
-    monkeypatch.setattr("pallet_optimizer.company_ai_endpoint._assert_public_destination", lambda endpoint: None)
+    monkeypatch.setattr("pallet_optimizer.company_ai_endpoint._assert_public_destination", lambda value: None)
     monkeypatch.setattr("pallet_optimizer.company_ai_endpoint.urllib.request.urlopen", fake_urlopen)
     response = client.post("/api/company/document-ai-endpoint/test", json={})
 
@@ -102,6 +102,8 @@ def test_experience_assets_are_injected(tmp_path):
     assert page.text.count("/static/document_control_experience.css?v=0.19.1") == 1
     assert page.text.count("/static/document_control_experience_v2.js?v=0.19.1") == 1
     assert page.text.count("/static/document_control_permission_ui.js?v=0.19.1") == 1
-    assert page.text.count("/static/company_ai_endpoint.css?v=0.19.5") == 1
-    assert page.text.count("/static/company_ai_endpoint.js?v=0.19.5") == 1
+    assert page.text.count("/static/company_ai_endpoint.css?v=0.19.6") == 1
+    assert page.text.count("/static/company_ai_endpoint.js?v=0.19.6") == 1
+    assert "/static/company_ai_endpoint.css?v=0.19.5" not in page.text
+    assert "/static/company_ai_endpoint.js?v=0.19.5" not in page.text
     assert "document_control_experience.js?v=0.18.0" not in page.text

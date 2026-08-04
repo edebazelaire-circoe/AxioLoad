@@ -72,7 +72,7 @@ def register_document_control_routes(app: FastAPI) -> None:
     async def document_analyze(request: Request,left_file:Annotated[UploadFile,File()],right_file:Annotated[UploadFile,File()],left_type:Annotated[str,Form()],right_type:Annotated[str,Form()],title:Annotated[str,Form()]="",user_instruction:Annotated[str,Form()]="") -> dict[str,Any]:
         context=_require(request,"document_control.run",write=True); _validate_types(left_type,right_type); repo=_repo(request)
         config=repo.get_ai_config(context.tenant_id,include_secret=True)
-        if not config.get("configured"): raise HTTPException(422,"Le superadministrateur doit configurer la clé IA de cette entreprise")
+        if not config.get("configured"): raise HTTPException(422,"Le responsable principal doit configurer la connexion IA de cette entreprise dans Paramètres")
         prompt=repo.get_prompt(context.tenant_id,left_type,right_type); left_bytes=await left_file.read(); right_bytes=await right_file.read()
         try:
             left=prepare_document(left_file.filename or "document-1",left_file.content_type,left_bytes); right=prepare_document(right_file.filename or "document-2",right_file.content_type,right_bytes)

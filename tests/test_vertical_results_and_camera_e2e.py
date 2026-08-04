@@ -113,6 +113,10 @@ def test_camera_button_converts_a_photo_to_jpeg(vertical_camera_app: str, tmp_pa
         page = browser.new_page(viewport={"width": 1200, "height": 900})
         page.goto(vertical_camera_app, wait_until="networkidle")
         page.wait_for_function("() => Boolean(window.AxioDocumentCamera)")
+        page.locator('#workspace-switcher [data-workspace="documents"]').click()
+        page.wait_for_function(
+            "() => document.body.dataset.workspace === 'documents' && document.querySelector('#tab-document-control')?.classList.contains('active')"
+        )
 
         camera = page.locator('input[data-dc-camera-for="left_file"]')
         camera.wait_for(state="attached")

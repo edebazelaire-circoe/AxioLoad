@@ -9,11 +9,12 @@
     '#open-settings',
     '#open-admin'
   ].join(',');
-  const LOCK_MS = 550;
+  const LOCK_MS = 250;
   const SAFETY_MS = 1800;
   let locked = false;
   let releaseTimer = 0;
   let safetyTimer = 0;
+  let queuedControl = null;
 
   function ensureIndicator() {
     let indicator = document.querySelector('#navigation-loading-indicator');
@@ -28,6 +29,13 @@
     return indicator;
   }
 
+  function replayQueuedNavigation() {
+    const control = queuedControl;
+    queuedControl = null;
+    if (!control || !control.isConnected || control.disabled || control.hidden || control.getAttribute('aria-disabled') === 'true') return;
+    window.setTimeout(() => control.click(), 0);
+  }
+
   function releaseNavigation() {
     locked = false;
     document.body.classList.remove('navigation-is-loading');
@@ -35,6 +43,7 @@
     ensureIndicator().classList.remove('visible');
     window.clearTimeout(releaseTimer);
     window.clearTimeout(safetyTimer);
+    replayQueuedNavigation();
   }
 
   function lockNavigation() {
@@ -53,6 +62,7 @@
     if (!control || control.disabled || control.hidden || control.getAttribute('aria-disabled') === 'true') return;
 
     if (locked) {
+      queuedControl = control;
       event.preventDefault();
       event.stopImmediatePropagation();
       return;

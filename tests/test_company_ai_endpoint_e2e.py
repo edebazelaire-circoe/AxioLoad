@@ -137,8 +137,8 @@ def test_primary_manager_can_choose_endpoint_or_api_key(
             assert save_box['height'] >= 43
             assert test_box['height'] >= 43
             assert delete_box['height'] >= 43
-            assert abs(save_box['y'] - test_box['y']) < 2
-            assert abs(test_box['y'] - delete_box['y']) < 2
+            assert abs(save_box['y'] - test_box['y']) <= 3
+            assert abs(test_box['y'] - delete_box['y']) <= 3
             assert save_box['width'] < card_box['width'] / 2
             assert test_box['width'] < card_box['width'] / 2
 

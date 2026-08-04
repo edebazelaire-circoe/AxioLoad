@@ -38,8 +38,19 @@ def _context(request: Request) -> WebContext:
 def _primary(request: Request, context: WebContext) -> bool:
     if context.actor_id=="local-user": return True
     if context.actor_type!="user": return False
-    try: return request.app.state.admin.get_user(context.actor_id)["role"]=="primary"
-    except KeyError: return False
+    try:
+        user=request.app.state.admin.get_user(context.actor_id)
+    except KeyError:
+        return False
+    if user["tenant_id"]!=context.tenant_id or not user["active"]:
+        return False
+    if user["role"]=="primary":
+        return True
+    try:
+        active_users=[entry for entry in request.app.state.admin.list_users(context.tenant_id) if entry["active"]]
+    except KeyError:
+        return False
+    return len(active_users)==1 and active_users[0]["id"]==context.actor_id
 
 
 def _require(request: Request, permission: str, *, write: bool=False) -> WebContext:

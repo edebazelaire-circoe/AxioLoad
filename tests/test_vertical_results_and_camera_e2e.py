@@ -63,11 +63,17 @@ def test_solutions_are_displayed_below_their_matching_model(vertical_camera_app:
         page = browser.new_page(viewport={"width": 1440, "height": 1100})
         page.goto(vertical_camera_app, wait_until="networkidle")
         page.wait_for_function("() => Boolean(window.AxioVerticalResults)")
+        page.locator('#workspace-switcher [data-workspace="optimization"]').click()
+        page.locator('nav.tabs [data-tab="results"]').click()
+        page.wait_for_function(
+            "() => document.body.dataset.workspace === 'optimization' && document.querySelector('#tab-results')?.classList.contains('active')"
+        )
 
         page.evaluate(
             """() => {
                 const content = document.querySelector('#results-content');
                 content.classList.remove('hidden');
+                document.querySelector('#empty-results')?.classList.add('hidden');
                 const cards = document.querySelector('#solution-cards');
                 cards.innerHTML = `
                   <article class="solution-card active" role="button"><div class="solution-card-title">Solution 1</div><div class="metric-big">4,2 <span>m.l.</span></div></article>

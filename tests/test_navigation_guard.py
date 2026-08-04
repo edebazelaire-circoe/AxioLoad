@@ -12,7 +12,7 @@ def test_navigation_guard_assets_are_loaded(tmp_path) -> None:
     assert response.text.count("/static/navigation_guard.js?v=0.19.1") == 1
 
 
-def test_navigation_guard_replays_latest_click_and_has_safety_release() -> None:
+def test_navigation_guard_replays_latest_click_and_allows_internal_navigation() -> None:
     source = (
         __import__("pathlib").Path(__file__).parents[1]
         / "src/pallet_optimizer/static/navigation_guard.js"
@@ -22,6 +22,7 @@ def test_navigation_guard_replays_latest_click_and_has_safety_release() -> None:
     assert "queuedControl = control" in source
     assert "replayQueuedNavigation" in source
     assert "control.click()" in source
+    assert "if (!event.isTrusted) return" in source
     assert "event.stopImmediatePropagation()" in source
     assert "navigation-loading-indicator" in source
     assert "MutationObserver" not in source

@@ -24,6 +24,7 @@ from .document_control_system import install_document_control_system
 from .fixed_test_accounts import install_fixed_test_accounts
 from .optimization_experience_panel import install_optimization_experience_injection
 from .optimization_portfolio import install_optimization_portfolio
+from .optimization_resilience import install_partial_model_success_policy
 from .password_reset_panel import install_password_reset_injection
 from .password_reset_system import install_password_reset_system
 from .prompt_center_experience_panel import install_prompt_center_experience_injection
@@ -38,6 +39,7 @@ install_password_reset_system()
 install_fixed_test_accounts()
 install_client_grouping()
 install_optimization_portfolio()
+install_partial_model_success_policy()
 install_client_split_policy()
 install_unlimited_item_count()
 install_admin_panel_injection()

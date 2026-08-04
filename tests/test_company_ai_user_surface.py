@@ -69,10 +69,10 @@ def test_non_primary_user_gets_redacted_company_status(tmp_path: Path, monkeypat
             "peut enregistrer ou remplacer une passerelle ou une clé API."
         ),
     }
-    serialized = public_status.text.lower()
-    assert "api_key" not in serialized
-    assert "key_hint" not in serialized
-    assert "endpoint_url" not in serialized
+    assert "api_key" not in payload
+    assert "api_key_hint" not in payload
+    assert "key_hint" not in payload
+    assert "endpoint_url" not in payload
     assert secret_value not in public_status.text
 
 

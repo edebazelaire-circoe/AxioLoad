@@ -59,27 +59,29 @@ def loading_ui_app(tmp_path: Path) -> Iterator[str]:
 def test_calculation_time_is_aligned_with_loading_actions(loading_ui_app: str) -> None:
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(headless=True)
-        page = browser.new_page(viewport={"width": 1500, "height": 1000})
-        page.goto(loading_ui_app, wait_until="networkidle")
+        try:
+            page = browser.new_page(viewport={"width": 1500, "height": 1000})
+            page.set_default_timeout(15_000)
+            page.goto(loading_ui_app, wait_until="domcontentloaded")
 
-        page.locator('#workspace-switcher [data-workspace="optimization"]').click()
-        page.locator('#tab-data.active').wait_for(state="visible")
-        actions = page.locator('#tab-data .form-actions.opx-resilient-actions')
-        actions.wait_for(state="visible")
+            page.locator('#workspace-switcher [data-workspace="optimization"]').click()
+            page.locator('#tab-data.active').wait_for(state="visible")
+            actions = page.locator('#tab-data .form-actions.opx-resilient-actions')
+            actions.wait_for(state="visible")
 
-        assert page.locator('#budget-seconds').evaluate(
-            "element => element.closest('label').parentElement.classList.contains('opx-resilient-actions')"
-        )
+            assert page.locator('#budget-seconds').evaluate(
+                "element => element.closest('label').parentElement.classList.contains('opx-resilient-actions')"
+            )
 
-        controls = [
-            page.locator('#add-row'),
-            page.locator('#duplicate-row'),
-            page.locator('#budget-seconds'),
-            page.locator('#optimize'),
-        ]
-        boxes = [control.bounding_box() for control in controls]
-        assert all(box is not None for box in boxes)
-        bottoms = [round(box["y"] + box["height"], 1) for box in boxes if box is not None]
-        assert max(bottoms) - min(bottoms) <= 3.0, bottoms
-
-        browser.close()
+            controls = [
+                page.locator('#add-row'),
+                page.locator('#duplicate-row'),
+                page.locator('#budget-seconds'),
+                page.locator('#optimize'),
+            ]
+            boxes = [control.bounding_box() for control in controls]
+            assert all(box is not None for box in boxes)
+            bottoms = [round(box["y"] + box["height"], 1) for box in boxes if box is not None]
+            assert max(bottoms) - min(bottoms) <= 3.0, bottoms
+        finally:
+            browser.close()

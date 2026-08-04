@@ -103,7 +103,8 @@ def test_experience_assets_are_injected(tmp_path):
     assert page.text.count("/static/document_control_experience_v2.js?v=0.19.1") == 1
     assert page.text.count("/static/document_control_permission_ui.js?v=0.19.1") == 1
     assert page.text.count("/static/company_ai_endpoint.css?v=0.19.6") == 1
-    assert page.text.count("/static/company_ai_endpoint.js?v=0.19.6") == 1
+    assert page.text.count("/static/company_ai_user_surface.js?v=0.19.7") == 1
+    assert "/static/company_ai_endpoint.js?v=0.19.6" not in page.text
     assert "/static/company_ai_endpoint.css?v=0.19.5" not in page.text
     assert "/static/company_ai_endpoint.js?v=0.19.5" not in page.text
     assert "document_control_experience.js?v=0.18.0" not in page.text

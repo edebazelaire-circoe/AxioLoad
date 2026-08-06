@@ -19,16 +19,16 @@ def test_logipilot_and_vehicle_viewer_assets_are_injected_once(tmp_path: Path) -
 
     assert response.status_code == 200
     expected = (
-        "/static/viewer_vehicle_enhancements.css?v=0.19.8",
+        "/static/viewer_vehicle_enhancements.css?v=0.19.9",
         "/static/logipilot_branding.css?v=0.19.8",
-        "/static/viewer_vehicle_enhancements.js?v=0.19.8",
+        "/static/viewer_vehicle_enhancements.js?v=0.19.9",
         "/static/logipilot_branding.js?v=0.19.8",
     )
     for asset in expected:
         assert response.text.count(asset) == 1
 
 
-def test_viewer_keeps_a_fixed_vertical_perspective_and_opaque_cargo() -> None:
+def test_viewer_uses_a_fixed_perspective_opaque_cargo_and_cutaway_vehicle() -> None:
     script = (STATIC / "viewer_vehicle_enhancements.js").read_text(encoding="utf-8")
     stylesheet = (STATIC / "viewer_vehicle_enhancements.css").read_text(encoding="utf-8")
 
@@ -36,15 +36,22 @@ def test_viewer_keeps_a_fixed_vertical_perspective_and_opaque_cargo() -> None:
         "FIXED_TILT = 0.52",
         "state.tilt = FIXED_TILT",
         "event.stopImmediatePropagation()",
-        "drawTrailerBody",
-        "drawCab",
-        "drawWheel",
-        "Number(alpha) >= 0.4 ? 1 : alpha",
+        "drawCutawayTrailer",
+        "drawVehicleOverview",
+        "drawContinuation",
+        "focusLength",
+        "sceneLayout",
+        "Zone de chargement affichée",
+        "Espace libre restant",
+        "Number(alpha) >= 0.2 ? 1 : alpha",
         "Glisser horizontalement pour tourner",
     ):
         assert token in script
 
-    assert "aspect-ratio: 1000 / 620" in stylesheet
+    assert "drawCab" not in script
+    assert "aspect-ratio: 16 / 9" in stylesheet
+    assert "min-height: 440px" in stylesheet
+    assert "max-height: 640px" in stylesheet
     assert "resize: none" in stylesheet
     assert "touch-action: none" in stylesheet
 

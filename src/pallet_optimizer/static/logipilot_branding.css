@@ -1,0 +1,55 @@
+:root {
+  --logipilot-deep: #0F3D3E;
+  --logipilot-green: #1DAA8A;
+  --logipilot-yellow: #F5B400;
+  --logipilot-red: #E63946;
+  --logipilot-light: #F4F6F7;
+}
+
+.topbar {
+  background: linear-gradient(110deg, #0F3D3E 0%, #075B63 58%, #0A7E83 100%) !important;
+  border-bottom: 4px solid var(--logipilot-green);
+}
+
+.brand-lockup {
+  gap: 26px !important;
+}
+
+.brand-logo {
+  width: min(330px, 31vw) !important;
+  height: auto !important;
+  max-height: 78px !important;
+  object-fit: contain;
+}
+
+.brand-lockup .eyebrow {
+  color: #85E4C8 !important;
+}
+
+.brand-lockup p {
+  max-width: 690px;
+  color: #F4F6F7 !important;
+}
+
+.settings-access {
+  border-color: color-mix(in srgb, var(--logipilot-green) 75%, white) !important;
+}
+
+.settings-access:hover {
+  background: color-mix(in srgb, var(--logipilot-green) 18%, transparent) !important;
+}
+
+.primary,
+.tab.active {
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--logipilot-green) 18%, transparent);
+}
+
+@media (max-width: 900px) {
+  .brand-logo {
+    width: min(260px, 60vw) !important;
+  }
+
+  .brand-lockup {
+    gap: 14px !important;
+  }
+}

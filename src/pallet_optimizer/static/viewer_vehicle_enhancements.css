@@ -1,0 +1,36 @@
+#viewer {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1000 / 620;
+  min-height: 520px;
+  max-height: 720px;
+  resize: none;
+  touch-action: none;
+  cursor: grab;
+}
+
+#viewer:active {
+  cursor: grabbing;
+}
+
+.viewer-card {
+  overflow: hidden;
+}
+
+.viewer-help {
+  padding-inline: 18px;
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  #viewer {
+    min-height: 420px;
+  }
+}
+
+@media (max-width: 620px) {
+  #viewer {
+    min-height: 330px;
+  }
+}

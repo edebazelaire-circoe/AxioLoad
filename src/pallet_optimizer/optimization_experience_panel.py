@@ -11,6 +11,8 @@ _RESILIENCE_STYLE = b'<link rel="stylesheet" href="/static/optimization_resilien
 _RESILIENCE_SCRIPT = b'<script src="/static/optimization_resilience.js?v=0.19.2"></script>'
 _VERTICAL_STYLE = b'<link rel="stylesheet" href="/static/vertical_results.css?v=0.19.4">'
 _VERTICAL_SCRIPT = b'<script src="/static/vertical_results.js?v=0.19.4"></script>'
+_COMPACT_STYLE = b'<link rel="stylesheet" href="/static/results_compact.css?v=0.19.5">'
+_COMPACT_SCRIPT = b'<script src="/static/results_compact.js?v=0.19.5"></script>'
 _OLD_STYLE = b'<link rel="stylesheet" href="/static/optimization_experience.css?v=0.18.0">'
 _OLD_SCRIPT = b'<script src="/static/optimization_experience.js?v=0.18.0"></script>'
 _original_template_response: Callable[..., Any] | None = None
@@ -36,15 +38,17 @@ def install_optimization_experience_injection() -> None:
                 _RESILIENCE_SCRIPT,
                 _VERTICAL_STYLE,
                 _VERTICAL_SCRIPT,
+                _COMPACT_STYLE,
+                _COMPACT_SCRIPT,
             ):
                 body = body.replace(asset, b"")
             body = body.replace(
                 b"</head>",
-                _STYLE + _RESILIENCE_STYLE + _VERTICAL_STYLE + b"</head>",
+                _STYLE + _RESILIENCE_STYLE + _VERTICAL_STYLE + _COMPACT_STYLE + b"</head>",
             )
             body = body.replace(
                 b"</body>",
-                _SCRIPT + _RESILIENCE_SCRIPT + _VERTICAL_SCRIPT + b"</body>",
+                _SCRIPT + _RESILIENCE_SCRIPT + _VERTICAL_SCRIPT + _COMPACT_SCRIPT + b"</body>",
             )
             response.body = body
             response.headers["content-length"] = str(len(body))

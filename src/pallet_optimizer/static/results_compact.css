@@ -1,0 +1,188 @@
+#method-status-panel {
+  display: none !important;
+}
+
+.opx-aligned-portfolio {
+  margin-bottom: 14px !important;
+  padding: 14px 16px !important;
+}
+
+.opx-aligned-portfolio .opx-portfolio-heading {
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.opx-aligned-portfolio .opx-portfolio-heading > div:first-child {
+  min-width: 0;
+}
+
+.opx-portfolio-summary {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: .8rem;
+  line-height: 1.4;
+}
+
+.opx-portfolio-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.opx-model-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid color-mix(in srgb, var(--opx-blue) 30%, var(--line));
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--opx-blue);
+  font-size: .76rem;
+  font-weight: 850;
+  cursor: pointer;
+  transition: transform .16s ease, background .16s ease, border-color .16s ease;
+}
+
+.opx-model-toggle:hover {
+  transform: translateY(-1px);
+  border-color: var(--opx-blue);
+  background: color-mix(in srgb, var(--opx-blue) 5%, var(--paper));
+}
+
+.opx-model-toggle svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform .16s ease;
+}
+
+.opx-model-toggle[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+
+.opx-aligned-portfolio .opx-portfolio-intro {
+  margin: 7px 0 10px;
+  max-width: 960px;
+  font-size: .8rem;
+  line-height: 1.45;
+}
+
+.opx-aligned-portfolio:not(.models-expanded) .opx-portfolio-intro {
+  display: none;
+}
+
+.opx-aligned-portfolio .opx-comparison-board {
+  gap: 7px;
+}
+
+.opx-aligned-portfolio .opx-row-label {
+  font-size: .7rem;
+  letter-spacing: .055em;
+}
+
+.opx-aligned-portfolio .opx-five-column-row {
+  gap: 10px;
+}
+
+.opx-aligned-portfolio .opx-model-row[hidden],
+.opx-aligned-portfolio .opx-row-label[hidden] {
+  display: none !important;
+}
+
+.opx-aligned-portfolio .ovr-model-card {
+  padding: 10px;
+  border-radius: 12px;
+}
+
+.opx-aligned-portfolio .ovr-model-card header {
+  grid-template-columns: 27px minmax(0, 1fr);
+  gap: 7px;
+}
+
+.opx-aligned-portfolio .ovr-model-card .opx-model-number {
+  width: 27px;
+  height: 27px;
+  border-radius: 9px;
+}
+
+.opx-aligned-portfolio .ovr-model-card .opx-model-heading strong {
+  font-size: .78rem;
+}
+
+.opx-aligned-portfolio .ovr-model-card .opx-model-heading small {
+  font-size: .66rem;
+}
+
+.opx-aligned-portfolio .ovr-model-card .opx-model-status {
+  padding: 3px 6px;
+  font-size: .64rem;
+}
+
+.opx-aligned-portfolio .ovr-model-card > p {
+  min-height: 0;
+  margin: 7px 0 8px;
+  font-size: .7rem;
+  line-height: 1.35;
+}
+
+.opx-aligned-portfolio .ovr-model-card .opx-model-metrics {
+  gap: 5px;
+}
+
+.opx-aligned-portfolio .ovr-model-card .opx-model-metrics span {
+  padding: 5px 6px;
+  border-radius: 8px;
+}
+
+.opx-aligned-portfolio .ovr-model-card details {
+  margin-top: 7px;
+  padding-top: 6px;
+}
+
+.opx-aligned-portfolio .opx-solution-cell {
+  min-height: 168px;
+  gap: 7px;
+  padding: 10px;
+  border-radius: 12px;
+}
+
+.opx-aligned-portfolio .opx-solution-cell-label {
+  font-size: .68rem;
+}
+
+.opx-aligned-portfolio .opx-solution-slot .solution-card {
+  padding: 11px;
+  border-radius: 11px;
+}
+
+.opx-aligned-portfolio .opx-solution-slot .solution-card .metric-big {
+  margin-block: 8px 5px;
+}
+
+.opx-aligned-portfolio .opx-solution-slot .solution-card .metric-row {
+  padding-block: 3px;
+}
+
+.opx-aligned-portfolio .opx-no-solution {
+  min-height: 112px;
+  padding: 10px;
+}
+
+@media (max-width: 800px) {
+  .opx-aligned-portfolio {
+    padding: 12px !important;
+  }
+
+  .opx-portfolio-actions {
+    justify-content: flex-start;
+  }
+}

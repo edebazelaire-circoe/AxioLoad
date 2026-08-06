@@ -24,11 +24,15 @@ def test_vertical_result_and_camera_assets_are_injected_once(tmp_path: Path) -> 
     expected = (
         "/static/vertical_results.css?v=0.19.4",
         "/static/vertical_results.js?v=0.19.4",
+        "/static/results_compact.css?v=0.19.5",
+        "/static/results_compact.js?v=0.19.5",
         "/static/document_camera.css?v=0.19.6",
         "/static/document_camera.js?v=0.19.6",
     )
     for asset in expected:
         assert response.text.count(asset) == 1
+
+    assert response.text.index("vertical_results.js?v=0.19.4") < response.text.index("results_compact.js?v=0.19.5")
 
 
 def test_results_keep_two_aligned_rows_of_five_slots() -> None:
@@ -44,6 +48,31 @@ def test_results_keep_two_aligned_rows_of_five_slots() -> None:
     assert "grid-template-columns: repeat(5" in stylesheet
     assert "opx-comparison-scroll" in stylesheet
     assert "scroll-snap-type: x proximity" in stylesheet
+
+
+def test_result_comparison_is_compact_collapsible_and_removes_redundant_status() -> None:
+    script = (STATIC / "results_compact.js").read_text(encoding="utf-8")
+    stylesheet = (STATIC / "results_compact.css").read_text(encoding="utf-8")
+
+    for token in (
+        "removeLegacyStatusPanel",
+        "method-status-panel",
+        "Voir le détail des modèles",
+        "Masquer les modèles",
+        "aria-expanded",
+        "localStorage",
+        "MutationObserver",
+    ):
+        assert token in script
+
+    for token in (
+        "#method-status-panel",
+        ".opx-model-toggle",
+        ".opx-solution-cell",
+        "min-height: 168px",
+        "padding: 14px 16px",
+    ):
+        assert token in stylesheet
 
 
 def test_document_camera_requests_rear_camera_and_transfers_a_jpeg() -> None:
@@ -79,7 +108,7 @@ def test_new_javascript_assets_are_syntactically_valid() -> None:
     if not node:
         pytest.skip("Node.js n’est pas disponible dans cet environnement")
 
-    for filename in ("vertical_results.js", "document_camera.js"):
+    for filename in ("vertical_results.js", "results_compact.js", "document_camera.js"):
         result = subprocess.run(
             [node, "--check", str(STATIC / filename)],
             capture_output=True,

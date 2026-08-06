@@ -76,6 +76,10 @@
   line-height: 1.45;
 }
 
+.opx-aligned-portfolio:not(.models-expanded) .opx-portfolio-intro {
+  display: none;
+}
+
 .opx-aligned-portfolio .opx-comparison-board {
   gap: 7px;
 }

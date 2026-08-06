@@ -2,12 +2,13 @@
   display: block;
   width: 100%;
   height: auto;
-  aspect-ratio: 1000 / 620;
-  min-height: 520px;
-  max-height: 720px;
+  aspect-ratio: 16 / 9;
+  min-height: 440px;
+  max-height: 640px;
   resize: none;
   touch-action: none;
   cursor: grab;
+  background: var(--surface-2);
 }
 
 #viewer:active {
@@ -18,19 +19,37 @@
   overflow: hidden;
 }
 
+.viewer-toolbar {
+  position: relative;
+  z-index: 2;
+}
+
 .viewer-help {
-  padding-inline: 18px;
+  padding: 12px 18px 6px;
   text-align: center;
+  line-height: 1.45;
+}
+
+.axis-legend {
+  padding-bottom: 12px;
 }
 
 @media (max-width: 900px) {
   #viewer {
-    min-height: 420px;
+    min-height: 390px;
+    max-height: 560px;
   }
 }
 
 @media (max-width: 620px) {
   #viewer {
-    min-height: 330px;
+    min-height: 310px;
+    max-height: 460px;
+    aspect-ratio: 4 / 3;
+  }
+
+  .viewer-help {
+    padding-inline: 12px;
+    font-size: .82rem;
   }
 }

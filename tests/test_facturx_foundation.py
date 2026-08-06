@@ -98,3 +98,28 @@ def test_facturx_routes_are_registered(tmp_path) -> None:
     assert "/api/facturx/invoices" in paths
     assert "/api/facturx/invoices/{invoice_id}/validate" in paths
     assert "/api/facturx/invoices/{invoice_id}/factur-x.xml" in paths
+
+
+def test_facturx_workspace_is_loaded_in_main_page(tmp_path) -> None:
+    response = TestClient(create_app(tmp_path)).get("/")
+
+    assert response.status_code == 200
+    assert response.text.count('/static/facturx.css?v=0.20.0') == 1
+    assert response.text.count('/static/facturx.js?v=0.20.0') == 1
+
+
+def test_facturx_frontend_contains_visible_workspace_and_editable_lines() -> None:
+    from pathlib import Path
+
+    static = Path(__file__).resolve().parents[1] / "src" / "pallet_optimizer" / "static"
+    script = (static / "facturx.js").read_text(encoding="utf-8")
+
+    for token in (
+        "Facturation électronique",
+        "Créer et contrôler une facture Factur-X",
+        "facturx-add-line",
+        "Enregistrer le brouillon",
+        "Valider humainement",
+        "/api/facturx/invoices",
+    ):
+        assert token in script

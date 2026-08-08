@@ -108,28 +108,33 @@
     q('#facturx-validate')?.addEventListener('click', async () => { await api(`/api/facturx/invoices/${id}/validate`, {method:'POST'}); await loadInvoices(); await showDetail(id); });
   }
 
-  function openWorkspace() {
-    qa('.tab-panel').forEach(panel => panel.classList.remove('active'));
-    const panel = q('#tab-facturx');
-    panel.style.display = 'block';
-    panel.classList.add('active');
-    document.body.dataset.workspace = 'facturx';
-    qa('[data-workspace]').forEach(button => button.classList.toggle('active', button.dataset.workspace === 'facturx'));
-  }
-
   function installNavigation() {
     const switcher = q('#workspace-switcher');
     const nav = q('nav.tabs');
-    if (!switcher || !nav || q('[data-workspace="facturx"]')) return false;
-    const card = document.createElement('button');
-    card.type = 'button'; card.className = 'workspace-card facturx-workspace-card'; card.dataset.workspace = 'facturx';
-    card.innerHTML = `${icon()}<span><strong>Facturation électronique</strong><small>Créer, contrôler et exporter</small></span>`;
-    switcher.append(card);
-    const tab = document.createElement('button');
-    tab.type = 'button'; tab.className = 'tab workspace-synthetic-tab'; tab.textContent = 'Factures'; tab.dataset.workspaceGroup = 'facturx';
-    nav.append(tab);
-    card.addEventListener('click', openWorkspace); tab.addEventListener('click', openWorkspace);
-    qa('[data-workspace]:not([data-workspace="facturx"])').forEach(button => button.addEventListener('click', () => { q('#tab-facturx').style.display = 'none'; }));
+    if (!switcher || !nav) return false;
+    if (q('[data-workspace="facturx"]', switcher) && q('[data-tab="facturx"]', nav)) return true;
+
+    if (!q('[data-workspace="facturx"]', switcher)) {
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'workspace-card facturx-workspace-card';
+      card.dataset.workspace = 'facturx';
+      card.setAttribute('aria-pressed', 'false');
+      card.innerHTML = `${icon()}<span><strong>Facturation électronique</strong><small>Créer, contrôler et exporter</small></span>`;
+      switcher.append(card);
+    }
+
+    if (!q('[data-tab="facturx"]', nav)) {
+      const tab = document.createElement('button');
+      tab.type = 'button';
+      tab.className = 'tab';
+      tab.textContent = 'Données';
+      tab.dataset.tab = 'facturx';
+      tab.dataset.workspaceGroup = 'facturx';
+      nav.append(tab);
+    }
+
+    window.dispatchEvent(new CustomEvent('axioload:workspace:registered', {detail: {workspace: 'facturx'}}));
     return true;
   }
 

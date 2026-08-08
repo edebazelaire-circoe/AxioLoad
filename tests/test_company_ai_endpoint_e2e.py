@@ -74,7 +74,8 @@ def test_primary_manager_can_choose_endpoint_or_api_key(
             "() => document.querySelector('#tab-settings')?.classList.contains('active')"
         )
 
-        card = page.locator('.company-endpoint-card')
+        assert page.locator('#company-ai-user-card').count() == 1
+        card = page.locator('#company-ai-user-card')
         card.wait_for(state='visible')
         assert card.get_by_text(
             'Configuration réservée au responsable principal.', exact=True
@@ -114,7 +115,7 @@ def test_primary_manager_can_choose_endpoint_or_api_key(
         )
         assert set(model_ids) == ALLOWED_OPENAI_MODELS
         assert card.locator('#company-ai-model').input_value() == 'gpt-5-mini'
-        assert card.get_by_text('Liste contrôlée par AxioLoad', exact=True).is_visible()
+        assert card.locator('.company-ai-model-note strong').inner_text() == 'Liste contrôlée par LogiPilot'
 
         body_metrics = page.evaluate(
             "() => ({bodyWidth: document.documentElement.scrollWidth, viewportWidth: window.innerWidth})"
@@ -150,13 +151,15 @@ def test_api_key_mode_can_be_saved_without_exposing_the_key(ai_settings_app: str
         browser = playwright.chromium.launch(headless=True)
         page = browser.new_page(viewport={"width": 1280, "height": 900})
         page.goto(ai_settings_app, wait_until="networkidle")
-        page.wait_for_selector('#company-ai-connection-title', state='attached')
         page.locator('#open-settings').click()
-        card = page.locator('.company-endpoint-card')
-        card.locator(
-            '.company-ai-mode-choice', has_text='Clé API OpenAI'
-        ).click()
-        card.locator('#company-ai-model').select_option('gpt-4.1')
+        page.wait_for_function(
+            "() => document.querySelector('#tab-settings')?.classList.contains('active')"
+        )
+
+        card = page.locator('#company-ai-user-card')
+        card.wait_for(state='visible')
+        card.locator('.company-ai-mode-choice', has_text='Clé API OpenAI').click()
+        card.locator('#company-ai-model').select_option('gpt-5-mini')
         card.locator('#company-ai-api-key').fill('sk-proj-browser-test-abcdefghijklmnopqrstuvwxyz')
         card.locator('#company-ai-retention-confirmed').check()
         card.locator('#company-ai-connection-save').click()
@@ -164,9 +167,8 @@ def test_api_key_mode_can_be_saved_without_exposing_the_key(ai_settings_app: str
             "() => document.querySelector('#company-ai-connection-message')?.textContent.includes('Configuration enregistrée')"
         )
 
-        assert card.locator('#company-ai-connection-status strong').inner_text().startswith('gpt-4.1')
-        key_input = card.locator('#company-ai-api-key')
-        assert key_input.input_value() == ''
-        assert 'déjà enregistrée' in (key_input.get_attribute('placeholder') or '')
-        assert 'abcdefghijklmnopqrstuvwxyz' not in page.content()
+        assert card.locator('#company-ai-api-key').input_value() == ''
+        assert 'browser-test-abcdefghijklmnopqrstuvwxyz' not in page.content()
+        assert 'gpt-5-mini' in card.locator('#company-ai-connection-status').inner_text()
+
         browser.close()

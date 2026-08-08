@@ -130,6 +130,21 @@ def test_real_browser_navigation_loads_the_requested_pages_and_survives_reload(l
             page.locator('nav.tabs [data-workspace-tab="prompts"]').click()
             _assert_only_panel(page, "database", "#tab-prompt-center", settle_ms=1000)
 
+            # Factur-X doit utiliser exactement le même routeur que les autres espaces.
+            _click_tile_edge(page, "facturx")
+            _assert_only_panel(page, "facturx", "#tab-facturx", settle_ms=1200)
+            assert page.locator('#facturx-form').is_visible()
+            assert page.locator('nav.tabs [data-tab="facturx"]').is_visible()
+            assert 'active' not in (page.locator('#tab-data').get_attribute('class') or '').split()
+
+            # La facturation reste sélectionnée après rechargement et ne retombe pas sur le transport.
+            page.reload(wait_until="networkidle")
+            page.locator("#workspace-switcher").wait_for(state="visible")
+            page.locator('#tab-facturx').wait_for(state="attached")
+            _assert_only_panel(page, "facturx", "#tab-facturx", settle_ms=1200)
+            assert page.locator('#facturx-form').is_visible()
+            assert 'active' not in (page.locator('#tab-data').get_attribute('class') or '').split()
+
             # Contrôle complémentaire de la carte de thème sur toute sa surface.
             page.locator("#open-settings").click()
             page.locator("#tab-settings.active").wait_for(state="visible")

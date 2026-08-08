@@ -9,12 +9,14 @@
     history: 'history.view',
     route: 'route.view',
     total: 'total.view',
-    'document-control': 'document_control.view'
+    'document-control': 'document_control.view',
+    facturx: 'facturx.view'
   };
   const WORKSPACE_DEFAULTS = {
     database: 'vehicles',
     optimization: 'data',
-    documents: 'document-new'
+    documents: 'document-new',
+    facturx: 'facturx'
   };
 
   const q = (selector, root = document) => root.querySelector(selector);
@@ -32,11 +34,12 @@
           workspace: saved.workspace || null,
           database: saved.database || 'vehicles',
           optimization: saved.optimization || 'data',
-          documents: saved.documents || 'document-new'
+          documents: saved.documents || 'document-new',
+          facturx: saved.facturx || 'facturx'
         };
       }
     } catch (_) {}
-    return {workspace: null, database: 'vehicles', optimization: 'data', documents: 'document-new'};
+    return {workspace: null, database: 'vehicles', optimization: 'data', documents: 'document-new', facturx: 'facturx'};
   }
 
   function persistState() {
@@ -62,12 +65,15 @@
   function workspaceAllowed(name) {
     if (name === 'documents') return tabAllowed('document-control');
     if (name === 'database') return tabAllowed('vehicles') || Boolean(q('[data-workspace-tab="prompts"]'));
-    return ['data', 'results', 'history', 'route', 'total'].some(tabAllowed);
+    if (name === 'facturx') return tabAllowed('facturx') && Boolean(q('#tab-facturx'));
+    if (name === 'optimization') return ['data', 'results', 'history', 'route', 'total'].some(tabAllowed);
+    return false;
   }
 
   function workspaceForTab(name) {
     if (name === 'vehicles' || name === 'prompts') return 'database';
     if (name === 'document-control' || name === 'document-new' || name === 'document-history') return 'documents';
+    if (name === 'facturx') return 'facturx';
     return 'optimization';
   }
 
@@ -142,6 +148,7 @@
     state.workspace = workspace;
     if (workspace === 'database') state.database = name;
     if (workspace === 'optimization') state.optimization = name;
+    if (workspace === 'facturx') state.facturx = name;
     persistState();
     emitNavigation(workspace, name);
     return true;
@@ -201,11 +208,17 @@
     return true;
   }
 
+  function openFacturxWorkspace() {
+    if (!workspaceAllowed('facturx')) return false;
+    setWorkspaceVisual('facturx');
+    return directSwitchTab('facturx');
+  }
+
   async function openWorkspace(name, requestedTarget = null) {
     await permissionsReady;
     let workspace = name;
     if (!workspaceAllowed(workspace)) {
-      workspace = ['optimization', 'database', 'documents'].find(workspaceAllowed) || 'database';
+      workspace = ['optimization', 'database', 'documents', 'facturx'].find(workspaceAllowed) || 'database';
     }
 
     setWorkspaceVisual(workspace);
@@ -217,6 +230,10 @@
     }
     if (workspace === 'documents') {
       openDocumentWorkspace(requestedTarget || state.documents || WORKSPACE_DEFAULTS.documents);
+      return;
+    }
+    if (workspace === 'facturx') {
+      openFacturxWorkspace();
       return;
     }
 
@@ -265,6 +282,7 @@
       state.workspace = workspaceForTab(activeTab);
       if (state.workspace === 'database') state.database = activeTab;
       if (state.workspace === 'optimization') state.optimization = activeTab;
+      if (state.workspace === 'facturx') state.facturx = activeTab;
     }
   }
 
@@ -276,7 +294,9 @@
       ? state.database
       : workspace === 'optimization'
         ? state.optimization
-        : state.documents;
+        : workspace === 'facturx'
+          ? state.facturx
+          : state.documents;
     await openWorkspace(workspace, target);
   }
 
@@ -285,6 +305,9 @@
     if (!q('#workspace-switcher') || !q('nav.tabs') || !q('main')) return false;
     installed = true;
     window.addEventListener('click', handleNavigation, true);
+    window.addEventListener('axioload:workspace:registered', event => {
+      if (event.detail?.workspace === state.workspace) void openWorkspace(state.workspace, state.facturx);
+    });
     void restoreNavigation();
     return true;
   }

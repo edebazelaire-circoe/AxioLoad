@@ -16,7 +16,6 @@ _PERMISSIONS = (
     {"key": "facturx.validate", "module": "facturx", "label": "Valider une facture avant export"},
     {"key": "facturx.export", "module": "facturx", "label": "Exporter les fichiers de facturation"},
 )
-_original_fastapi_init = FastAPI.__init__
 
 
 def install_facturx_permissions() -> None:
@@ -138,8 +137,10 @@ def install_facturx_routes() -> None:
     if getattr(FastAPI.__init__, "_axioload_facturx", False):
         return
 
+    previous_init = FastAPI.__init__
+
     def init(self: FastAPI, *args: Any, **kwargs: Any) -> None:
-        _original_fastapi_init(self, *args, **kwargs)
+        previous_init(self, *args, **kwargs)
         register_facturx_routes(self)
 
     init._axioload_facturx = True  # type: ignore[attr-defined]

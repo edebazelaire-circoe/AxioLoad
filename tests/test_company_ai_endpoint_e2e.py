@@ -115,7 +115,7 @@ def test_primary_manager_can_choose_endpoint_or_api_key(
         )
         assert set(model_ids) == ALLOWED_OPENAI_MODELS
         assert card.locator('#company-ai-model').input_value() == 'gpt-5-mini'
-        assert card.locator('.company-ai-model-note strong').inner_text() == 'Liste contrôlée par AxioLoad'
+        assert card.locator('.company-ai-model-note strong').inner_text() == 'Liste contrôlée par LogiPilot'
 
         body_metrics = page.evaluate(
             "() => ({bodyWidth: document.documentElement.scrollWidth, viewportWidth: window.innerWidth})"

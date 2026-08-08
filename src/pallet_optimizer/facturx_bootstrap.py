@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import Any, Mapping
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import Response
@@ -35,6 +35,26 @@ def install_facturx_permissions() -> None:
     admin_base.PERMISSION_CATALOG = admin_base.PERMISSION_CATALOG + additions
     admin_base.PERMISSION_KEYS.update(entry["key"] for entry in additions)
     admin_base.DEFAULT_NEW_COMPANY_PERMISSIONS.update({entry["key"]: True for entry in additions})
+
+
+def install_facturx_repository_transaction_fix() -> None:
+    if getattr(FacturXRepository.save_party, "_logipilot_committed_party_read", False):
+        return
+
+    original_save_party = FacturXRepository.save_party
+
+    def save_party(
+        self: FacturXRepository,
+        tenant_id: str,
+        payload: Mapping[str, Any],
+        *,
+        party_id: str | None = None,
+    ) -> dict[str, Any]:
+        result = original_save_party(self, tenant_id, payload, party_id=party_id)
+        return self.get_party(tenant_id, str(result["id"]))
+
+    save_party._logipilot_committed_party_read = True  # type: ignore[attr-defined]
+    FacturXRepository.save_party = save_party  # type: ignore[method-assign]
 
 
 def _context(request: Request) -> WebContext:
@@ -224,6 +244,7 @@ def register_facturx_routes(app: FastAPI) -> None:
 
 
 def install_facturx_routes() -> None:
+    install_facturx_repository_transaction_fix()
     if getattr(FastAPI.__init__, "_axioload_facturx", False):
         return
 

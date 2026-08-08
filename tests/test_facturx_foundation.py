@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 from xml.etree import ElementTree
 
 from fastapi.testclient import TestClient
@@ -90,7 +91,7 @@ def test_repository_deletes_source_by_policy_and_requires_human_validation(tmp_p
     assert validated["validated_by"] == "local-user"
 
 
-def test_facturx_routes_are_registered(tmp_path) -> None:
+def test_facturx_routes_are_registered_without_removing_document_control(tmp_path) -> None:
     app = create_app(tmp_path)
     paths = {route.path for route in app.routes}
 
@@ -105,13 +106,41 @@ def test_facturx_workspace_is_loaded_in_main_page(tmp_path) -> None:
     response = TestClient(create_app(tmp_path)).get("/")
 
     assert response.status_code == 200
-    assert response.text.count('/static/facturx.css?v=0.20.1') == 1
-    assert response.text.count('/static/facturx.js?v=0.20.1') == 1
+    assert response.text.count('/static/facturx.css?v=0.20.2') == 1
+    assert response.text.count('/static/facturx.js?v=0.20.2') == 1
+
+
+def test_facturx_uses_the_shared_workspace_router() -> None:
+    static = Path(__file__).resolve().parents[1] / "src" / "pallet_optimizer" / "static"
+    facturx_script = (static / "facturx.js").read_text(encoding="utf-8")
+    navigation_script = (static / "workspace_navigation_fix.js").read_text(encoding="utf-8")
+
+    assert "card.dataset.workspace = 'facturx'" in facturx_script
+    assert "tab.dataset.tab = 'facturx'" in facturx_script
+    assert "data-facturx-workspace" not in facturx_script
+    assert "function openWorkspace()" not in facturx_script
+    assert "facturx: 'facturx.view'" in navigation_script
+    assert "function openFacturxWorkspace()" in navigation_script
+
+
+def test_facturx_has_one_persistence_path_and_no_browser_store() -> None:
+    package_root = Path(__file__).resolve().parents[1] / "src" / "pallet_optimizer"
+    python_sources = list(package_root.rglob("*.py"))
+    storage_definitions = [
+        path
+        for path in python_sources
+        if "CREATE TABLE IF NOT EXISTS electronic_invoices" in path.read_text(encoding="utf-8")
+    ]
+
+    assert storage_definitions == [package_root / "facturx.py"]
+
+    frontend = (package_root / "static" / "facturx.js").read_text(encoding="utf-8")
+    assert "/api/facturx/invoices" in frontend
+    assert "localStorage" not in frontend
+    assert "sessionStorage" not in frontend
 
 
 def test_facturx_frontend_contains_visible_workspace_and_editable_lines() -> None:
-    from pathlib import Path
-
     static = Path(__file__).resolve().parents[1] / "src" / "pallet_optimizer" / "static"
     script = (static / "facturx.js").read_text(encoding="utf-8")
 

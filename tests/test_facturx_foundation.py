@@ -6,7 +6,13 @@ from xml.etree import ElementTree
 from fastapi.testclient import TestClient
 
 from pallet_optimizer.api import create_app
-from pallet_optimizer.facturx import FacturXRepository, build_facturx_xml, select_profile, validate_invoice
+from pallet_optimizer.facturx import (
+    FacturXRepository,
+    build_facturx_xml,
+    normalize_extracted_invoice,
+    select_profile,
+    validate_invoice,
+)
 
 
 def valid_invoice() -> dict:
@@ -91,11 +97,86 @@ def test_repository_deletes_source_by_policy_and_requires_human_validation(tmp_p
     assert validated["validated_by"] == "local-user"
 
 
+def test_party_master_data_is_reusable_and_reliable_ids_are_merged(tmp_path) -> None:
+    app = create_app(tmp_path)
+    repository = FacturXRepository(app.state.registry)
+    first = repository.save_party(
+        "local",
+        {
+            "party_type": "customer",
+            "legal_name": "Client Démo",
+            "siren": "123 456 789",
+            "siret": "123 456 789 00012",
+            "vat_number": "FR00123456789",
+            "address_line1": "1 rue du Port",
+            "postal_code": "76600",
+            "city": "Le Havre",
+            "country_code": "FR",
+        },
+    )
+    second = repository.save_party(
+        "local",
+        {
+            "party_type": "supplier",
+            "legal_name": "Client Démo mis à jour",
+            "siren": "123456789",
+            "city": "Le Havre",
+            "country_code": "FR",
+        },
+    )
+
+    parties = repository.list_parties("local")
+    assert len(parties) == 1
+    assert second["id"] == first["id"]
+    assert second["party_type"] == "both"
+    assert second["legal_name"] == "Client Démo mis à jour"
+
+
+def test_extracted_invoice_is_completed_from_party_master_data() -> None:
+    extracted = {
+        "document_type": "invoice",
+        "invoice_number": "FA-42",
+        "issue_date": "2026-08-08",
+        "currency": "EUR",
+        "reverse_charge": False,
+        "seller": {"legal_name": "Fournisseur", "siren": "111222333", "country_code": "FR"},
+        "buyer": {"legal_name": "Client Démo", "siren": "123456789", "country_code": "FR"},
+        "lines": [{"description": "Transport", "quantity": "1", "unit_code": "C62", "unit_price": "100", "vat_rate": "20", "line_net_amount": "100"}],
+        "total_net": "100",
+        "total_tax": "20",
+        "total_gross": "120",
+        "extraction_notes": [],
+    }
+    parties = [{
+        "id": "party-1",
+        "active": True,
+        "legal_name": "Client Démo",
+        "siren": "123456789",
+        "siret": "12345678900012",
+        "vat_number": "FR00123456789",
+        "address_line1": "1 rue du Port",
+        "postal_code": "76600",
+        "city": "Le Havre",
+        "country_code": "FR",
+    }]
+
+    result = normalize_extracted_invoice(extracted, direction="incoming", source_name="facture.pdf", parties=parties)
+
+    assert result["direction"] == "incoming"
+    assert result["source_name"] == "facture.pdf"
+    assert result["source_deleted"] is True
+    assert result["buyer"]["master_party_id"] == "party-1"
+    assert result["buyer"]["address_line1"] == "1 rue du Port"
+    assert result["total_gross"] == "120.00"
+
+
 def test_facturx_routes_are_registered_without_removing_document_control(tmp_path) -> None:
     app = create_app(tmp_path)
     paths = {route.path for route in app.routes}
 
     assert "/api/facturx/bootstrap" in paths
+    assert "/api/facturx/parties" in paths
+    assert "/api/facturx/extract" in paths
     assert "/api/facturx/invoices" in paths
     assert "/api/facturx/invoices/{invoice_id}/validate" in paths
     assert "/api/facturx/invoices/{invoice_id}/factur-x.xml" in paths
@@ -106,8 +187,8 @@ def test_facturx_workspace_is_loaded_in_main_page(tmp_path) -> None:
     response = TestClient(create_app(tmp_path)).get("/")
 
     assert response.status_code == 200
-    assert response.text.count('/static/facturx.css?v=0.20.2') == 1
-    assert response.text.count('/static/facturx.js?v=0.20.2') == 1
+    assert response.text.count('/static/facturx.css?v=0.20.3') == 1
+    assert response.text.count('/static/facturx.js?v=0.20.3') == 1
 
 
 def test_facturx_uses_the_shared_workspace_router() -> None:
@@ -117,9 +198,11 @@ def test_facturx_uses_the_shared_workspace_router() -> None:
 
     assert "card.dataset.workspace = 'facturx'" in facturx_script
     assert "tab.dataset.tab = 'facturx'" in facturx_script
+    assert "tab.dataset.tab = 'invoice-parties'" in facturx_script
     assert "data-facturx-workspace" not in facturx_script
     assert "function openWorkspace()" not in facturx_script
     assert "facturx: 'facturx.view'" in navigation_script
+    assert "'invoice-parties': 'facturx.view'" in navigation_script
     assert "function openFacturxWorkspace()" in navigation_script
 
 
@@ -136,20 +219,26 @@ def test_facturx_has_one_persistence_path_and_no_browser_store() -> None:
 
     frontend = (package_root / "static" / "facturx.js").read_text(encoding="utf-8")
     assert "/api/facturx/invoices" in frontend
+    assert "/api/facturx/parties" in frontend
     assert "localStorage" not in frontend
     assert "sessionStorage" not in frontend
 
 
-def test_facturx_frontend_contains_visible_workspace_and_editable_lines() -> None:
+def test_facturx_frontend_contains_upload_party_master_and_editable_lines() -> None:
     static = Path(__file__).resolve().parents[1] / "src" / "pallet_optimizer" / "static"
     script = (static / "facturx.js").read_text(encoding="utf-8")
 
     for token in (
         "Facturation électronique",
-        "Créer et contrôler une facture Factur-X",
+        "Analyser et préremplir",
+        ".pdf,.jpg,.jpeg,.png",
+        "Clients et fournisseurs",
+        "Préremplir depuis les données de base",
         "facturx-add-line",
         "Enregistrer le brouillon",
         "Valider humainement",
+        "/api/facturx/extract",
+        "/api/facturx/parties",
         "/api/facturx/invoices",
     ):
         assert token in script

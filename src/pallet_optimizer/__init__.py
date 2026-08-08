@@ -27,6 +27,7 @@ from .company_ai_user_surface import install_company_ai_user_surface
 from .document_control_experience_panel import install_document_control_experience_injection
 from .document_control_panel import install_document_control_panel_injection
 from .document_control_system import install_document_control_system
+from .facturx_panel import install_facturx_panel_injection
 from .fixed_test_accounts import install_fixed_test_accounts
 from .fixed_test_login_gate import install_fixed_test_login_gate
 from .optimization_experience_panel import install_optimization_experience_injection
@@ -54,6 +55,7 @@ install_admin_panel_injection()
 install_document_control_panel_injection()
 install_document_control_experience_injection()
 install_optimization_experience_injection()
+install_facturx_panel_injection()
 install_auth_experience_injection()
 install_password_reset_injection()
 install_prompt_center_experience_injection()

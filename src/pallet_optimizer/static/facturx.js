@@ -109,27 +109,62 @@
   }
 
   function openWorkspace() {
-    qa('.tab-panel').forEach(panel => panel.classList.remove('active'));
     const panel = q('#tab-facturx');
-    panel.style.display = 'block';
-    panel.classList.add('active');
+    const switcher = q('#workspace-switcher');
+    const nav = q('nav.tabs');
+    if (!panel || !switcher || !nav) return;
+
+    qa('main > .tab-panel').forEach(item => item.classList.toggle('active', item === panel));
+    panel.style.removeProperty('display');
+    panel.setAttribute('aria-hidden', 'false');
+    if ('inert' in panel) panel.inert = false;
+
     document.body.dataset.workspace = 'facturx';
-    qa('[data-workspace]').forEach(button => button.classList.toggle('active', button.dataset.workspace === 'facturx'));
+    nav.dataset.workspace = 'facturx';
+
+    qa('[data-workspace]', switcher).forEach(button => {
+      button.classList.remove('active');
+      button.setAttribute('aria-pressed', 'false');
+    });
+    const card = q('[data-facturx-workspace]', switcher);
+    if (card) {
+      card.classList.add('active');
+      card.setAttribute('aria-pressed', 'true');
+    }
+
+    qa('[data-workspace-group]', nav).forEach(button => {
+      button.classList.toggle('workspace-group-hidden', button.dataset.workspaceGroup !== 'facturx');
+    });
+    qa('.tab', nav).forEach(button => {
+      const active = button.dataset.facturxTab === 'data';
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-selected', String(active));
+    });
   }
 
   function installNavigation() {
     const switcher = q('#workspace-switcher');
     const nav = q('nav.tabs');
-    if (!switcher || !nav || q('[data-workspace="facturx"]')) return false;
+    if (!switcher || !nav || q('[data-facturx-workspace]')) return false;
+
     const card = document.createElement('button');
-    card.type = 'button'; card.className = 'workspace-card facturx-workspace-card'; card.dataset.workspace = 'facturx';
+    card.type = 'button';
+    card.className = 'workspace-card facturx-workspace-card';
+    card.dataset.facturxWorkspace = 'facturx';
+    card.setAttribute('aria-pressed', 'false');
     card.innerHTML = `${icon()}<span><strong>Facturation électronique</strong><small>Créer, contrôler et exporter</small></span>`;
     switcher.append(card);
+
     const tab = document.createElement('button');
-    tab.type = 'button'; tab.className = 'tab workspace-synthetic-tab'; tab.textContent = 'Factures'; tab.dataset.workspaceGroup = 'facturx';
+    tab.type = 'button';
+    tab.className = 'tab workspace-synthetic-tab';
+    tab.textContent = 'Données';
+    tab.dataset.workspaceGroup = 'facturx';
+    tab.dataset.facturxTab = 'data';
     nav.append(tab);
-    card.addEventListener('click', openWorkspace); tab.addEventListener('click', openWorkspace);
-    qa('[data-workspace]:not([data-workspace="facturx"])').forEach(button => button.addEventListener('click', () => { q('#tab-facturx').style.display = 'none'; }));
+
+    card.addEventListener('click', openWorkspace);
+    tab.addEventListener('click', openWorkspace);
     return true;
   }
 

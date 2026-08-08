@@ -5,8 +5,8 @@ from typing import Any
 
 from fastapi.templating import Jinja2Templates
 
-_STYLE = b'<link rel="stylesheet" href="/static/facturx.css?v=0.20.1">'
-_SCRIPT = b'<script src="/static/facturx.js?v=0.20.1"></script>'
+_STYLE = b'<link rel="stylesheet" href="/static/facturx.css?v=0.20.2">'
+_SCRIPT = b'<script src="/static/facturx.js?v=0.20.2"></script>'
 _original_template_response: Callable[..., Any] | None = None
 
 
@@ -24,6 +24,8 @@ def install_facturx_panel_injection() -> None:
             for asset in (
                 b'<link rel="stylesheet" href="/static/facturx.css?v=0.20.0">',
                 b'<script src="/static/facturx.js?v=0.20.0"></script>',
+                b'<link rel="stylesheet" href="/static/facturx.css?v=0.20.1">',
+                b'<script src="/static/facturx.js?v=0.20.1"></script>',
                 _STYLE,
                 _SCRIPT,
             ):

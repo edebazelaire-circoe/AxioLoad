@@ -101,7 +101,10 @@ def test_https_hardening_secures_session_cookie_and_headers() -> None:
         )
         return response
 
-    response = TestClient(app, base_url="https://logipilot.test").get("/cookie")
+    response = TestClient(app, base_url="https://logipilot.test").get(
+        "/cookie",
+        headers={"X-Forwarded-Proto": "https"},
+    )
     cookie_header = response.headers.get("set-cookie", "")
 
     assert "HttpOnly" in cookie_header

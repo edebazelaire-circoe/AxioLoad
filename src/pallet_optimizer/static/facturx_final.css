@@ -1,0 +1,44 @@
+@media (min-width: 981px) {
+  #workspace-switcher[data-visible-count="4"] {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+#tab-facturx.facturx-transform-mode .facturx-layout {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+#tab-facturx.facturx-transform-mode .facturx-layout > aside {
+  display: none;
+}
+
+#tab-facturx.facturx-history-mode .facturx-import-card,
+#tab-facturx.facturx-history-mode #facturx-form {
+  display: none;
+}
+
+#tab-facturx.facturx-history-mode .facturx-layout {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+#tab-facturx.facturx-history-mode .facturx-layout > aside {
+  display: block;
+  width: 100%;
+  max-width: none;
+}
+
+#tab-facturx.facturx-history-mode .facturx-invoice-list {
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+}
+
+#tab-facturx.facturx-history-mode #facturx-detail:not(:empty) {
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border, #d7e1e5);
+}
+
+@media (max-width: 980px) {
+  #workspace-switcher[data-visible-count="4"] {
+    grid-template-columns: 1fr;
+  }
+}

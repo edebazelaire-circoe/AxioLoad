@@ -94,6 +94,38 @@ Le test navigateur réel vérifie maintenant :
 5. une actualisation complète ne renvoie pas vers le transport ;
 6. aucune erreur JavaScript n’est remontée pendant le parcours.
 
+## Couverture du besoin fonctionnel initial
+
+La revue ne considère pas le cahier des charges comme intégralement achevé. Les fonctions suivantes sont déjà opérationnelles :
+
+- création manuelle d’une facture ;
+- import PDF/image avec extraction IA et préremplissage ;
+- factures émises ou reçues, facture/avoir/acompte et autoliquidation ;
+- référentiel clients/fournisseurs réutilisable ;
+- fusion automatique sur identifiant fiable ;
+- contrôle des lignes, de la TVA et des totaux ;
+- proposition automatique de profil ;
+- validation humaine avant export ;
+- historique dans le même flux de données ;
+- XML intermédiaire et rapport de conformité.
+
+Les éléments convenus mais **pas encore réalisés** sont :
+
+- import CSV/Excel du référentiel clients/fournisseurs ;
+- import CSV/Excel et copier-coller tableur pour les lignes de facture ;
+- interrogation SIRENE/VIES pour compléter ou vérifier un tiers ;
+- proposition de rapprochement avec confirmation humaine lorsque les identifiants ne permettent pas une fusion certaine ;
+- séquences de numérotation configurables par type de document, établissement ou activité ;
+- modèles réutilisables et duplication d’une facture existante ;
+- cycle de conservation configurable par entreprise ;
+- modification d’une facture validée réservée à l’administrateur principal avec invalidation automatique de la validation précédente ;
+- modèle PDF HTML/CSS personnalisable géré par l’administrateur technique ;
+- export PDF lisible distinct ;
+- véritable export hybride Factur-X PDF/A-3 + CII ;
+- comportement configurable de génération automatique des brouillons lorsque les contrôles sont conformes.
+
+Ces écarts ne bloquent pas un pilote ciblé sur **PDF/image → préremplissage → contrôle → validation → historique**, mais ils doivent rester dans la feuille de route avant de qualifier la solution de complète au regard du besoin initial.
+
 ## Points restant à traiter avant production réglementaire
 
 ### P0 - Conformité Factur-X réelle

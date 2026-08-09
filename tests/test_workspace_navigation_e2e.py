@@ -100,6 +100,18 @@ def test_real_browser_navigation_loads_the_requested_pages_and_survives_reload(l
         try:
             page.goto(live_app, wait_until="networkidle")
             page.locator("#workspace-switcher").wait_for(state="visible")
+            page.locator('#workspace-switcher [data-workspace="facturx"]').wait_for(state="visible")
+            page.wait_for_function(
+                "() => document.querySelector('#workspace-switcher')?.dataset.visibleCount === '4'"
+            )
+            workspace_boxes = [
+                page.locator(f'#workspace-switcher [data-workspace="{workspace}"]').bounding_box()
+                for workspace in ("database", "optimization", "documents", "facturx")
+            ]
+            assert all(workspace_boxes)
+            workspace_y = [box["y"] for box in workspace_boxes if box]
+            assert max(workspace_y) - min(workspace_y) < 3
+
             _assert_only_panel(page, "database", "#tab-vehicles", settle_ms=1800)
 
             _click_tile_edge(page, "optimization")
@@ -134,17 +146,37 @@ def test_real_browser_navigation_loads_the_requested_pages_and_survives_reload(l
 
             _click_tile_edge(page, "facturx")
             _assert_only_panel(page, "facturx", "#tab-facturx", settle_ms=1200)
+            transform_tab = page.locator('nav.tabs [data-tab="facturx"]')
+            history_tab = page.locator('nav.tabs [data-facturx-view="history"]')
+            assert transform_tab.inner_text() == "Transformation des factures"
+            assert history_tab.inner_text() == "Historique"
             assert page.locator('#facturx-form').is_visible()
             assert page.locator('#facturx-source-file').is_visible()
             assert page.locator('#facturx-extract').is_visible()
-            assert page.locator('nav.tabs [data-tab="facturx"]').is_visible()
             assert 'active' not in (page.locator('#tab-data').get_attribute('class') or '').split()
+
+            history_tab.click()
+            page.wait_for_function(
+                "() => document.querySelector('#tab-facturx')?.classList.contains('facturx-history-mode')"
+            )
+            assert not page.locator('#facturx-form').is_visible()
+            assert page.locator('#facturx-list').is_visible()
+            assert history_tab.get_attribute('aria-selected') == 'true'
+
+            transform_tab.click()
+            page.wait_for_function(
+                "() => document.querySelector('#tab-facturx')?.classList.contains('facturx-transform-mode')"
+            )
+            assert page.locator('#facturx-form').is_visible()
+            assert not page.locator('#facturx-list').is_visible()
 
             page.reload(wait_until="networkidle")
             page.locator("#workspace-switcher").wait_for(state="visible")
             page.locator('#tab-facturx').wait_for(state="attached")
             _assert_only_panel(page, "facturx", "#tab-facturx", settle_ms=1200)
             assert page.locator('#facturx-form').is_visible()
+            assert page.locator('nav.tabs [data-tab="facturx"]').inner_text() == "Transformation des factures"
+            assert page.locator('nav.tabs [data-facturx-view="history"]').is_visible()
             assert 'active' not in (page.locator('#tab-data').get_attribute('class') or '').split()
 
             page.locator("#open-settings").click()

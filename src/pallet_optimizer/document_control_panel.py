@@ -6,7 +6,7 @@ from typing import Any
 from fastapi.templating import Jinja2Templates
 
 _STYLE = b'<link rel="stylesheet" href="/static/document_control.css?v=0.13.0">'
-_SCRIPT = b'<script src="/static/document_control.js?v=0.13.0"></script>'
+_LEGACY_SCRIPT = b'<script src="/static/document_control.js?v=0.13.0"></script>'
 _CAMERA_STYLE = b'<link rel="stylesheet" href="/static/document_camera.css?v=0.19.6">'
 _CAMERA_SCRIPT = b'<script src="/static/document_camera.js?v=0.19.6"></script>'
 _OLD_CAMERA_STYLE = b'<link rel="stylesheet" href="/static/document_camera.css?v=0.19.3">'
@@ -27,7 +27,7 @@ def install_document_control_panel_injection() -> None:
         if b'id="open-settings"' in body:
             for asset in (
                 _STYLE,
-                _SCRIPT,
+                _LEGACY_SCRIPT,
                 _OLD_CAMERA_STYLE,
                 _OLD_CAMERA_SCRIPT,
                 _CAMERA_STYLE,
@@ -35,7 +35,7 @@ def install_document_control_panel_injection() -> None:
             ):
                 body = body.replace(asset, b"")
             body = body.replace(b"</head>", _STYLE + _CAMERA_STYLE + b"</head>")
-            body = body.replace(b"</body>", _SCRIPT + _CAMERA_SCRIPT + b"</body>")
+            body = body.replace(b"</body>", _LEGACY_SCRIPT + _CAMERA_SCRIPT + b"</body>")
             response.body = body
             response.headers["content-length"] = str(len(body))
         return response

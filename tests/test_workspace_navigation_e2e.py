@@ -102,15 +102,12 @@ def test_real_browser_navigation_loads_the_requested_pages_and_survives_reload(l
             page.locator("#workspace-switcher").wait_for(state="visible")
             _assert_only_panel(page, "database", "#tab-vehicles", settle_ms=1800)
 
-            # Le clic est volontairement placé au bord inférieur droit de la tuile,
-            # et non sur son icône ou son texte.
             _click_tile_edge(page, "optimization")
             _assert_only_panel(page, "optimization", "#tab-data", settle_ms=1800)
 
             page.locator('nav.tabs [data-tab="route"]').click()
             _assert_only_panel(page, "optimization", "#tab-route", settle_ms=1200)
 
-            # La page sélectionnée doit rester la même après une vraie actualisation.
             page.reload(wait_until="networkidle")
             page.locator("#workspace-switcher").wait_for(state="visible")
             _assert_only_panel(page, "optimization", "#tab-route", settle_ms=1800)
@@ -130,14 +127,19 @@ def test_real_browser_navigation_loads_the_requested_pages_and_survives_reload(l
             page.locator('nav.tabs [data-workspace-tab="prompts"]').click()
             _assert_only_panel(page, "database", "#tab-prompt-center", settle_ms=1000)
 
-            # Factur-X doit utiliser exactement le même routeur que les autres espaces.
+            page.locator('nav.tabs [data-tab="invoice-parties"]').click()
+            _assert_only_panel(page, "database", "#tab-invoice-parties", settle_ms=800)
+            assert page.locator('#facturx-party-form').is_visible()
+            assert page.get_by_text('Clients et fournisseurs', exact=True).is_visible()
+
             _click_tile_edge(page, "facturx")
             _assert_only_panel(page, "facturx", "#tab-facturx", settle_ms=1200)
             assert page.locator('#facturx-form').is_visible()
+            assert page.locator('#facturx-source-file').is_visible()
+            assert page.locator('#facturx-extract').is_visible()
             assert page.locator('nav.tabs [data-tab="facturx"]').is_visible()
             assert 'active' not in (page.locator('#tab-data').get_attribute('class') or '').split()
 
-            # La facturation reste sélectionnée après rechargement et ne retombe pas sur le transport.
             page.reload(wait_until="networkidle")
             page.locator("#workspace-switcher").wait_for(state="visible")
             page.locator('#tab-facturx').wait_for(state="attached")
@@ -145,7 +147,6 @@ def test_real_browser_navigation_loads_the_requested_pages_and_survives_reload(l
             assert page.locator('#facturx-form').is_visible()
             assert 'active' not in (page.locator('#tab-data').get_attribute('class') or '').split()
 
-            # Contrôle complémentaire de la carte de thème sur toute sa surface.
             page.locator("#open-settings").click()
             page.locator("#tab-settings.active").wait_for(state="visible")
             dark_choice = page.locator('label.theme-choice:has(input[value="dark"])')

@@ -1,14 +1,23 @@
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import Any, Mapping
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import Response
 
 from . import admin_base
 from .admin_base import WebContext
-from .facturx import FACTURX_PROFILES, FacturXRepository, build_facturx_xml, validate_invoice
+from .company_ai_dual_mode import get_connection_config
+from .document_control import DocumentControlRepository, MAX_FILE_BYTES, prepare_document
+from .facturx import (
+    FACTURX_PROFILES,
+    PARTY_TYPES,
+    FacturXRepository,
+    build_facturx_xml,
+    extract_invoice_with_ai,
+    validate_invoice,
+)
 
 _PERMISSIONS = (
     {"key": "facturx.view", "module": "facturx", "label": "Accéder à la facturation électronique"},
@@ -26,6 +35,26 @@ def install_facturx_permissions() -> None:
     admin_base.PERMISSION_CATALOG = admin_base.PERMISSION_CATALOG + additions
     admin_base.PERMISSION_KEYS.update(entry["key"] for entry in additions)
     admin_base.DEFAULT_NEW_COMPANY_PERMISSIONS.update({entry["key"]: True for entry in additions})
+
+
+def install_facturx_repository_transaction_fix() -> None:
+    if getattr(FacturXRepository.save_party, "_logipilot_committed_party_read", False):
+        return
+
+    original_save_party = FacturXRepository.save_party
+
+    def save_party(
+        self: FacturXRepository,
+        tenant_id: str,
+        payload: Mapping[str, Any],
+        *,
+        party_id: str | None = None,
+    ) -> dict[str, Any]:
+        result = original_save_party(self, tenant_id, payload, party_id=party_id)
+        return self.get_party(tenant_id, str(result["id"]))
+
+    save_party._logipilot_committed_party_read = True  # type: ignore[attr-defined]
+    FacturXRepository.save_party = save_party  # type: ignore[method-assign]
 
 
 def _context(request: Request) -> WebContext:
@@ -60,11 +89,92 @@ def register_facturx_routes(app: FastAPI) -> None:
             "profiles": list(FACTURX_PROFILES),
             "directions": ["outgoing", "incoming"],
             "document_types": ["invoice", "credit_note", "advance_invoice"],
+            "party_types": list(PARTY_TYPES),
+            "accepted_sources": ["pdf", "jpg", "jpeg", "png"],
             "source_policy": "deleted_after_extraction",
             "human_validation_required": True,
             "exports": ["facturx", "xml", "pdf", "compliance_report"],
             "platform_connection": False,
             "scope": ["B2B", "B2C", "international", "credit_notes", "advance_invoices", "reverse_charge"],
+        }
+
+    @app.get("/api/facturx/parties")
+    def facturx_parties(request: Request, party_type: str | None = None) -> list[dict[str, Any]]:
+        context = _require(request, "facturx.view")
+        return _repository(request).list_parties(context.tenant_id, party_type)
+
+    @app.post("/api/facturx/parties")
+    async def facturx_party_create(request: Request) -> dict[str, Any]:
+        context = _require(request, "facturx.edit", write=True)
+        payload = await request.json()
+        try:
+            return _repository(request).save_party(context.tenant_id, payload)
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.put("/api/facturx/parties/{party_id}")
+    async def facturx_party_update(request: Request, party_id: str) -> dict[str, Any]:
+        context = _require(request, "facturx.edit", write=True)
+        payload = await request.json()
+        try:
+            return _repository(request).save_party(context.tenant_id, payload, party_id=party_id)
+        except KeyError as exc:
+            raise HTTPException(404, "Tiers inconnu") from exc
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.delete("/api/facturx/parties/{party_id}", status_code=204)
+    def facturx_party_delete(request: Request, party_id: str) -> Response:
+        context = _require(request, "facturx.edit", write=True)
+        try:
+            _repository(request).deactivate_party(context.tenant_id, party_id)
+        except KeyError as exc:
+            raise HTTPException(404, "Tiers inconnu") from exc
+        return Response(status_code=204)
+
+    @app.post("/api/facturx/extract")
+    async def facturx_extract(
+        request: Request,
+        file: UploadFile = File(...),
+        direction: str = Form("outgoing"),
+    ) -> dict[str, Any]:
+        context = _require(request, "facturx.edit", write=True)
+        raw = await file.read(MAX_FILE_BYTES + 1)
+        try:
+            document = prepare_document(file.filename or "facture", file.content_type, raw)
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+        document_repository = DocumentControlRepository(request.app.state.registry)
+        config = get_connection_config(
+            document_repository,
+            context.tenant_id,
+            include_secret=True,
+            reveal_endpoint=True,
+        )
+        if not config.get("configured"):
+            raise HTTPException(
+                409,
+                "La connexion IA de l’entreprise doit être configurée dans Paramètres avant l’analyse d’une facture.",
+            )
+        repository = _repository(request)
+        parties = repository.list_parties(context.tenant_id)
+        try:
+            payload = extract_invoice_with_ai(
+                config,
+                document,
+                direction=direction,
+                parties=parties,
+            )
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from exc
+        except RuntimeError as exc:
+            raise HTTPException(502, str(exc)) from exc
+        return {
+            "payload": payload,
+            "source_name": document.filename,
+            "source_deleted": True,
+            "message": "Document analysé. Le fichier source n’a pas été conservé ; vérifiez les données préremplies avant enregistrement.",
         }
 
     @app.get("/api/facturx/invoices")
@@ -134,6 +244,7 @@ def register_facturx_routes(app: FastAPI) -> None:
 
 
 def install_facturx_routes() -> None:
+    install_facturx_repository_transaction_fix()
     if getattr(FastAPI.__init__, "_axioload_facturx", False):
         return
 

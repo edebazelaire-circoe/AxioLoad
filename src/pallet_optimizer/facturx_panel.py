@@ -5,8 +5,8 @@ from typing import Any
 
 from fastapi.templating import Jinja2Templates
 
-_STYLE = b'<link rel="stylesheet" href="/static/facturx.css?v=0.20.2">'
-_SCRIPT = b'<script src="/static/facturx.js?v=0.20.2"></script>'
+_STYLE = b'<link rel="stylesheet" href="/static/facturx.css?v=0.20.3">'
+_SCRIPT = b'<script src="/static/facturx.js?v=0.20.3"></script>'
 _original_template_response: Callable[..., Any] | None = None
 
 
@@ -21,15 +21,9 @@ def install_facturx_panel_injection() -> None:
         response = _original_template_response(self, *args, **kwargs)
         body = getattr(response, "body", b"")
         if b'id="open-settings"' in body:
-            for asset in (
-                b'<link rel="stylesheet" href="/static/facturx.css?v=0.20.0">',
-                b'<script src="/static/facturx.js?v=0.20.0"></script>',
-                b'<link rel="stylesheet" href="/static/facturx.css?v=0.20.1">',
-                b'<script src="/static/facturx.js?v=0.20.1"></script>',
-                _STYLE,
-                _SCRIPT,
-            ):
-                body = body.replace(asset, b"")
+            for version in (b"0.20.0", b"0.20.1", b"0.20.2", b"0.20.3"):
+                body = body.replace(b'<link rel="stylesheet" href="/static/facturx.css?v=' + version + b'">', b"")
+                body = body.replace(b'<script src="/static/facturx.js?v=' + version + b'"></script>', b"")
             body = body.replace(b"</head>", _STYLE + b"</head>")
             body = body.replace(b"</body>", _SCRIPT + b"</body>")
             response.body = body

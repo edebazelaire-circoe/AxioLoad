@@ -10,7 +10,8 @@
     route: 'route.view',
     total: 'total.view',
     'document-control': 'document_control.view',
-    facturx: 'facturx.view'
+    facturx: 'facturx.view',
+    'invoice-parties': 'facturx.view'
   };
   const WORKSPACE_DEFAULTS = {
     database: 'vehicles',
@@ -64,14 +65,14 @@
 
   function workspaceAllowed(name) {
     if (name === 'documents') return tabAllowed('document-control');
-    if (name === 'database') return tabAllowed('vehicles') || Boolean(q('[data-workspace-tab="prompts"]'));
+    if (name === 'database') return tabAllowed('vehicles') || tabAllowed('invoice-parties') || Boolean(q('[data-workspace-tab="prompts"]'));
     if (name === 'facturx') return tabAllowed('facturx') && Boolean(q('#tab-facturx'));
     if (name === 'optimization') return ['data', 'results', 'history', 'route', 'total'].some(tabAllowed);
     return false;
   }
 
   function workspaceForTab(name) {
-    if (name === 'vehicles' || name === 'prompts') return 'database';
+    if (name === 'vehicles' || name === 'prompts' || name === 'invoice-parties') return 'database';
     if (name === 'document-control' || name === 'document-new' || name === 'document-history') return 'documents';
     if (name === 'facturx') return 'facturx';
     return 'optimization';
@@ -225,6 +226,7 @@
     if (workspace === 'database') {
       const target = requestedTarget || state.database || WORKSPACE_DEFAULTS.database;
       if (target === 'prompts' && openPromptCenter()) return;
+      if (target === 'invoice-parties' && directSwitchTab('invoice-parties')) return;
       directSwitchTab('vehicles');
       return;
     }

@@ -93,6 +93,7 @@
         showMode('history');
       });
     }
+    historyTab.classList.toggle('workspace-group-hidden', document.body.dataset.workspace !== 'facturx');
     return true;
   }
 
@@ -131,6 +132,7 @@
   });
 
   window.addEventListener('axioload:navigation:changed', event => {
+    ensureTabs();
     if (event.detail?.workspace === 'facturx' && event.detail?.tab === 'facturx') {
       showMode('transform');
     }

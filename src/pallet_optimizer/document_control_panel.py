@@ -35,7 +35,7 @@ def install_document_control_panel_injection() -> None:
             ):
                 body = body.replace(asset, b"")
             body = body.replace(b"</head>", _STYLE + _CAMERA_STYLE + b"</head>")
-            body = body.replace(b"</body>", _CAMERA_SCRIPT + b"</body>")
+            body = body.replace(b"</body>", _LEGACY_SCRIPT + _CAMERA_SCRIPT + b"</body>")
             response.body = body
             response.headers["content-length"] = str(len(body))
         return response

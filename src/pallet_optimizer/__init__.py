@@ -38,6 +38,7 @@ from .password_reset_system import install_password_reset_system
 from .prompt_center_experience_panel import install_prompt_center_experience_injection
 from .prompt_center_system import install_prompt_center_system
 from .scaling import install_unlimited_item_count
+from .security_hardening import install_security_hardening
 from .super_admin_routes import install_super_admin_routes
 
 __version__ = "0.20.0"
@@ -68,3 +69,4 @@ install_company_ai_endpoint()
 install_company_ai_dual_mode()
 install_company_ai_privacy()
 install_company_ai_user_surface()
+install_security_hardening()

@@ -121,10 +121,16 @@ def test_cross_origin_browser_write_is_rejected_when_session_cookie_is_present()
         return {"ok": True}
 
     client = TestClient(app, base_url="https://logipilot.test")
-    client.cookies.set("axioload_session", "test-token", domain="logipilot.test", secure=True)
+    session_header = {"Cookie": "axioload_session=test-token"}
 
-    rejected = client.post("/write", headers={"Origin": "https://evil.example"})
-    accepted = client.post("/write", headers={"Origin": "https://logipilot.test"})
+    rejected = client.post(
+        "/write",
+        headers={**session_header, "Origin": "https://evil.example"},
+    )
+    accepted = client.post(
+        "/write",
+        headers={**session_header, "Origin": "https://logipilot.test"},
+    )
 
     assert rejected.status_code == 403
     assert accepted.status_code == 200

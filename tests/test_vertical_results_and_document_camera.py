@@ -50,27 +50,30 @@ def test_results_keep_two_aligned_rows_of_five_slots() -> None:
     assert "scroll-snap-type: x proximity" in stylesheet
 
 
-def test_result_comparison_is_compact_collapsible_and_removes_redundant_status() -> None:
+def test_result_comparison_uses_one_global_model_details_control() -> None:
     script = (STATIC / "results_compact.js").read_text(encoding="utf-8")
     stylesheet = (STATIC / "results_compact.css").read_text(encoding="utf-8")
 
     for token in (
         "removeLegacyStatusPanel",
         "method-status-panel",
-        "Voir le détail des modèles",
-        "Masquer les modèles",
+        "Détails des modèles",
+        "Masquer les détails des modèles",
         "aria-expanded",
-        "localStorage",
+        "modelDetails",
         "MutationObserver",
     ):
         assert token in script
 
+    assert "localStorage" not in script
+
     for token in (
         "#method-status-panel",
         ".opx-model-toggle",
+        ".opx-model-details-footer",
         ".opx-solution-cell",
         "min-height: 168px",
-        "padding: 14px 16px",
+        "padding: 16px 18px",
     ):
         assert token in stylesheet
 

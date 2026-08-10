@@ -139,12 +139,12 @@ def test_cross_origin_browser_write_is_rejected_when_session_cookie_is_present()
     assert accepted.status_code == 200
 
 
-def test_final_facturx_ui_assets_are_loaded_once(tmp_path) -> None:
+def test_final_facturx_ui_assets_are_loaded_once_without_refresh_overlay(tmp_path) -> None:
     response = TestClient(create_app(tmp_path)).get("/")
 
     assert response.status_code == 200
     assert response.text.count('/static/facturx_final.css?v=0.20.4') == 1
     assert response.text.count('/static/facturx_view_modes.js?v=0.20.4') == 1
     assert response.text.count('/static/document_control.js?v=0.13.0') == 1
-    assert response.text.count('/static/ui_refresh.css?v=0.20.1') == 1
-    assert response.text.count('/static/ui_refresh.js?v=0.20.1') == 1
+    assert '/static/ui_refresh.css' not in response.text
+    assert '/static/ui_refresh.js' not in response.text

@@ -24,12 +24,6 @@
     transformTab.setAttribute('tabindex', '-1');
   }
 
-  function polishModelDetails(root = document) {
-    qa('.opx-model-card details summary, .ovr-model-card details summary', root).forEach(summary => {
-      if (summary.textContent.trim() !== 'Détails du modèle') summary.textContent = 'Détails du modèle';
-    });
-  }
-
   function solutionRank(card, cell) {
     const value = card?.dataset.solutionRank || cell?.dataset.solutionRank || '';
     const rank = Number(value);
@@ -37,7 +31,7 @@
   }
 
   function rankLabel(rank) {
-    if (rank === 1) return '🏆 1er';
+    if (rank === 1) return '🏆 Recommandé';
     if (rank === 2) return '🥈 2e';
     if (rank === 3) return '🥉 3e';
     return `${rank}e`;
@@ -47,15 +41,12 @@
     if (!card) return;
     qa('strong, h2, h3, h4, span', card).forEach(element => {
       if (element.children.length) return;
-      if (/^Solution\s+\d+$/i.test(element.textContent.trim())) element.textContent = 'Plan obtenu';
+      const text = element.textContent.trim();
+      if (/^Solution\s+\d+$/i.test(text) || text === 'Plan obtenu') element.classList.add('ux-hide-result-title');
+      if (text.toLocaleLowerCase('fr') === 'recommandée' || text.toLocaleLowerCase('fr') === 'recommandé') {
+        element.classList.add('ux-hide-inner-recommended');
+      }
     });
-  }
-
-  function modelLabelFor(cell, card) {
-    const existing = q('.opx-solution-cell-label span', cell)?.textContent.trim();
-    if (existing) return existing;
-    const method = card?.dataset.method || cell?.dataset.method || '';
-    return method ? 'Modèle correspondant' : 'Résultat du modèle';
   }
 
   function polishRanking() {
@@ -71,14 +62,17 @@
       cell.classList.remove('rank-1', 'rank-2', 'rank-3', 'rank-4', 'rank-5');
       q('.ux-recommended-ribbon', cell)?.remove();
 
+      const label = q('.opx-solution-cell-label', cell);
+      const model = q('span', label || cell);
+      if (model && !/^Modèle\s+\d+$/i.test(model.textContent.trim())) {
+        const methodIndex = [...cells].indexOf(cell) + 1;
+        model.textContent = `Modèle ${methodIndex}`;
+      }
+
       if (!rank) return;
       cell.dataset.solutionRank = String(rank);
       cell.classList.add(`rank-${Math.min(rank, 5)}`);
-
-      const label = q('.opx-solution-cell-label', cell);
       if (label) {
-        const model = q('span', label);
-        if (model) model.textContent = modelLabelFor(cell, card);
         let badge = q('strong', label);
         if (!badge) {
           badge = document.createElement('strong');
@@ -87,21 +81,10 @@
         badge.className = 'opx-ranking-badge';
         badge.textContent = rankLabel(rank);
       }
-
-      if (rank === 1) {
-        const ribbon = document.createElement('span');
-        ribbon.className = 'ux-recommended-ribbon';
-        ribbon.textContent = 'Recommandé';
-        cell.append(ribbon);
-      }
     });
 
     const rowLabel = row.previousElementSibling;
     if (rowLabel?.classList.contains('opx-row-label')) rowLabel.textContent = 'Résultats classés';
-    const intro = q('.opx-aligned-portfolio .opx-portfolio-intro');
-    if (intro) {
-      intro.textContent = 'Chaque résultat conserve strictement la colonne de son modèle. Le rang est affiché par un trophée ou une médaille sans déplacer les solutions ni masquer les échecs.';
-    }
   }
 
   function compactDecisionPanel() {
@@ -112,10 +95,35 @@
     if (content.lastElementChild !== panel) content.append(panel);
   }
 
+  function headingElement(text) {
+    const expected = text.toLocaleLowerCase('fr');
+    return qa('h2, h3, h4, strong').find(element => element.textContent.trim().toLocaleLowerCase('fr') === expected) || null;
+  }
+
   function sectionForHeading(text) {
-    const heading = qa('h2, h3, h4, strong').find(element => element.textContent.trim().toLocaleLowerCase('fr') === text);
+    const heading = headingElement(text);
     if (!heading) return null;
     return heading.closest('section, article') || heading.parentElement?.parentElement || heading.parentElement;
+  }
+
+  function makeDiagnosticsSecondary(diagnostics) {
+    if (!diagnostics || diagnostics.dataset.uxDiagnosticsReady === '1') return;
+    diagnostics.dataset.uxDiagnosticsReady = '1';
+    diagnostics.classList.add('ux-diagnostics-secondary');
+    const heading = [...diagnostics.querySelectorAll('h2, h3, h4, strong')]
+      .find(element => element.textContent.trim().toLocaleLowerCase('fr') === 'diagnostics');
+    if (!heading) return;
+
+    const disclosure = document.createElement('details');
+    disclosure.className = 'ux-diagnostics-disclosure';
+    const summary = document.createElement('summary');
+    summary.innerHTML = '<span>Diagnostics</span><small>Afficher les informations techniques</small>';
+    disclosure.append(summary);
+
+    [...diagnostics.children].forEach(child => {
+      if (child !== heading) disclosure.append(child);
+    });
+    heading.replaceWith(disclosure);
   }
 
   function polishInspector() {
@@ -123,23 +131,28 @@
     const diagnostics = sectionForHeading('diagnostics');
     const exports = sectionForHeading('exports opérationnels');
     details?.classList.add('ux-inspector-details');
-    diagnostics?.classList.add('ux-diagnostics-secondary');
+    makeDiagnosticsSecondary(diagnostics);
     exports?.classList.add('ux-exports-final');
 
-    if (diagnostics && exports && diagnostics.parentElement === exports.parentElement) {
-      const parent = diagnostics.parentElement;
-      if (exports !== parent.lastElementChild) parent.append(exports);
-    }
+    const parent = details?.parentElement || diagnostics?.parentElement || exports?.parentElement;
+    parent?.classList.add('ux-inspector-stack');
+    if (parent && exports && exports.parentElement === parent && exports !== parent.lastElementChild) parent.append(exports);
+  }
+
+  function polishViewer() {
+    const viewer = q('#viewer');
+    if (!viewer) return;
+    viewer.closest('.viewer-main, .viewer-stage, .viewer-panel')?.classList.add('ux-viewer-rectangular');
   }
 
   function apply() {
     scheduled = false;
     hideRedundantFacturxTab();
     replaceOptimizationLabels();
-    polishModelDetails();
     polishRanking();
     compactDecisionPanel();
     polishInspector();
+    polishViewer();
   }
 
   function scheduleApply() {

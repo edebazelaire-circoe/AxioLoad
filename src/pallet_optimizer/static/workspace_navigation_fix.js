@@ -19,6 +19,7 @@
     documents: 'document-new',
     facturx: 'facturx'
   };
+  const OPTIMIZATION_TABS = ['data', 'results', 'history', 'route', 'total'];
 
   const q = (selector, root = document) => root.querySelector(selector);
   const qa = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -67,7 +68,7 @@
     if (name === 'documents') return tabAllowed('document-control');
     if (name === 'database') return tabAllowed('vehicles') || tabAllowed('invoice-parties') || Boolean(q('[data-workspace-tab="prompts"]'));
     if (name === 'facturx') return tabAllowed('facturx') && Boolean(q('#tab-facturx'));
-    if (name === 'optimization') return ['data', 'results', 'history', 'route', 'total'].some(tabAllowed);
+    if (name === 'optimization') return OPTIMIZATION_TABS.some(tabAllowed);
     return false;
   }
 
@@ -76,6 +77,14 @@
     if (name === 'document-control' || name === 'document-new' || name === 'document-history') return 'documents';
     if (name === 'facturx') return 'facturx';
     return 'optimization';
+  }
+
+  function rememberedTargetForWorkspace(workspace) {
+    if (workspace === 'database') return state.database || WORKSPACE_DEFAULTS.database;
+    if (workspace === 'optimization') return state.optimization || WORKSPACE_DEFAULTS.optimization;
+    if (workspace === 'documents') return state.documents || WORKSPACE_DEFAULTS.documents;
+    if (workspace === 'facturx') return state.facturx || WORKSPACE_DEFAULTS.facturx;
+    return null;
   }
 
   function setWorkspaceVisual(name) {
@@ -156,8 +165,9 @@
   }
 
   function allowedOptimizationTarget(preferred) {
-    const order = [preferred, 'data', 'results', 'route', 'total', 'history'];
-    return order.find(name => name && tabAllowed(name) && q(`#tab-${CSS.escape(name)}`)) || null;
+    const order = [preferred, ...OPTIMIZATION_TABS]
+      .filter((name, index, values) => name && OPTIMIZATION_TABS.includes(name) && values.indexOf(name) === index);
+    return order.find(name => tabAllowed(name) && q(`#tab-${CSS.escape(name)}`)) || null;
   }
 
   function openPromptCenter() {
@@ -292,14 +302,7 @@
     await permissionsReady;
     deriveInitialState();
     const workspace = state.workspace || 'database';
-    const target = workspace === 'database'
-      ? state.database
-      : workspace === 'optimization'
-        ? state.optimization
-        : workspace === 'facturx'
-          ? state.facturx
-          : state.documents;
-    await openWorkspace(workspace, target);
+    await openWorkspace(workspace, rememberedTargetForWorkspace(workspace));
   }
 
   function install() {
@@ -308,7 +311,8 @@
     installed = true;
     window.addEventListener('click', handleNavigation, true);
     window.addEventListener('axioload:workspace:registered', event => {
-      if (event.detail?.workspace === state.workspace) void openWorkspace(state.workspace, state.facturx);
+      if (event.detail?.workspace !== state.workspace) return;
+      void openWorkspace(state.workspace, rememberedTargetForWorkspace(state.workspace));
     });
     void restoreNavigation();
     return true;

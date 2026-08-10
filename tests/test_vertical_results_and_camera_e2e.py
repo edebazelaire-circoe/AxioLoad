@@ -108,12 +108,28 @@ def test_five_solution_slots_are_aligned_with_the_five_models(vertical_camera_ap
         solutions = page.locator('#opx-solution-row .opx-solution-cell')
         assert models.count() == 5
         assert solutions.count() == 5
+        for index in range(5):
+            assert models.nth(index).is_visible()
 
-        assert solutions.nth(0).locator('.solution-card-title').inner_text() == 'Solution 1'
-        assert solutions.nth(1).locator('.solution-card-title').inner_text() == 'Solution 2'
+        assert solutions.nth(0).locator('.solution-card-title').inner_text() == 'Plan obtenu'
+        assert solutions.nth(1).locator('.solution-card-title').inner_text() == 'Plan obtenu'
         assert solutions.nth(2).locator('.opx-no-solution').is_visible()
-        assert solutions.nth(3).locator('.solution-card-title').inner_text() == 'Solution 3'
+        assert solutions.nth(3).locator('.solution-card-title').inner_text() == 'Plan obtenu'
         assert solutions.nth(4).locator('.opx-no-solution').is_visible()
+
+        assert solutions.nth(0).locator('.opx-ranking-badge').inner_text() == '🏆 Recommandé'
+        assert solutions.nth(1).locator('.opx-ranking-badge').inner_text() == '🥈 2e'
+        assert solutions.nth(3).locator('.opx-ranking-badge').inner_text() == '🥉 3e'
+
+        toggle = page.locator('[data-results-model-toggle]')
+        toggle.wait_for(state="visible")
+        assert toggle.get_attribute('aria-expanded') == 'false'
+        assert not models.first.locator('details').is_visible()
+        toggle.click()
+        assert toggle.get_attribute('aria-expanded') == 'true'
+        assert models.first.locator('details').is_visible()
+        for index in range(5):
+            assert models.nth(index).is_visible()
 
         boxes = page.evaluate(
             """() => {

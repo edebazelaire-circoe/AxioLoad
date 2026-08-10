@@ -64,24 +64,13 @@
     const cells = qa(':scope > .opx-solution-cell', row);
     if (!cells.length) return;
 
-    const ranked = cells.map((cell, index) => {
+    cells.forEach(cell => {
       const card = q('.solution-card', cell);
       const rank = solutionRank(card, cell);
-      return {cell, card, rank, index};
-    });
-
-    const sorted = [...ranked].sort((left, right) => {
-      const leftRank = left.rank ?? 999;
-      const rightRank = right.rank ?? 999;
-      return leftRank - rightRank || left.index - right.index;
-    });
-    if (sorted.some((entry, index) => entry.cell !== cells[index])) {
-      sorted.forEach(entry => row.append(entry.cell));
-    }
-
-    sorted.forEach(({cell, card, rank}) => {
       removeSolutionNumbering(card);
       cell.classList.remove('rank-1', 'rank-2', 'rank-3', 'rank-4', 'rank-5');
+      q('.ux-recommended-ribbon', cell)?.remove();
+
       if (!rank) return;
       cell.dataset.solutionRank = String(rank);
       cell.classList.add(`rank-${Math.min(rank, 5)}`);
@@ -99,7 +88,7 @@
         badge.textContent = rankLabel(rank);
       }
 
-      if (rank === 1 && !q('.ux-recommended-ribbon', cell)) {
+      if (rank === 1) {
         const ribbon = document.createElement('span');
         ribbon.className = 'ux-recommended-ribbon';
         ribbon.textContent = 'Recommandé';
@@ -108,10 +97,10 @@
     });
 
     const rowLabel = row.previousElementSibling;
-    if (rowLabel?.classList.contains('opx-row-label')) rowLabel.textContent = 'Classement des résultats';
+    if (rowLabel?.classList.contains('opx-row-label')) rowLabel.textContent = 'Résultats classés';
     const intro = q('.opx-aligned-portfolio .opx-portfolio-intro');
     if (intro) {
-      intro.textContent = 'Chaque modèle est présenté séparément. Les résultats sont ensuite classés avec un trophée ou une médaille afin d’éviter toute confusion entre le numéro du modèle et celui d’une solution.';
+      intro.textContent = 'Chaque résultat conserve strictement la colonne de son modèle. Le rang est affiché par un trophée ou une médaille sans déplacer les solutions ni masquer les échecs.';
     }
   }
 

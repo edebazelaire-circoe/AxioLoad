@@ -3,12 +3,12 @@
 
   const FIXED_TILT = 0.52;
   const DEFAULT_ZOOM = 1.45;
-  const MIN_FOCUS_LENGTH_MM = 3800;
   const VEHICLE_DARK = '#0F3D3E';
   const VEHICLE_GREEN = '#1DAA8A';
   const VEHICLE_GREEN_DARK = '#137C77';
   const VEHICLE_YELLOW = '#F5B400';
   const VEHICLE_RED = '#E63946';
+  const DIMENSION_BLUE = '#00A8BF';
   const FLOOR = '#DCE9E8';
   const FLOOR_EDGE = '#45676A';
   const CHASSIS = '#324B50';
@@ -36,14 +36,8 @@
     )));
   }
 
-  function focusLength(vehicle, plan) {
-    const occupied = occupiedLength(plan);
-    if (vehicle.interior_length_mm <= 5200) return vehicle.interior_length_mm;
-    const margin = Math.max(850, occupied * 0.22);
-    return Math.min(
-      vehicle.interior_length_mm,
-      Math.max(MIN_FOCUS_LENGTH_MM, occupied + margin),
-    );
+  function focusLength(vehicle) {
+    return Number(vehicle.interior_length_mm || 0);
   }
 
   function sceneLayout(targetCanvas, vehicle, displayedLength) {
@@ -63,15 +57,15 @@
     const zoomFactor = Math.max(0.55, Math.min(2.75, Number(state.zoom || DEFAULT_ZOOM) / DEFAULT_ZOOM));
     const scale = Math.min(
       targetCanvas.width * 0.72 / width,
-      targetCanvas.height * 0.64 / height,
+      targetCanvas.height * 0.60 / height,
     ) * zoomFactor;
     const centreX = (Math.min(...xs) + Math.max(...xs)) / 2;
     const centreY = (Math.min(...ys) + Math.max(...ys)) / 2;
     return {
       scale,
       origin: [
-        targetCanvas.width * 0.48 - centreX * scale,
-        targetCanvas.height * 0.59 - centreY * scale,
+        targetCanvas.width * 0.50 - centreX * scale,
+        targetCanvas.height * 0.61 - centreY * scale,
       ],
     };
   }
@@ -169,7 +163,7 @@
       [point(0, 0, H, origin, scale), point(displayedLength, 0, H, origin, scale)],
       [point(0, W, H, origin, scale), point(displayedLength, W, H, origin, scale)],
     ];
-    topRails.forEach(([a, b]) => line(target, a, b, 'rgba(15,61,62,.55)', 1.5, [7, 6]));
+    topRails.forEach(([a, b]) => line(target, a, b, 'rgba(15,61,62,.34)', 1.3, [7, 6]));
 
     const frontPanel = [
       point(displayedLength, 0, 0, origin, scale),
@@ -177,47 +171,17 @@
       point(displayedLength, W, H, origin, scale),
       point(displayedLength, 0, H, origin, scale),
     ];
-    face(target, frontPanel, 'rgba(29,170,138,.11)', 'rgba(15,61,62,.70)', 1.9);
+    face(target, frontPanel, 'rgba(29,170,138,.06)', 'rgba(15,61,62,.52)', 1.6);
 
     const thresholdA = point(-55, -55, -28, origin, scale);
     const thresholdB = point(-55, W + 55, -28, origin, scale);
-    line(target, thresholdA, thresholdB, VEHICLE_YELLOW, 6);
+    line(target, thresholdA, thresholdB, VEHICLE_YELLOW, 5);
 
     const axle = Math.max(displayedLength * 0.67, displayedLength - 1150);
     [axle - 260, axle + 260].forEach(position => {
       if (position <= 200 || position >= displayedLength - 100) return;
       drawWheel(target, position, -120, origin, scale, 0.9);
       drawWheel(target, position, W + 120, origin, scale, 0.9);
-    });
-  }
-
-  function drawContinuation(target, vehicle, displayedLength, origin, scale) {
-    const remaining = vehicle.interior_length_mm - displayedLength;
-    if (remaining <= 120) return;
-    const W = vehicle.interior_width_mm;
-    const H = vehicle.interior_height_mm;
-    const visualExtension = Math.min(1200, Math.max(650, displayedLength * 0.22));
-    const end = displayedLength + visualExtension;
-    const pairs = [
-      [[displayedLength, 0, 0], [end, 0, 0]],
-      [[displayedLength, W, 0], [end, W, 0]],
-      [[displayedLength, 0, H], [end, 0, H]],
-      [[displayedLength, W, H], [end, W, H]],
-    ];
-    pairs.forEach(([from, to]) => line(
-      target,
-      point(...from, origin, scale),
-      point(...to, origin, scale),
-      'rgba(15,61,62,.28)',
-      1.2,
-      [7, 7],
-    ));
-    const label = point(end, W * 0.5, H * 0.54, origin, scale);
-    screenLabel(target, `Espace libre restant ${fmt(remaining / 1000)} m`, label[0], label[1], {
-      font: '700 11px Segoe UI, Arial, sans-serif',
-      background: 'rgba(255,255,255,.92)',
-      color: VEHICLE_DARK,
-      border: 'rgba(15,61,62,.38)',
     });
   }
 
@@ -236,59 +200,99 @@
   }
 
   function drawVehicleOverview(target, targetCanvas, vehicle, plan, exportMode) {
-    const width = exportMode ? 390 : Math.min(330, targetCanvas.width * 0.29);
-    const height = exportMode ? 108 : 92;
-    const x = 24;
-    const y = 22;
+    const width = exportMode ? 430 : Math.min(360, targetCanvas.width * 0.34);
+    const height = exportMode ? 126 : 104;
+    const x = 22;
+    const y = 20;
     const occupied = occupiedLength(plan);
-    const ratio = Math.max(0, Math.min(1, occupied / vehicle.interior_length_mm));
-    roundedRect(target, x, y, width, height, 14, 'rgba(255,255,255,.94)', 'rgba(15,61,62,.22)');
+    const total = Number(vehicle.interior_length_mm || 0);
+    const remaining = Math.max(0, total - occupied);
+    const ratio = total > 0 ? Math.max(0, Math.min(1, occupied / total)) : 0;
+    roundedRect(target, x, y, width, height, 12, 'rgba(255,255,255,.97)', 'rgba(15,61,62,.18)');
 
     target.save();
     target.fillStyle = VEHICLE_DARK;
-    target.font = `${exportMode ? 18 : 13}px Segoe UI, Arial, sans-serif`;
-    target.fontWeight = '700';
-    target.fillText('Position du chargement dans le véhicule', x + 16, y + 23);
+    target.font = `800 ${exportMode ? 18 : 13}px Segoe UI, Arial, sans-serif`;
+    target.fillText('Occupation de la longueur', x + 14, y + 22);
 
-    const trailerX = x + 16;
-    const trailerY = y + 40;
-    const trailerW = width - 72;
-    const trailerH = exportMode ? 34 : 28;
-    roundedRect(target, trailerX, trailerY, trailerW, trailerH, 6, '#E7F1F0', VEHICLE_DARK);
-    target.fillStyle = VEHICLE_GREEN;
-    target.fillRect(trailerX + 2, trailerY + 2, Math.max(3, (trailerW - 4) * ratio), trailerH - 4);
-    target.fillStyle = VEHICLE_YELLOW;
-    target.fillRect(trailerX - 2, trailerY + 1, 4, trailerH - 2);
+    const barX = x + 14;
+    const barY = y + 38;
+    const barW = width - 28;
+    const barH = exportMode ? 16 : 12;
+    roundedRect(target, barX, barY, barW, barH, barH / 2, '#E7EEF1', null);
+    if (ratio > 0) {
+      roundedRect(target, barX, barY, Math.max(4, barW * ratio), barH, barH / 2, VEHICLE_GREEN, null);
+    }
 
-    const cabX = trailerX + trailerW + 5;
-    const cabY = trailerY + 4;
+    target.font = `700 ${exportMode ? 14 : 10.5}px Segoe UI, Arial, sans-serif`;
     target.fillStyle = VEHICLE_GREEN_DARK;
-    target.strokeStyle = VEHICLE_DARK;
-    target.lineWidth = 1.3;
-    target.beginPath();
-    target.moveTo(cabX, cabY + trailerH - 5);
-    target.lineTo(cabX + 30, cabY + trailerH - 5);
-    target.lineTo(cabX + 30, cabY + 8);
-    target.lineTo(cabX + 17, cabY);
-    target.lineTo(cabX, cabY);
-    target.closePath();
-    target.fill();
-    target.stroke();
-    [trailerX + trailerW * 0.68, trailerX + trailerW * 0.82, cabX + 22].forEach(wheelX => {
-      target.beginPath();
-      target.arc(wheelX, trailerY + trailerH + 4, 4.2, 0, Math.PI * 2);
-      target.fillStyle = '#1B2A2E';
-      target.fill();
-    });
-
-    target.fillStyle = '#49666B';
-    target.font = `${exportMode ? 15 : 11}px Segoe UI, Arial, sans-serif`;
-    target.fillText(
-      `${fmt(occupied / 1000)} m occupés sur ${fmt(vehicle.interior_length_mm / 1000)} m utiles`,
-      x + 16,
-      y + height - 10,
-    );
+    target.fillText(`${fmt(occupied / 1000)} m occupés`, barX, y + height - 14);
+    target.textAlign = 'center';
+    target.fillStyle = '#526A70';
+    target.fillText(`${fmt(remaining / 1000)} m restants`, x + width / 2, y + height - 14);
+    target.textAlign = 'right';
+    target.fillText(`${fmt(total / 1000)} m total`, x + width - 14, y + height - 14);
     target.restore();
+  }
+
+  function drawLoadingAnnotations(target, vehicle, plan, origin, scale, scene) {
+    const total = Number(vehicle.interior_length_mm || 0);
+    const occupied = Math.min(total, occupiedLength(plan));
+    const free = Math.max(0, total - occupied);
+
+    if (occupied > 50) {
+      drawDimension(
+        target,
+        [0, vehicle.interior_width_mm + 520, 0],
+        [occupied, vehicle.interior_width_mm + 520, 0],
+        `Longueur occupée ${fmt(occupied / 1000)} m`,
+        DIMENSION_BLUE,
+        origin,
+        scale,
+        state,
+      );
+    }
+
+    if (free > 100) {
+      const freeCentre = point(occupied + free * 0.5, vehicle.interior_width_mm * 0.52, vehicle.interior_height_mm * 0.55, origin, scale);
+      screenLabel(target, `Espace libre\n${fmt(free / 1000)} m`, freeCentre[0], freeCentre[1], {
+        font: '800 12px Segoe UI, Arial, sans-serif',
+        background: 'rgba(255,255,255,.96)',
+        color: '#0B639F',
+        border: 'rgba(0,168,191,.42)',
+      });
+    }
+
+    drawDimension(
+      target,
+      [0, vehicle.interior_width_mm + 340, 0],
+      [total, vehicle.interior_width_mm + 340, 0],
+      `Longueur totale ${fmt(total / 1000)} m`,
+      DIMENSION_BLUE,
+      origin,
+      scale,
+      state,
+    );
+    drawDimension(
+      target,
+      [-220, 0, 0],
+      [-220, vehicle.interior_width_mm, 0],
+      `Largeur ${fmt(vehicle.interior_width_mm / 1000)} m`,
+      DIMENSION_BLUE,
+      origin,
+      scale,
+      state,
+    );
+    drawDimension(
+      target,
+      [0, vehicle.interior_width_mm + 210, 0],
+      [0, vehicle.interior_width_mm + 210, vehicle.interior_height_mm],
+      `Hauteur ${fmt(vehicle.interior_height_mm / 1000)} m`,
+      DIMENSION_BLUE,
+      origin,
+      scale,
+      state,
+    );
   }
 
   function drawCutawayScene(target, targetCanvas, { interactive = false, exportMode = false } = {}) {
@@ -298,11 +302,11 @@
     const plan = solution.vehicle_plans[state.selectedVehicle];
     const vehicle = vehicleFor(plan);
     const scene = sceneColors();
-    const displayedLength = focusLength(vehicle, plan);
+    const displayedLength = focusLength(vehicle);
     const layout = sceneLayout(targetCanvas, vehicle, displayedLength);
 
     target.clearRect(0, 0, targetCanvas.width, targetCanvas.height);
-    target.fillStyle = scene.background;
+    target.fillStyle = '#FFFFFF';
     target.fillRect(0, 0, targetCanvas.width, targetCanvas.height);
     if (interactive) state.hitAreas = [];
 
@@ -335,56 +339,16 @@
       interactive,
     ));
 
-    drawContinuation(target, vehicle, displayedLength, layout.origin, layout.scale);
-
-    drawDimension(
-      target,
-      [0, vehicle.interior_width_mm + 360, 0],
-      [displayedLength, vehicle.interior_width_mm + 360, 0],
-      `Zone de chargement affichée ${fmt(displayedLength / 1000)} m`,
-      '#00A8BF',
-      layout.origin,
-      layout.scale,
-      state,
-    );
-    drawDimension(
-      target,
-      [-220, 0, 0],
-      [-220, vehicle.interior_width_mm, 0],
-      `Largeur ${fmt(vehicle.interior_width_mm / 1000)} m`,
-      VEHICLE_GREEN,
-      layout.origin,
-      layout.scale,
-      state,
-    );
-    drawDimension(
-      target,
-      [0, vehicle.interior_width_mm + 210, 0],
-      [0, vehicle.interior_width_mm + 210, vehicle.interior_height_mm],
-      `Hauteur ${fmt(vehicle.interior_height_mm / 1000)} m`,
-      VEHICLE_RED,
-      layout.origin,
-      layout.scale,
-      state,
-    );
-
-    const rear = point(0, vehicle.interior_width_mm * 0.5, -20, layout.origin, layout.scale);
-    screenLabel(target, 'Porte arrière', rear[0], rear[1] + 26, {
-      font: '700 12px Segoe UI, Arial, sans-serif',
-      background: scene.labelBackground,
-      color: scene.labelColor,
-      border: scene.labelBorder,
-    });
-
+    drawLoadingAnnotations(target, vehicle, plan, layout.origin, layout.scale, scene);
     drawVehicleOverview(target, targetCanvas, vehicle, plan, exportMode);
 
     const metrics = planMetricsFromPlacements(plan);
     screenLabel(target, `${fmt(metrics.occupiedM)} m occupés · ${fmt(metrics.linearMeters)} m.l.`, targetCanvas.width - 22, 24, {
       align: 'right',
       font: exportMode ? '800 18px Segoe UI, Arial, sans-serif' : '800 13px Segoe UI, Arial, sans-serif',
-      background: scene.metricBackground,
-      color: '#FFFFFF',
-      border: VEHICLE_DARK,
+      background: 'rgba(255,255,255,.96)',
+      color: VEHICLE_DARK,
+      border: 'rgba(15,61,62,.20)',
     });
   }
 
@@ -423,7 +387,7 @@
 
     const help = document.querySelector('.viewer-help');
     if (help) {
-      help.textContent = 'Glisser horizontalement pour tourner · Maj + glisser pour déplacer la caméra · molette pour zoomer · cliquer sur un objet pour l’inspecter';
+      help.textContent = 'Glisser horizontalement pour tourner · Molette pour zoomer · Cliquer sur un objet pour l’inspecter';
     }
   }
 

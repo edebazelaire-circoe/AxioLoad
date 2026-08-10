@@ -90,13 +90,13 @@
     panel.classList.add('ux-decision-compact');
   }
 
-  function headingElement(text) {
+  function headingElement(text, root = document) {
     const expected = text.toLocaleLowerCase('fr');
-    return qa('h2, h3, h4, strong').find(element => element.textContent.trim().toLocaleLowerCase('fr') === expected) || null;
+    return qa('h2, h3, h4, strong', root).find(element => element.textContent.trim().toLocaleLowerCase('fr') === expected) || null;
   }
 
-  function sectionForHeading(text) {
-    const heading = headingElement(text);
+  function sectionForHeading(text, root = document) {
+    const heading = headingElement(text, root);
     if (!heading) return null;
     return heading.closest('section, article') || heading.parentElement || null;
   }
@@ -106,7 +106,7 @@
     diagnostics.classList.add('ux-diagnostics-secondary');
     const heading = [...diagnostics.querySelectorAll('h2, h3, h4, strong')]
       .find(element => element.textContent.trim().toLocaleLowerCase('fr') === 'diagnostics');
-    if (!heading || diagnostics.querySelector(':scope > .ux-diagnostics-toggle')) return;
+    if (!heading || diagnostics.querySelector('.ux-diagnostics-toggle')) return;
 
     diagnostics.classList.add('ux-diagnostics-collapsed');
     const toggle = document.createElement('button');
@@ -126,9 +126,10 @@
   }
 
   function polishInspector() {
-    const details = sectionForHeading('inspection de l’objet') || sectionForHeading("inspection de l'objet") || sectionForHeading('détails de l’objet') || sectionForHeading("détails de l'objet");
-    const diagnostics = sectionForHeading('diagnostics');
-    const exports = sectionForHeading('exports opérationnels');
+    const inspector = q('.viewer-inspector, #viewer-inspector, .inspector-panel') || document;
+    const details = sectionForHeading('inspection de l’objet', inspector) || sectionForHeading("inspection de l'objet", inspector) || sectionForHeading('détails de l’objet', inspector) || sectionForHeading("détails de l'objet", inspector);
+    const diagnostics = sectionForHeading('diagnostics', inspector);
+    const exports = sectionForHeading('exports opérationnels', inspector);
     details?.classList.add('ux-inspector-details');
     makeDiagnosticsSecondary(diagnostics);
     exports?.classList.add('ux-exports-final');

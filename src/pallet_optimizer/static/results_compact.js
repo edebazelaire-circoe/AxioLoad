@@ -24,7 +24,7 @@
   function enhancePortfolio() {
     removeLegacyStatusPanel();
     const section = document.querySelector('#opx-method-portfolio');
-    if (!section || section.dataset.compactResultsReady === '2') return;
+    if (!section) return;
 
     const heading = section.querySelector('.opx-portfolio-heading');
     const title = heading?.querySelector('h3');
@@ -33,13 +33,18 @@
     const solutionRow = section.querySelector('#opx-solution-row');
     if (!heading || !title || !intro || !modelRow || !solutionRow) return;
 
-    section.dataset.compactResultsReady = '2';
     modelRow.hidden = false;
+    [...modelRow.children].forEach(card => { card.hidden = false; });
     const modelLabel = modelRow.previousElementSibling;
     if (modelLabel?.classList.contains('opx-row-label')) modelLabel.hidden = false;
 
-    section.querySelector('.opx-portfolio-summary')?.remove();
-    title.insertAdjacentHTML('afterend', '<p class="opx-portfolio-summary">Comparez les cinq modèles, puis choisissez le plan le mieux classé.</p>');
+    let summary = section.querySelector('.opx-portfolio-summary');
+    if (!summary) {
+      summary = document.createElement('p');
+      summary.className = 'opx-portfolio-summary';
+      summary.textContent = 'Comparez les cinq modèles, puis choisissez le plan le mieux classé.';
+      title.insertAdjacentElement('afterend', summary);
+    }
     intro.textContent = 'Les cartes du haut résument chaque modèle. Les informations techniques détaillées restent masquées tant que vous ne les demandez pas.';
 
     let footer = section.querySelector('.opx-model-details-footer');
@@ -50,20 +55,24 @@
     }
 
     let toggle = section.querySelector('[data-results-model-toggle]');
-    if (toggle) toggle.remove();
-    toggle = document.createElement('button');
-    toggle.type = 'button';
-    toggle.className = 'opx-model-toggle';
-    toggle.dataset.resultsModelToggle = '1';
-    toggle.setAttribute('aria-controls', 'opx-model-row');
-    toggle.innerHTML = '<span>Détails des modèles</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>';
-    footer.append(toggle);
+    if (!toggle) {
+      toggle = document.createElement('button');
+      toggle.type = 'button';
+      toggle.className = 'opx-model-toggle';
+      toggle.dataset.resultsModelToggle = '1';
+      toggle.setAttribute('aria-controls', 'opx-model-row');
+      toggle.innerHTML = '<span>Détails des modèles</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>';
+      footer.append(toggle);
+      applyDetailsState(section, false);
+      toggle.addEventListener('click', () => {
+        const next = toggle.getAttribute('aria-expanded') !== 'true';
+        applyDetailsState(section, next);
+      });
+    } else if (!toggle.hasAttribute('aria-expanded')) {
+      applyDetailsState(section, false);
+    }
 
-    applyDetailsState(section, false);
-    toggle.addEventListener('click', () => {
-      const next = toggle.getAttribute('aria-expanded') !== 'true';
-      applyDetailsState(section, next);
-    });
+    section.dataset.compactResultsReady = '2';
   }
 
   function run() {

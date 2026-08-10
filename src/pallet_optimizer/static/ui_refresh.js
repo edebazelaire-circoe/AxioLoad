@@ -55,19 +55,15 @@
     const cells = qa(':scope > .opx-solution-cell', row);
     if (!cells.length) return;
 
-    cells.forEach(cell => {
+    cells.forEach((cell, index) => {
       const card = q('.solution-card', cell);
       const rank = solutionRank(card, cell);
       removeSolutionNumbering(card);
       cell.classList.remove('rank-1', 'rank-2', 'rank-3', 'rank-4', 'rank-5');
-      q('.ux-recommended-ribbon', cell)?.remove();
 
       const label = q('.opx-solution-cell-label', cell);
       const model = q('span', label || cell);
-      if (model && !/^Modèle\s+\d+$/i.test(model.textContent.trim())) {
-        const methodIndex = [...cells].indexOf(cell) + 1;
-        model.textContent = `Modèle ${methodIndex}`;
-      }
+      if (model) model.textContent = `Modèle ${index + 1}`;
 
       if (!rank) return;
       cell.dataset.solutionRank = String(rank);
@@ -92,7 +88,6 @@
     const panel = content?.querySelector('.decision-panel');
     if (!content || !panel) return;
     panel.classList.add('ux-decision-compact');
-    if (content.lastElementChild !== panel) content.append(panel);
   }
 
   function headingElement(text) {
@@ -103,27 +98,31 @@
   function sectionForHeading(text) {
     const heading = headingElement(text);
     if (!heading) return null;
-    return heading.closest('section, article') || heading.parentElement?.parentElement || heading.parentElement;
+    return heading.closest('section, article') || heading.parentElement || null;
   }
 
   function makeDiagnosticsSecondary(diagnostics) {
-    if (!diagnostics || diagnostics.dataset.uxDiagnosticsReady === '1') return;
-    diagnostics.dataset.uxDiagnosticsReady = '1';
+    if (!diagnostics) return;
     diagnostics.classList.add('ux-diagnostics-secondary');
     const heading = [...diagnostics.querySelectorAll('h2, h3, h4, strong')]
       .find(element => element.textContent.trim().toLocaleLowerCase('fr') === 'diagnostics');
-    if (!heading) return;
+    if (!heading || diagnostics.querySelector(':scope > .ux-diagnostics-toggle')) return;
 
-    const disclosure = document.createElement('details');
-    disclosure.className = 'ux-diagnostics-disclosure';
-    const summary = document.createElement('summary');
-    summary.innerHTML = '<span>Diagnostics</span><small>Afficher les informations techniques</small>';
-    disclosure.append(summary);
-
-    [...diagnostics.children].forEach(child => {
-      if (child !== heading) disclosure.append(child);
+    diagnostics.classList.add('ux-diagnostics-collapsed');
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'ux-diagnostics-toggle';
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.innerHTML = '<span>Afficher les informations techniques</span><span aria-hidden="true">⌄</span>';
+    heading.insertAdjacentElement('afterend', toggle);
+    toggle.addEventListener('click', () => {
+      const expanded = diagnostics.classList.toggle('ux-diagnostics-open');
+      diagnostics.classList.toggle('ux-diagnostics-collapsed', !expanded);
+      toggle.setAttribute('aria-expanded', String(expanded));
+      toggle.firstElementChild.textContent = expanded
+        ? 'Masquer les informations techniques'
+        : 'Afficher les informations techniques';
     });
-    heading.replaceWith(disclosure);
   }
 
   function polishInspector() {
@@ -133,16 +132,14 @@
     details?.classList.add('ux-inspector-details');
     makeDiagnosticsSecondary(diagnostics);
     exports?.classList.add('ux-exports-final');
-
     const parent = details?.parentElement || diagnostics?.parentElement || exports?.parentElement;
     parent?.classList.add('ux-inspector-stack');
-    if (parent && exports && exports.parentElement === parent && exports !== parent.lastElementChild) parent.append(exports);
   }
 
   function polishViewer() {
     const viewer = q('#viewer');
     if (!viewer) return;
-    viewer.closest('.viewer-main, .viewer-stage, .viewer-panel')?.classList.add('ux-viewer-rectangular');
+    viewer.closest('.viewer-main, .viewer-stage, .viewer-panel, .viewer-card')?.classList.add('ux-viewer-rectangular');
   }
 
   function apply() {
@@ -162,7 +159,7 @@
   }
 
   const observer = new MutationObserver(scheduleApply);
-  observer.observe(document.documentElement, {childList: true, subtree: true});
+  observer.observe(document.body || document.documentElement, {childList: true, subtree: true});
   window.addEventListener('axioload:navigation:changed', scheduleApply);
   window.addEventListener('axioload:workspace:registered', scheduleApply);
 

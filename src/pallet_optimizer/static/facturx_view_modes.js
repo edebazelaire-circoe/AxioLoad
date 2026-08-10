@@ -51,6 +51,9 @@
       const active = mode === 'transform';
       transformTab.classList.toggle('active', active);
       transformTab.setAttribute('aria-selected', String(active));
+      transformTab.hidden = true;
+      transformTab.setAttribute('aria-hidden', 'true');
+      transformTab.setAttribute('tabindex', '-1');
     }
     if (historyTab) {
       const active = mode === 'history';
@@ -76,6 +79,11 @@
 
     transformTab.textContent = 'Transformation des factures';
     transformTab.setAttribute('aria-label', 'Transformation des factures');
+    transformTab.dataset.workspaceGroup = 'facturx';
+    transformTab.hidden = true;
+    transformTab.classList.add('workspace-group-hidden');
+    transformTab.setAttribute('aria-hidden', 'true');
+    transformTab.setAttribute('tabindex', '-1');
 
     let historyTab = q('nav.tabs [data-facturx-view="history"]');
     if (!historyTab) {
@@ -93,7 +101,9 @@
         showMode('history');
       });
     }
-    historyTab.classList.toggle('workspace-group-hidden', document.body.dataset.workspace !== 'facturx');
+    const showHistory = document.body.dataset.workspace === 'facturx';
+    historyTab.classList.toggle('workspace-group-hidden', !showHistory);
+    historyTab.hidden = !showHistory;
     return true;
   }
 

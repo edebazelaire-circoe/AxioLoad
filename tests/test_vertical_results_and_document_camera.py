@@ -44,26 +44,32 @@ def test_results_keep_two_aligned_rows_of_five_slots() -> None:
     assert "buildSolutionCell" in script
     assert "buildFailureCell" in script
     assert "solution.method_code" in script
-    assert "Les cinq modèles restent dans le premier bloc" in script
+    assert "Les cinq modèles restent visibles" in script
+    assert "Résultats classés" in script
+    assert "🏆 Recommandé" in script
+    assert "Aucun plan disponible" in script
     assert "grid-template-columns: repeat(5" in stylesheet
     assert "opx-comparison-scroll" in stylesheet
     assert "scroll-snap-type: x proximity" in stylesheet
 
 
-def test_result_comparison_is_compact_collapsible_and_removes_redundant_status() -> None:
+def test_result_comparison_keeps_models_visible_and_toggles_only_their_details() -> None:
     script = (STATIC / "results_compact.js").read_text(encoding="utf-8")
     stylesheet = (STATIC / "results_compact.css").read_text(encoding="utf-8")
 
     for token in (
         "removeLegacyStatusPanel",
         "method-status-panel",
-        "Voir le détail des modèles",
-        "Masquer les modèles",
+        "Détails des modèles",
+        "Masquer les détails des modèles",
         "aria-expanded",
-        "localStorage",
+        "modelRow.hidden = false",
+        "card.hidden = false",
         "MutationObserver",
     ):
         assert token in script
+
+    assert "localStorage" not in script
 
     for token in (
         "#method-status-panel",

@@ -14,11 +14,21 @@
   function applyDetailsState(section, expanded) {
     const toggle = section.querySelector('[data-results-model-toggle]');
     if (!toggle) return;
-    modelDetails(section).forEach(details => { details.open = expanded; });
+    modelDetails(section).forEach(details => {
+      if (details.open !== expanded) details.open = expanded;
+    });
     section.classList.toggle('model-details-expanded', expanded);
-    toggle.setAttribute('aria-expanded', String(expanded));
+    const expandedValue = String(expanded);
+    if (toggle.getAttribute('aria-expanded') !== expandedValue) {
+      toggle.setAttribute('aria-expanded', expandedValue);
+    }
     const label = toggle.querySelector('span');
-    if (label) label.textContent = expanded ? 'Masquer les détails des modèles' : 'Détails des modèles';
+    const expectedLabel = expanded ? 'Masquer les détails des modèles' : 'Détails des modèles';
+    if (label && label.textContent !== expectedLabel) label.textContent = expectedLabel;
+  }
+
+  function ensureVisible(element) {
+    if (element?.hidden) element.hidden = false;
   }
 
   function enhancePortfolio() {
@@ -33,10 +43,10 @@
     const solutionRow = section.querySelector('#opx-solution-row');
     if (!heading || !title || !intro || !modelRow || !solutionRow) return;
 
-    modelRow.hidden = false;
-    [...modelRow.children].forEach(card => { card.hidden = false; });
+    ensureVisible(modelRow);
+    [...modelRow.children].forEach(ensureVisible);
     const modelLabel = modelRow.previousElementSibling;
-    if (modelLabel?.classList.contains('opx-row-label')) modelLabel.hidden = false;
+    if (modelLabel?.classList.contains('opx-row-label')) ensureVisible(modelLabel);
 
     let summary = section.querySelector('.opx-portfolio-summary');
     if (!summary) {
@@ -45,7 +55,9 @@
       summary.textContent = 'Comparez les cinq modèles, puis choisissez le plan le mieux classé.';
       title.insertAdjacentElement('afterend', summary);
     }
-    intro.textContent = 'Les cartes du haut résument chaque modèle. Les informations techniques détaillées restent masquées tant que vous ne les demandez pas.';
+
+    const expectedIntro = 'Les cartes du haut résument chaque modèle. Les informations techniques détaillées restent masquées tant que vous ne les demandez pas.';
+    if (intro.textContent !== expectedIntro) intro.textContent = expectedIntro;
 
     let footer = section.querySelector('.opx-model-details-footer');
     if (!footer) {
@@ -72,7 +84,9 @@
       applyDetailsState(section, false);
     }
 
-    section.dataset.compactResultsReady = '2';
+    if (section.dataset.compactResultsReady !== '2') {
+      section.dataset.compactResultsReady = '2';
+    }
   }
 
   function run() {

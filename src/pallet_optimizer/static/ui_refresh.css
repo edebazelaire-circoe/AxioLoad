@@ -1,89 +1,28 @@
-/* LogiPilot UI refresh: navigation, model ranking, validation and inspector hierarchy. */
+/* LogiPilot approved UI alignment. */
 
-/* The Factur-X workspace card is the entry point. Do not duplicate it with a
-   permanent "Transformation des factures" sub-tab in the global navigation. */
 nav.tabs .tab[data-tab="facturx"] {
   display: none !important;
 }
 
-/* Model cards stay compact until the user asks for technical detail. */
-.opx-model-card,
-.ovr-model-card {
-  display: flex;
-  flex-direction: column;
-}
-
-.opx-model-card > p,
-.ovr-model-card > p {
-  margin: 8px 0 10px;
-  min-height: 0;
-}
-
-.opx-model-card details,
-.ovr-model-card details {
-  margin-top: auto;
-  padding-top: 10px;
-  border-top: 1px solid var(--line);
-}
-
-.opx-model-card details summary,
-.ovr-model-card details summary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  min-height: 38px;
-  padding: 8px 10px;
-  border: 1px solid color-mix(in srgb, var(--opx-blue, #0b639f) 28%, var(--line));
-  border-radius: 10px;
-  color: var(--opx-blue, #0b639f);
-  background: color-mix(in srgb, var(--opx-blue, #0b639f) 3%, var(--paper));
-  font-size: .78rem;
-  font-weight: 800;
-  cursor: pointer;
-  list-style: none;
-}
-
-.opx-model-card details summary::-webkit-details-marker,
-.ovr-model-card details summary::-webkit-details-marker {
-  display: none;
-}
-
-.opx-model-card details summary::after,
-.ovr-model-card details summary::after {
-  content: '›';
-  font-size: 1.1rem;
-  line-height: 1;
-  transform: rotate(0deg);
-  transition: transform .16s ease;
-}
-
-.opx-model-card details[open] summary::after,
-.ovr-model-card details[open] summary::after {
-  transform: rotate(90deg);
-}
-
-.opx-model-card details[open] > p,
-.ovr-model-card details[open] > p {
-  margin: 10px 2px 0;
-}
-
-/* Ranked result cards: the result is identified by its producing model, while
-   rank is communicated with a medal/trophy instead of a second solution ID. */
+/* Results: one clear relationship between a model column and its ranked plan. */
 .opx-solution-cell {
   position: relative;
+  overflow: hidden;
 }
 
 .opx-solution-cell-label {
+  min-height: 30px;
   align-items: center;
+  padding-bottom: 7px;
+  border-bottom: 1px solid var(--line);
 }
 
 .opx-ranking-badge {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  justify-content: center;
   min-height: 25px;
-  padding: 4px 8px;
+  padding: 4px 9px;
   border-radius: 999px;
   letter-spacing: 0;
   text-transform: none;
@@ -92,19 +31,19 @@ nav.tabs .tab[data-tab="facturx"] {
 
 .opx-solution-cell.rank-1 {
   border-color: #e8b13f;
-  background: color-mix(in srgb, #f5b400 7%, var(--paper));
+  background: color-mix(in srgb, #f5b400 6%, var(--paper));
   box-shadow: 0 8px 22px rgba(132, 88, 0, .08);
 }
 
 .opx-solution-cell.rank-1 .opx-ranking-badge {
-  color: #8a5800;
+  color: #7a5100;
   background: #fff2c9;
   border: 1px solid #efc762;
 }
 
 .opx-solution-cell.rank-2 {
   border-color: #b9c7d3;
-  background: color-mix(in srgb, #b9c7d3 7%, var(--paper));
+  background: color-mix(in srgb, #b9c7d3 5%, var(--paper));
 }
 
 .opx-solution-cell.rank-2 .opx-ranking-badge {
@@ -115,7 +54,7 @@ nav.tabs .tab[data-tab="facturx"] {
 
 .opx-solution-cell.rank-3 {
   border-color: #d49a73;
-  background: color-mix(in srgb, #c77a45 6%, var(--paper));
+  background: color-mix(in srgb, #c77a45 5%, var(--paper));
 }
 
 .opx-solution-cell.rank-3 .opx-ranking-badge {
@@ -131,93 +70,145 @@ nav.tabs .tab[data-tab="facturx"] {
   border: 1px solid color-mix(in srgb, var(--opx-blue, #0b639f) 22%, var(--line));
 }
 
+.ux-hide-result-title,
+.ux-hide-inner-recommended,
 .opx-solution-cell .ux-recommended-ribbon {
-  position: absolute;
-  top: 9px;
-  left: 12px;
-  z-index: 2;
-  padding: 3px 8px;
-  border-radius: 999px;
-  color: #8a5800;
-  background: #fff2c9;
-  border: 1px solid #efc762;
-  font-size: .66rem;
-  font-weight: 900;
-  letter-spacing: .04em;
-  text-transform: uppercase;
+  display: none !important;
 }
 
-.opx-solution-cell.rank-1 .opx-solution-cell-label {
-  padding-top: 25px;
+.opx-solution-cell .solution-card {
+  border: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
 }
 
-/* Validation is a final workflow step, not the main visual focus. */
+/* Validation is the final compact workflow step. */
 #results-content .decision-panel.ux-decision-compact {
   margin-top: 24px;
-  padding: 16px 18px !important;
+  padding: 14px 16px !important;
   border-radius: 14px;
 }
 
 #results-content .decision-panel.ux-decision-compact h2,
 #results-content .decision-panel.ux-decision-compact h3,
 #results-content .decision-panel.ux-decision-compact h4 {
-  margin-top: 0;
-  margin-bottom: 6px;
+  margin: 0 0 5px;
+  font-size: .95rem;
 }
 
 #results-content .decision-panel.ux-decision-compact p {
-  margin-top: 4px;
-  margin-bottom: 8px;
+  margin: 3px 0 7px;
+  font-size: .78rem;
 }
 
 #results-content .decision-panel.ux-decision-compact textarea {
-  min-height: 64px !important;
-  max-height: 100px;
+  min-height: 56px !important;
+  max-height: 82px;
 }
 
 #results-content .decision-panel.ux-decision-compact .form-actions,
 #results-content .decision-panel.ux-decision-compact .decision-actions {
   gap: 8px;
-  margin-top: 10px;
+  margin-top: 8px;
 }
 
-/* Give the loading view a simpler rectangular visual frame. */
+/* Viewer: a calmer rectangular stage, keeping the actual loading geometry interactive. */
 #viewer {
-  border: 1px solid color-mix(in srgb, var(--opx-blue, #0b639f) 18%, var(--line));
-  border-radius: 12px;
-  background: color-mix(in srgb, #eaf5f6 46%, var(--paper));
-}
-
-.viewer-grid,
-.viewer-main,
-.viewer-stage {
+  border: 1px solid color-mix(in srgb, var(--opx-blue, #0b639f) 20%, var(--line));
   border-radius: 14px;
+  background: #f4fafb;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.6);
 }
 
-/* Inspector hierarchy: object data first, diagnostics secondary, exports last. */
+.viewer-grid {
+  align-items: stretch;
+  gap: 14px !important;
+}
+
+.viewer-main,
+.viewer-stage,
+.ux-viewer-rectangular {
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+/* Inspector: operational data first, technical diagnostics optional, exports last. */
+.ux-inspector-stack {
+  display: flex !important;
+  flex-direction: column;
+  gap: 14px;
+}
+
 .ux-inspector-details {
   order: 10;
 }
 
 .ux-diagnostics-secondary {
   order: 20;
-  opacity: .92;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
 }
 
-.ux-diagnostics-secondary > h2,
-.ux-diagnostics-secondary > h3,
-.ux-diagnostics-secondary > h4 {
-  font-size: .86rem;
+.ux-diagnostics-disclosure {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--opx-blue, #0b639f) 2.5%, var(--paper));
+  overflow: hidden;
+}
+
+.ux-diagnostics-disclosure > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 12px;
+  cursor: pointer;
+  list-style: none;
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.ux-diagnostics-disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+
+.ux-diagnostics-disclosure > summary::after {
+  content: '+';
+  color: var(--opx-blue, #0b639f);
+  font-size: 1rem;
+}
+
+.ux-diagnostics-disclosure[open] > summary::after {
+  content: '−';
+}
+
+.ux-diagnostics-disclosure > summary small {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: .68rem;
+  font-weight: 600;
+}
+
+.ux-diagnostics-disclosure > :not(summary) {
+  margin-inline: 12px;
+}
+
+.ux-diagnostics-disclosure > :last-child {
+  margin-bottom: 12px;
 }
 
 .ux-exports-final {
   order: 30;
-  margin-top: 12px;
+  margin-top: auto !important;
+  padding-top: 12px !important;
+  border-top: 1px solid var(--line);
 }
 
 .ux-exports-final a,
 .ux-exports-final button {
-  min-height: 44px;
+  min-height: 42px;
 }
 
 @media (max-width: 900px) {
@@ -226,6 +217,10 @@ nav.tabs .tab[data-tab="facturx"] {
   }
 
   #results-content .decision-panel.ux-decision-compact {
-    padding: 14px !important;
+    padding: 12px !important;
+  }
+
+  .ux-diagnostics-disclosure > summary small {
+    display: none;
   }
 }

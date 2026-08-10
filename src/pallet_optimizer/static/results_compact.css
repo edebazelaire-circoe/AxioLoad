@@ -181,6 +181,51 @@
   padding: 10px;
 }
 
+#results-content .decision-panel.decision-panel-compact {
+  margin: 18px 0 0;
+  padding: 13px 15px;
+  border-radius: 13px;
+}
+
+#results-content .decision-panel.decision-panel-compact > div:first-child {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+#results-content .decision-panel.decision-panel-compact h3 {
+  margin: 0;
+  font-size: .95rem;
+}
+
+#results-content .decision-panel.decision-panel-compact .section-description {
+  max-width: 760px;
+  margin: 0;
+  font-size: .75rem;
+}
+
+#results-content .decision-panel.decision-panel-compact .decision-status {
+  margin: 8px 0;
+  font-size: .78rem;
+}
+
+#results-content .decision-panel.decision-panel-compact .decision-grid {
+  grid-template-columns: minmax(210px, .45fr) minmax(320px, 1.55fr);
+  gap: 10px;
+}
+
+#results-content .decision-panel.decision-panel-compact textarea {
+  min-height: 54px;
+  max-height: 72px;
+}
+
+#results-content .decision-panel.decision-panel-compact .decision-actions {
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
 @media (max-width: 800px) {
   .opx-aligned-portfolio {
     padding: 12px !important;
@@ -188,5 +233,13 @@
 
   .opx-model-details-footer {
     justify-content: flex-start;
+  }
+
+  #results-content .decision-panel.decision-panel-compact > div:first-child {
+    display: block;
+  }
+
+  #results-content .decision-panel.decision-panel-compact .decision-grid {
+    grid-template-columns: 1fr;
   }
 }

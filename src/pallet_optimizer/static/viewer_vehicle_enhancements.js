@@ -3,15 +3,13 @@
 
   const FIXED_TILT = 0.52;
   const DEFAULT_ZOOM = 1.45;
-  const MIN_FOCUS_LENGTH_MM = 3800;
   const VEHICLE_DARK = '#0F3D3E';
   const VEHICLE_GREEN = '#1DAA8A';
   const VEHICLE_GREEN_DARK = '#137C77';
   const VEHICLE_YELLOW = '#F5B400';
   const VEHICLE_RED = '#E63946';
-  const FLOOR = '#DCE9E8';
+  const FLOOR = '#EAF4F3';
   const FLOOR_EDGE = '#45676A';
-  const CHASSIS = '#324B50';
 
   function face(target, points, fill, stroke = VEHICLE_DARK, width = 1.6) {
     polygon(target, points, fill, stroke, width);
@@ -36,23 +34,16 @@
     )));
   }
 
-  function focusLength(vehicle, plan) {
-    const occupied = occupiedLength(plan);
-    if (vehicle.interior_length_mm <= 5200) return vehicle.interior_length_mm;
-    const margin = Math.max(850, occupied * 0.22);
-    return Math.min(
-      vehicle.interior_length_mm,
-      Math.max(MIN_FOCUS_LENGTH_MM, occupied + margin),
-    );
+  function displayedVehicleLength(vehicle) {
+    return Number(vehicle.interior_length_mm || 0);
   }
 
   function sceneLayout(targetCanvas, vehicle, displayedLength) {
     const W = vehicle.interior_width_mm;
     const H = vehicle.interior_height_mm;
-    const underbody = -180;
     const corners = [
-      [0, 0, underbody], [displayedLength, 0, underbody],
-      [displayedLength, W, underbody], [0, W, underbody],
+      [0, 0, 0], [displayedLength, 0, 0],
+      [displayedLength, W, 0], [0, W, 0],
       [0, 0, H], [displayedLength, 0, H],
       [displayedLength, W, H], [0, W, H],
     ].map(values => rawProjection(...values));
@@ -62,21 +53,21 @@
     const height = Math.max(...ys) - Math.min(...ys) || 1;
     const zoomFactor = Math.max(0.55, Math.min(2.75, Number(state.zoom || DEFAULT_ZOOM) / DEFAULT_ZOOM));
     const scale = Math.min(
-      targetCanvas.width * 0.72 / width,
-      targetCanvas.height * 0.64 / height,
+      targetCanvas.width * 0.76 / width,
+      targetCanvas.height * 0.62 / height,
     ) * zoomFactor;
     const centreX = (Math.min(...xs) + Math.max(...xs)) / 2;
     const centreY = (Math.min(...ys) + Math.max(...ys)) / 2;
     return {
       scale,
       origin: [
-        targetCanvas.width * 0.48 - centreX * scale,
-        targetCanvas.height * 0.59 - centreY * scale,
+        targetCanvas.width * 0.5 - centreX * scale,
+        targetCanvas.height * 0.6 - centreY * scale,
       ],
     };
   }
 
-  function drawFocusGrid(target, vehicle, displayedLength, origin, scale, scene) {
+  function drawReferenceGrid(target, vehicle, displayedLength, origin, scale, scene) {
     const step = 1000;
     for (let longitudinal = step; longitudinal < displayedLength; longitudinal += step) {
       line(
@@ -85,45 +76,14 @@
         point(longitudinal, vehicle.interior_width_mm, 2, origin, scale),
         scene.grid,
         1,
-        [6, 6],
-      );
-    }
-    for (let transverse = step; transverse < vehicle.interior_width_mm; transverse += step) {
-      line(
-        target,
-        point(0, transverse, 2, origin, scale),
-        point(displayedLength, transverse, 2, origin, scale),
-        scene.grid,
-        1,
-        [6, 6],
+        [5, 7],
       );
     }
   }
 
-  function drawWheel(target, longitudinal, transverse, origin, scale, size = 1) {
-    const center = point(longitudinal, transverse, -205, origin, scale);
-    target.save();
-    target.translate(center[0], center[1]);
-    target.rotate(state.angle * 0.12);
-    target.beginPath();
-    target.ellipse(0, 0, 14 * size, 9 * size, 0, 0, Math.PI * 2);
-    target.fillStyle = '#18282D';
-    target.fill();
-    target.lineWidth = 1.8;
-    target.strokeStyle = '#07161B';
-    target.stroke();
-    target.beginPath();
-    target.ellipse(0, 0, 5.5 * size, 3.8 * size, 0, 0, Math.PI * 2);
-    target.fillStyle = '#93A1A6';
-    target.fill();
-    target.restore();
-  }
-
-  function drawCutawayTrailer(target, vehicle, displayedLength, origin, scale, scene) {
+  function drawRectangularTrailer(target, vehicle, displayedLength, origin, scale, scene) {
     const W = vehicle.interior_width_mm;
     const H = vehicle.interior_height_mm;
-    const underbody = -180;
-    const lowRail = Math.min(230, H * 0.11);
 
     const floor = [
       point(0, 0, 0, origin, scale),
@@ -132,44 +92,23 @@
       point(0, W, 0, origin, scale),
     ];
     face(target, floor, FLOOR, FLOOR_EDGE, 2.1);
-    drawFocusGrid(target, vehicle, displayedLength, origin, scale, scene);
+    drawReferenceGrid(target, vehicle, displayedLength, origin, scale, scene);
 
-    const chassis = [
-      point(0, 0, underbody, origin, scale),
-      point(displayedLength, 0, underbody, origin, scale),
-      point(displayedLength, W, underbody, origin, scale),
-      point(0, W, underbody, origin, scale),
+    const leftWall = [
+      point(0, 0, 0, origin, scale),
+      point(displayedLength, 0, 0, origin, scale),
+      point(displayedLength, 0, H, origin, scale),
+      point(0, 0, H, origin, scale),
     ];
-    face(target, chassis, CHASSIS, '#172D31', 1.8);
+    face(target, leftWall, 'rgba(29,170,138,.045)', 'rgba(15,61,62,.42)', 1.4);
 
-    const leftLowerPanel = [
-      point(0, 0, underbody, origin, scale),
-      point(displayedLength, 0, underbody, origin, scale),
-      point(displayedLength, 0, lowRail, origin, scale),
-      point(0, 0, lowRail, origin, scale),
+    const rightWall = [
+      point(0, W, 0, origin, scale),
+      point(displayedLength, W, 0, origin, scale),
+      point(displayedLength, W, H, origin, scale),
+      point(0, W, H, origin, scale),
     ];
-    const rightLowerPanel = [
-      point(0, W, underbody, origin, scale),
-      point(displayedLength, W, underbody, origin, scale),
-      point(displayedLength, W, lowRail, origin, scale),
-      point(0, W, lowRail, origin, scale),
-    ];
-    face(target, leftLowerPanel, '#456268', '#172D31', 1.7);
-    face(target, rightLowerPanel, '#3A575D', '#172D31', 1.7);
-
-    const rearFrame = [
-      [point(0, 0, 0, origin, scale), point(0, 0, H, origin, scale)],
-      [point(0, W, 0, origin, scale), point(0, W, H, origin, scale)],
-      [point(0, 0, H, origin, scale), point(0, W, H, origin, scale)],
-      [point(0, 0, 0, origin, scale), point(0, W, 0, origin, scale)],
-    ];
-    rearFrame.forEach(([a, b]) => line(target, a, b, VEHICLE_DARK, 4));
-
-    const topRails = [
-      [point(0, 0, H, origin, scale), point(displayedLength, 0, H, origin, scale)],
-      [point(0, W, H, origin, scale), point(displayedLength, W, H, origin, scale)],
-    ];
-    topRails.forEach(([a, b]) => line(target, a, b, 'rgba(15,61,62,.55)', 1.5, [7, 6]));
+    face(target, rightWall, 'rgba(29,170,138,.025)', 'rgba(15,61,62,.30)', 1.2);
 
     const frontPanel = [
       point(displayedLength, 0, 0, origin, scale),
@@ -177,48 +116,17 @@
       point(displayedLength, W, H, origin, scale),
       point(displayedLength, 0, H, origin, scale),
     ];
-    face(target, frontPanel, 'rgba(29,170,138,.11)', 'rgba(15,61,62,.70)', 1.9);
+    face(target, frontPanel, 'rgba(29,170,138,.09)', 'rgba(15,61,62,.58)', 1.6);
 
-    const thresholdA = point(-55, -55, -28, origin, scale);
-    const thresholdB = point(-55, W + 55, -28, origin, scale);
-    line(target, thresholdA, thresholdB, VEHICLE_YELLOW, 6);
-
-    const axle = Math.max(displayedLength * 0.67, displayedLength - 1150);
-    [axle - 260, axle + 260].forEach(position => {
-      if (position <= 200 || position >= displayedLength - 100) return;
-      drawWheel(target, position, -120, origin, scale, 0.9);
-      drawWheel(target, position, W + 120, origin, scale, 0.9);
-    });
-  }
-
-  function drawContinuation(target, vehicle, displayedLength, origin, scale) {
-    const remaining = vehicle.interior_length_mm - displayedLength;
-    if (remaining <= 120) return;
-    const W = vehicle.interior_width_mm;
-    const H = vehicle.interior_height_mm;
-    const visualExtension = Math.min(1200, Math.max(650, displayedLength * 0.22));
-    const end = displayedLength + visualExtension;
-    const pairs = [
-      [[displayedLength, 0, 0], [end, 0, 0]],
-      [[displayedLength, W, 0], [end, W, 0]],
-      [[displayedLength, 0, H], [end, 0, H]],
-      [[displayedLength, W, H], [end, W, H]],
+    const topRails = [
+      [point(0, 0, H, origin, scale), point(displayedLength, 0, H, origin, scale)],
+      [point(0, W, H, origin, scale), point(displayedLength, W, H, origin, scale)],
     ];
-    pairs.forEach(([from, to]) => line(
-      target,
-      point(...from, origin, scale),
-      point(...to, origin, scale),
-      'rgba(15,61,62,.28)',
-      1.2,
-      [7, 7],
-    ));
-    const label = point(end, W * 0.5, H * 0.54, origin, scale);
-    screenLabel(target, `Espace libre restant ${fmt(remaining / 1000)} m`, label[0], label[1], {
-      font: '700 11px Segoe UI, Arial, sans-serif',
-      background: 'rgba(255,255,255,.92)',
-      color: VEHICLE_DARK,
-      border: 'rgba(15,61,62,.38)',
-    });
+    topRails.forEach(([a, b]) => line(target, a, b, 'rgba(15,61,62,.28)', 1.1, [7, 7]));
+
+    const thresholdA = point(-55, -55, -18, origin, scale);
+    const thresholdB = point(-55, W + 55, -18, origin, scale);
+    line(target, thresholdA, thresholdB, VEHICLE_YELLOW, 5);
   }
 
   function roundedRect(target, x, y, width, height, radius, fill, stroke) {
@@ -242,19 +150,19 @@
     const y = 22;
     const occupied = occupiedLength(plan);
     const ratio = Math.max(0, Math.min(1, occupied / vehicle.interior_length_mm));
-    roundedRect(target, x, y, width, height, 14, 'rgba(255,255,255,.94)', 'rgba(15,61,62,.22)');
+    roundedRect(target, x, y, width, height, 14, 'rgba(255,255,255,.96)', 'rgba(15,61,62,.22)');
 
     target.save();
     target.fillStyle = VEHICLE_DARK;
     target.font = `${exportMode ? 18 : 13}px Segoe UI, Arial, sans-serif`;
     target.fontWeight = '700';
-    target.fillText('Position du chargement dans le véhicule', x + 16, y + 23);
+    target.fillText('Occupation de la longueur', x + 16, y + 23);
 
     const trailerX = x + 16;
     const trailerY = y + 40;
     const trailerW = width - 72;
     const trailerH = exportMode ? 34 : 28;
-    roundedRect(target, trailerX, trailerY, trailerW, trailerH, 6, '#E7F1F0', VEHICLE_DARK);
+    roundedRect(target, trailerX, trailerY, trailerW, trailerH, 6, '#F4F8F8', VEHICLE_DARK);
     target.fillStyle = VEHICLE_GREEN;
     target.fillRect(trailerX + 2, trailerY + 2, Math.max(3, (trailerW - 4) * ratio), trailerH - 4);
     target.fillStyle = VEHICLE_YELLOW;
@@ -274,17 +182,11 @@
     target.closePath();
     target.fill();
     target.stroke();
-    [trailerX + trailerW * 0.68, trailerX + trailerW * 0.82, cabX + 22].forEach(wheelX => {
-      target.beginPath();
-      target.arc(wheelX, trailerY + trailerH + 4, 4.2, 0, Math.PI * 2);
-      target.fillStyle = '#1B2A2E';
-      target.fill();
-    });
 
     target.fillStyle = '#49666B';
     target.font = `${exportMode ? 15 : 11}px Segoe UI, Arial, sans-serif`;
     target.fillText(
-      `${fmt(occupied / 1000)} m occupés sur ${fmt(vehicle.interior_length_mm / 1000)} m utiles`,
+      `${fmt(occupied / 1000)} m occupés sur ${fmt(vehicle.interior_length_mm / 1000)} m`,
       x + 16,
       y + height - 10,
     );
@@ -298,15 +200,17 @@
     const plan = solution.vehicle_plans[state.selectedVehicle];
     const vehicle = vehicleFor(plan);
     const scene = sceneColors();
-    const displayedLength = focusLength(vehicle, plan);
+    const displayedLength = displayedVehicleLength(vehicle);
+    const occupied = Math.min(displayedLength, occupiedLength(plan));
+    const remaining = Math.max(0, displayedLength - occupied);
     const layout = sceneLayout(targetCanvas, vehicle, displayedLength);
 
     target.clearRect(0, 0, targetCanvas.width, targetCanvas.height);
-    target.fillStyle = scene.background;
+    target.fillStyle = '#FFFFFF';
     target.fillRect(0, 0, targetCanvas.width, targetCanvas.height);
     if (interactive) state.hitAreas = [];
 
-    drawCutawayTrailer(target, vehicle, displayedLength, layout.origin, layout.scale, scene);
+    drawRectangularTrailer(target, vehicle, displayedLength, layout.origin, layout.scale, scene);
 
     (vehicle.obstacles || [])
       .filter(obstacle => Number(obstacle.y_mm || 0) < displayedLength)
@@ -335,18 +239,30 @@
       interactive,
     ));
 
-    drawContinuation(target, vehicle, displayedLength, layout.origin, layout.scale);
-
     drawDimension(
       target,
-      [0, vehicle.interior_width_mm + 360, 0],
-      [displayedLength, vehicle.interior_width_mm + 360, 0],
-      `Zone de chargement affichée ${fmt(displayedLength / 1000)} m`,
-      '#00A8BF',
+      [0, vehicle.interior_width_mm + 380, 0],
+      [displayedLength, vehicle.interior_width_mm + 380, 0],
+      `Longueur totale ${fmt(displayedLength / 1000)} m`,
+      '#005696',
       layout.origin,
       layout.scale,
       state,
     );
+
+    if (occupied > 0) {
+      drawDimension(
+        target,
+        [0, vehicle.interior_width_mm + 250, 0],
+        [occupied, vehicle.interior_width_mm + 250, 0],
+        `Longueur occupée ${fmt(occupied / 1000)} m`,
+        '#00A8BF',
+        layout.origin,
+        layout.scale,
+        state,
+      );
+    }
+
     drawDimension(
       target,
       [-220, 0, 0],
@@ -359,8 +275,8 @@
     );
     drawDimension(
       target,
-      [0, vehicle.interior_width_mm + 210, 0],
-      [0, vehicle.interior_width_mm + 210, vehicle.interior_height_mm],
+      [0, vehicle.interior_width_mm + 125, 0],
+      [0, vehicle.interior_width_mm + 125, vehicle.interior_height_mm],
       `Hauteur ${fmt(vehicle.interior_height_mm / 1000)} m`,
       VEHICLE_RED,
       layout.origin,
@@ -368,8 +284,18 @@
       state,
     );
 
+    if (remaining > 100) {
+      const freeLabel = point(occupied + remaining * 0.5, vehicle.interior_width_mm * 0.52, vehicle.interior_height_mm * 0.45, layout.origin, layout.scale);
+      screenLabel(target, `Espace libre ${fmt(remaining / 1000)} m`, freeLabel[0], freeLabel[1], {
+        font: '700 11px Segoe UI, Arial, sans-serif',
+        background: 'rgba(255,255,255,.94)',
+        color: VEHICLE_DARK,
+        border: 'rgba(15,61,62,.30)',
+      });
+    }
+
     const rear = point(0, vehicle.interior_width_mm * 0.5, -20, layout.origin, layout.scale);
-    screenLabel(target, 'Porte arrière', rear[0], rear[1] + 26, {
+    screenLabel(target, 'Porte arrière', rear[0], rear[1] + 24, {
       font: '700 12px Segoe UI, Arial, sans-serif',
       background: scene.labelBackground,
       color: scene.labelColor,

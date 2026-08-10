@@ -67,7 +67,8 @@
     [...host.querySelectorAll('.diag')].forEach((node, index) => {
       const diagnostic = diagnostics[index];
       const vehicleIndex = vehicleIndexForDiagnostic(diagnostic, solution);
-      if (vehicleIndex < 0) return;
+      if (vehicleIndex < 0 || node.dataset.vehicleLinkReady === '1') return;
+      node.dataset.vehicleLinkReady = '1';
       node.classList.add('diag-clickable');
       node.tabIndex = 0;
       node.setAttribute('role', 'button');
@@ -87,6 +88,53 @@
         }
       });
     });
+  }
+
+  function arrangeResultWorkflow() {
+    const host = document.querySelector('#results-content');
+    if (!host) return;
+
+    const decision = host.querySelector('.decision-panel');
+    if (decision) {
+      decision.classList.add('decision-panel-compact');
+      if (host.lastElementChild !== decision) host.append(decision);
+    }
+
+    const inspector = host.querySelector('.inspection-card');
+    if (!inspector) return;
+    inspector.classList.add('inspection-card-refined');
+
+    const headings = [...inspector.querySelectorAll(':scope > h3')];
+    const diagnosticsHeading = headings.find(heading => heading.textContent.trim() === 'Diagnostics');
+    const exportsHeading = headings.find(heading => heading.textContent.trim() === 'Exports opérationnels');
+    const diagnostics = inspector.querySelector('#diagnostics');
+    const exports = inspector.querySelector('#exports');
+    const exportNote = inspector.querySelector('.export-note');
+
+    diagnosticsHeading?.classList.add('inspection-secondary-heading');
+    exportsHeading?.classList.add('inspection-exports-heading');
+    exports?.classList.add('inspection-exports-actions');
+    exportNote?.classList.add('inspection-exports-note');
+
+    if (diagnosticsHeading && diagnostics && !inspector.querySelector('[data-diagnostics-toggle]')) {
+      const toggle = document.createElement('button');
+      toggle.type = 'button';
+      toggle.className = 'diagnostics-toggle';
+      toggle.dataset.diagnosticsToggle = '1';
+      toggle.setAttribute('aria-expanded', 'false');
+      toggle.setAttribute('aria-controls', 'diagnostics');
+      toggle.textContent = 'Afficher les informations techniques';
+      diagnosticsHeading.insertAdjacentElement('afterend', toggle);
+      diagnostics.classList.add('diagnostics-collapsed');
+      toggle.addEventListener('click', () => {
+        const expanded = toggle.getAttribute('aria-expanded') !== 'true';
+        toggle.setAttribute('aria-expanded', String(expanded));
+        diagnostics.classList.toggle('diagnostics-collapsed', !expanded);
+        toggle.textContent = expanded
+          ? 'Masquer les informations techniques'
+          : 'Afficher les informations techniques';
+      });
+    }
   }
 
   function buildCargoAccordion() {
@@ -195,6 +243,7 @@
       buildMethodStatus();
       makeDiagnosticsClickable();
       buildCargoAccordion();
+      arrangeResultWorkflow();
       addSixtySecondOptions();
     };
   }
@@ -205,6 +254,7 @@
   const totalRoot = document.querySelector('#tab-total');
   if (totalRoot) observer.observe(totalRoot, {subtree: true, childList: true, attributes: true, attributeFilter: ['class']});
 
+  arrangeResultWorkflow();
   addSixtySecondOptions();
   document.querySelectorAll('.version-badge').forEach(badge => {
     if (badge.textContent.toLowerCase().includes('global')) badge.remove();

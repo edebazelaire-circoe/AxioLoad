@@ -47,18 +47,24 @@
   function setTabState(mode) {
     const transformTab = q('nav.tabs [data-tab="facturx"]');
     const historyTab = q('nav.tabs [data-facturx-view="history"]');
+    const inWorkspace = document.body.dataset.workspace === 'facturx';
+
     if (transformTab) {
       const active = mode === 'transform';
       transformTab.classList.toggle('active', active);
       transformTab.setAttribute('aria-selected', String(active));
-      transformTab.hidden = true;
-      transformTab.setAttribute('aria-hidden', 'true');
-      transformTab.setAttribute('tabindex', '-1');
+      transformTab.hidden = !inWorkspace;
+      transformTab.classList.toggle('workspace-group-hidden', !inWorkspace);
+      transformTab.toggleAttribute('aria-hidden', !inWorkspace);
+      if (inWorkspace) transformTab.removeAttribute('tabindex');
+      else transformTab.setAttribute('tabindex', '-1');
     }
     if (historyTab) {
       const active = mode === 'history';
       historyTab.classList.toggle('active', active);
       historyTab.setAttribute('aria-selected', String(active));
+      historyTab.hidden = !inWorkspace;
+      historyTab.classList.toggle('workspace-group-hidden', !inWorkspace);
     }
   }
 
@@ -77,13 +83,17 @@
     const transformTab = q('nav.tabs [data-tab="facturx"]');
     if (!nav || !transformTab) return false;
 
-    transformTab.textContent = 'Transformation des factures';
-    transformTab.setAttribute('aria-label', 'Transformation des factures');
+    transformTab.textContent = 'Nouvelle facture';
+    transformTab.setAttribute('aria-label', 'Nouvelle facture');
     transformTab.dataset.workspaceGroup = 'facturx';
-    transformTab.hidden = true;
-    transformTab.classList.add('workspace-group-hidden');
-    transformTab.setAttribute('aria-hidden', 'true');
-    transformTab.setAttribute('tabindex', '-1');
+    if (transformTab.dataset.facturxModeBound !== '1') {
+      transformTab.dataset.facturxModeBound = '1';
+      transformTab.addEventListener('click', event => {
+        event.preventDefault();
+        event.stopPropagation();
+        showMode('transform');
+      });
+    }
 
     let historyTab = q('nav.tabs [data-facturx-view="history"]');
     if (!historyTab) {
@@ -101,9 +111,7 @@
         showMode('history');
       });
     }
-    const showHistory = document.body.dataset.workspace === 'facturx';
-    historyTab.classList.toggle('workspace-group-hidden', !showHistory);
-    historyTab.hidden = !showHistory;
+    setTabState(currentMode);
     return true;
   }
 
@@ -123,9 +131,6 @@
     const panel = q('#tab-facturx');
     const switcher = q('#workspace-switcher');
     if (!panel || !switcher || !ensureTabs()) return false;
-
-    panel.classList.add('facturx-transform-mode');
-    panel.classList.remove('facturx-history-mode');
     observeWorkspaceVisibility();
     syncWorkspaceCount();
     showMode(currentMode);
@@ -145,6 +150,8 @@
     ensureTabs();
     if (event.detail?.workspace === 'facturx' && event.detail?.tab === 'facturx') {
       showMode('transform');
+    } else {
+      setTabState(currentMode);
     }
   });
 

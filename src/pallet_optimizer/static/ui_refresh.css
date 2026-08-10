@@ -112,12 +112,14 @@ nav.tabs .tab[data-tab="facturx"] {
   margin-top: 8px;
 }
 
-/* Viewer: a calmer rectangular stage, keeping the actual loading geometry interactive. */
-#viewer {
-  border: 1px solid color-mix(in srgb, var(--opx-blue, #0b639f) 20%, var(--line));
+/* Viewer: clean rectangular loading diagram matching the approved visual reference. */
+.viewer-card,
+.viewer-main,
+.viewer-stage,
+.ux-viewer-rectangular {
   border-radius: 14px;
-  background: #f4fafb;
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,.6);
+  overflow: hidden;
+  background: #ffffff;
 }
 
 .viewer-grid {
@@ -125,11 +127,23 @@ nav.tabs .tab[data-tab="facturx"] {
   gap: 14px !important;
 }
 
-.viewer-main,
-.viewer-stage,
-.ux-viewer-rectangular {
+#viewer {
+  border: 1px solid #d9e4e8;
   border-radius: 14px;
-  overflow: hidden;
+  background: #ffffff !important;
+  box-shadow: 0 10px 30px rgba(15, 61, 62, .05);
+}
+
+.viewer-toolbar {
+  padding: 8px 10px !important;
+  background: rgba(255,255,255,.96);
+  border-bottom: 1px solid #e7eef1;
+}
+
+.viewer-help {
+  padding: 6px 14px 8px !important;
+  color: var(--muted);
+  font-size: .72rem;
 }
 
 /* Inspector: operational data first, technical diagnostics optional, exports last. */
@@ -145,58 +159,40 @@ nav.tabs .tab[data-tab="facturx"] {
 
 .ux-diagnostics-secondary {
   order: 20;
-  margin: 0 !important;
-  padding: 0 !important;
-  border: 0 !important;
-  background: transparent !important;
-}
-
-.ux-diagnostics-disclosure {
-  border: 1px solid var(--line);
+  position: relative;
+  border: 1px solid var(--line) !important;
   border-radius: 12px;
-  background: color-mix(in srgb, var(--opx-blue, #0b639f) 2.5%, var(--paper));
+  background: color-mix(in srgb, var(--opx-blue, #0b639f) 2.5%, var(--paper)) !important;
   overflow: hidden;
 }
 
-.ux-diagnostics-disclosure > summary {
+.ux-diagnostics-toggle {
   display: flex;
+  width: calc(100% - 20px);
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 11px 12px;
-  cursor: pointer;
-  list-style: none;
-  color: var(--ink);
-  font-weight: 800;
-}
-
-.ux-diagnostics-disclosure > summary::-webkit-details-marker {
-  display: none;
-}
-
-.ux-diagnostics-disclosure > summary::after {
-  content: '+';
+  gap: 10px;
+  margin: 6px 10px 10px;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--opx-blue, #0b639f) 24%, var(--line));
+  border-radius: 9px;
+  background: var(--paper);
   color: var(--opx-blue, #0b639f);
-  font-size: 1rem;
+  font-size: .72rem;
+  font-weight: 800;
+  cursor: pointer;
 }
 
-.ux-diagnostics-disclosure[open] > summary::after {
-  content: '−';
+.ux-diagnostics-toggle > span:last-child {
+  transition: transform .16s ease;
 }
 
-.ux-diagnostics-disclosure > summary small {
-  margin-left: auto;
-  color: var(--muted);
-  font-size: .68rem;
-  font-weight: 600;
+.ux-diagnostics-toggle[aria-expanded="true"] > span:last-child {
+  transform: rotate(180deg);
 }
 
-.ux-diagnostics-disclosure > :not(summary) {
-  margin-inline: 12px;
-}
-
-.ux-diagnostics-disclosure > :last-child {
-  margin-bottom: 12px;
+.ux-diagnostics-secondary.ux-diagnostics-collapsed > :not(h2):not(h3):not(h4):not(strong):not(.ux-diagnostics-toggle) {
+  display: none !important;
 }
 
 .ux-exports-final {
@@ -218,9 +214,5 @@ nav.tabs .tab[data-tab="facturx"] {
 
   #results-content .decision-panel.ux-decision-compact {
     padding: 12px !important;
-  }
-
-  .ux-diagnostics-disclosure > summary small {
-    display: none;
   }
 }

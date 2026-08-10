@@ -3,8 +3,8 @@
 }
 
 .opx-aligned-portfolio {
-  margin-bottom: 14px !important;
-  padding: 14px 16px !important;
+  margin-bottom: 18px !important;
+  padding: 16px 18px 18px !important;
 }
 
 .opx-aligned-portfolio .opx-portfolio-heading {
@@ -23,65 +23,15 @@
   line-height: 1.4;
 }
 
-.opx-portfolio-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.opx-model-toggle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-height: 34px;
-  padding: 6px 10px;
-  border: 1px solid color-mix(in srgb, var(--opx-blue) 30%, var(--line));
-  border-radius: 999px;
-  background: var(--paper);
-  color: var(--opx-blue);
-  font-size: .76rem;
-  font-weight: 850;
-  cursor: pointer;
-  transition: transform .16s ease, background .16s ease, border-color .16s ease;
-}
-
-.opx-model-toggle:hover {
-  transform: translateY(-1px);
-  border-color: var(--opx-blue);
-  background: color-mix(in srgb, var(--opx-blue) 5%, var(--paper));
-}
-
-.opx-model-toggle svg {
-  width: 16px;
-  height: 16px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  transition: transform .16s ease;
-}
-
-.opx-model-toggle[aria-expanded="true"] svg {
-  transform: rotate(180deg);
-}
-
 .opx-aligned-portfolio .opx-portfolio-intro {
-  margin: 7px 0 10px;
+  margin: 7px 0 12px;
   max-width: 960px;
   font-size: .8rem;
   line-height: 1.45;
 }
 
-.opx-aligned-portfolio:not(.models-expanded) .opx-portfolio-intro {
-  display: none;
-}
-
 .opx-aligned-portfolio .opx-comparison-board {
-  gap: 7px;
+  gap: 9px;
 }
 
 .opx-aligned-portfolio .opx-row-label {
@@ -93,24 +43,20 @@
   gap: 10px;
 }
 
-.opx-aligned-portfolio .opx-model-row[hidden],
-.opx-aligned-portfolio .opx-row-label[hidden] {
-  display: none !important;
-}
-
 .opx-aligned-portfolio .ovr-model-card {
-  padding: 10px;
+  min-height: 190px;
+  padding: 11px;
   border-radius: 12px;
 }
 
 .opx-aligned-portfolio .ovr-model-card header {
-  grid-template-columns: 27px minmax(0, 1fr);
+  grid-template-columns: 28px minmax(0, 1fr);
   gap: 7px;
 }
 
 .opx-aligned-portfolio .ovr-model-card .opx-model-number {
-  width: 27px;
-  height: 27px;
+  width: 28px;
+  height: 28px;
   border-radius: 9px;
 }
 
@@ -143,9 +89,64 @@
   border-radius: 8px;
 }
 
-.opx-aligned-portfolio .ovr-model-card details {
-  margin-top: 7px;
-  padding-top: 6px;
+/* Technical model explanations are controlled by one global button below the five cards. */
+.opx-aligned-portfolio .ovr-model-card details,
+.opx-aligned-portfolio .opx-model-card details {
+  margin-top: 8px;
+  padding: 8px 2px 0;
+  border-top: 1px solid var(--line);
+}
+
+.opx-aligned-portfolio .ovr-model-card details:not([open]),
+.opx-aligned-portfolio .opx-model-card details:not([open]) {
+  display: none;
+}
+
+.opx-aligned-portfolio .ovr-model-card details > summary,
+.opx-aligned-portfolio .opx-model-card details > summary {
+  display: none !important;
+}
+
+.opx-model-details-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin: 2px 0 4px;
+}
+
+.opx-model-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 7px 12px;
+  border: 1px solid color-mix(in srgb, var(--opx-blue) 30%, var(--line));
+  border-radius: 10px;
+  background: var(--paper);
+  color: var(--opx-blue);
+  font-size: .76rem;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.opx-model-toggle:hover {
+  border-color: var(--opx-blue);
+  background: color-mix(in srgb, var(--opx-blue) 5%, var(--paper));
+}
+
+.opx-model-toggle svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform .16s ease;
+}
+
+.opx-model-toggle[aria-expanded="true"] svg {
+  transform: rotate(180deg);
 }
 
 .opx-aligned-portfolio .opx-solution-cell {
@@ -182,7 +183,7 @@
     padding: 12px !important;
   }
 
-  .opx-portfolio-actions {
+  .opx-model-details-footer {
     justify-content: flex-start;
   }
 }

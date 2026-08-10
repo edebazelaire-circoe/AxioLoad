@@ -28,7 +28,7 @@ def test_logipilot_and_vehicle_viewer_assets_are_injected_once(tmp_path: Path) -
         assert response.text.count(asset) == 1
 
 
-def test_viewer_uses_a_fixed_perspective_opaque_cargo_and_cutaway_vehicle() -> None:
+def test_viewer_uses_the_approved_full_length_rectangular_loading_view() -> None:
     script = (STATIC / "viewer_vehicle_enhancements.js").read_text(encoding="utf-8")
     stylesheet = (STATIC / "viewer_vehicle_enhancements.css").read_text(encoding="utf-8")
 
@@ -38,16 +38,19 @@ def test_viewer_uses_a_fixed_perspective_opaque_cargo_and_cutaway_vehicle() -> N
         "event.stopImmediatePropagation()",
         "drawCutawayTrailer",
         "drawVehicleOverview",
-        "drawContinuation",
+        "drawLoadingAnnotations",
         "focusLength",
         "sceneLayout",
-        "Zone de chargement affichée",
-        "Espace libre restant",
+        "Occupation de la longueur",
+        "Longueur totale",
+        "Longueur occupée",
+        "Espace libre",
         "Number(alpha) >= 0.2 ? 1 : alpha",
         "Glisser horizontalement pour tourner",
     ):
         assert token in script
 
+    assert "drawContinuation(" not in script
     assert "drawCab" not in script
     assert "aspect-ratio: 16 / 9" in stylesheet
     assert "min-height: 440px" in stylesheet

@@ -1,81 +1,81 @@
 (() => {
   'use strict';
 
-  const STORAGE_KEY = 'logipilot.results.modelsExpanded';
   let observer = null;
 
   function removeLegacyStatusPanel() {
     document.querySelector('#method-status-panel')?.remove();
   }
 
-  function readExpandedState() {
-    try {
-      return window.localStorage.getItem(STORAGE_KEY) === 'true';
-    } catch (_) {
-      return false;
-    }
-  }
-
-  function storeExpandedState(expanded) {
-    try {
-      window.localStorage.setItem(STORAGE_KEY, String(expanded));
-    } catch (_) {
-      // The control remains functional if browser storage is unavailable.
-    }
+  function modelDetails(section) {
+    return [...section.querySelectorAll('#opx-model-row .ovr-model-card details')];
   }
 
   function applyExpandedState(section, expanded) {
-    const modelRow = section.querySelector('#opx-model-row');
-    const modelLabel = modelRow?.previousElementSibling;
     const toggle = section.querySelector('[data-results-model-toggle]');
-    if (!modelRow || !toggle) return;
+    if (!toggle) return;
 
-    modelRow.hidden = !expanded;
-    if (modelLabel?.classList.contains('opx-row-label')) modelLabel.hidden = !expanded;
-    section.classList.toggle('models-expanded', expanded);
+    modelDetails(section).forEach(details => {
+      if (details.open !== expanded) details.open = expanded;
+    });
+    section.classList.toggle('model-details-expanded', expanded);
     toggle.setAttribute('aria-expanded', String(expanded));
-    toggle.querySelector('span').textContent = expanded ? 'Masquer les modèles' : 'Voir le détail des modèles';
+    const label = toggle.querySelector('span');
+    const expected = expanded ? 'Masquer les détails des modèles' : 'Détails des modèles';
+    if (label && label.textContent !== expected) label.textContent = expected;
   }
 
   function enhancePortfolio() {
     removeLegacyStatusPanel();
     const section = document.querySelector('#opx-method-portfolio');
-    if (!section || section.dataset.compactResultsReady === '1') return;
+    if (!section) return;
 
     const heading = section.querySelector('.opx-portfolio-heading');
     const title = heading?.querySelector('h3');
     const intro = section.querySelector('.opx-portfolio-intro');
     const modelRow = section.querySelector('#opx-model-row');
-    if (!heading || !title || !intro || !modelRow) return;
+    const solutionRow = section.querySelector('#opx-solution-row');
+    if (!heading || !title || !intro || !modelRow || !solutionRow) return;
 
-    section.dataset.compactResultsReady = '1';
-    title.insertAdjacentHTML(
-      'afterend',
-      '<p class="opx-portfolio-summary">Cinq modèles indépendants, cinq réponses comparables sur le même cas.</p>'
-    );
-    intro.textContent = 'Chaque solution reste alignée avec le modèle qui l’a produite. Un échec conserve son emplacement afin de rendre la comparaison immédiate.';
+    modelRow.hidden = false;
+    [...modelRow.children].forEach(card => { card.hidden = false; });
+    const modelLabel = modelRow.previousElementSibling;
+    if (modelLabel?.classList.contains('opx-row-label')) modelLabel.hidden = false;
 
-    const actions = document.createElement('div');
-    actions.className = 'opx-portfolio-actions';
-    const count = heading.querySelector('#ovr-success-count');
-    if (count) actions.append(count);
+    let summary = section.querySelector('.opx-portfolio-summary');
+    if (!summary) {
+      summary = document.createElement('p');
+      summary.className = 'opx-portfolio-summary';
+      summary.textContent = 'Cinq modèles indépendants, cinq résultats comparables sur le même cas.';
+      title.insertAdjacentElement('afterend', summary);
+    }
 
-    const toggle = document.createElement('button');
-    toggle.type = 'button';
-    toggle.className = 'opx-model-toggle';
-    toggle.dataset.resultsModelToggle = '1';
-    toggle.setAttribute('aria-controls', 'opx-model-row');
-    toggle.innerHTML = '<span>Voir le détail des modèles</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>';
-    actions.append(toggle);
-    heading.append(actions);
+    const introText = 'Les cartes du haut résument les cinq modèles. Les informations techniques restent masquées jusqu’à l’ouverture des détails.';
+    if (intro.textContent !== introText) intro.textContent = introText;
 
-    const expanded = readExpandedState();
-    applyExpandedState(section, expanded);
-    toggle.addEventListener('click', () => {
-      const next = toggle.getAttribute('aria-expanded') !== 'true';
-      applyExpandedState(section, next);
-      storeExpandedState(next);
-    });
+    let footer = section.querySelector('.opx-model-details-footer');
+    if (!footer) {
+      footer = document.createElement('div');
+      footer.className = 'opx-model-details-footer';
+      modelRow.insertAdjacentElement('afterend', footer);
+    }
+
+    let toggle = footer.querySelector('[data-results-model-toggle]');
+    if (!toggle) {
+      toggle = document.createElement('button');
+      toggle.type = 'button';
+      toggle.className = 'opx-model-toggle';
+      toggle.dataset.resultsModelToggle = '1';
+      toggle.setAttribute('aria-controls', 'opx-model-row');
+      toggle.innerHTML = '<span>Détails des modèles</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>';
+      footer.append(toggle);
+      toggle.addEventListener('click', () => {
+        const next = toggle.getAttribute('aria-expanded') !== 'true';
+        applyExpandedState(section, next);
+      });
+    }
+
+    if (!toggle.hasAttribute('aria-expanded')) applyExpandedState(section, false);
   }
 
   function run() {
@@ -86,7 +86,9 @@
   function init() {
     run();
     const root = document.querySelector('#results-content') || document.body;
-    observer = new MutationObserver(run);
+    observer = new MutationObserver(records => {
+      if (records.some(record => record.addedNodes.length || record.removedNodes.length)) run();
+    });
     observer.observe(root, {childList: true, subtree: true});
   }
 

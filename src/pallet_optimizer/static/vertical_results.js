@@ -30,6 +30,13 @@
     return `${Number(value).toLocaleString('fr-FR', {maximumFractionDigits: 2})}${suffix}`;
   };
 
+  function rankingLabel(rank) {
+    if (rank === 1) return '🏆 Recommandé';
+    if (rank === 2) return '🥈 2e';
+    if (rank === 3) return '🥉 3e';
+    return `${rank}e`;
+  }
+
   function normalizedOutcome(solution, index) {
     return {
       index: index + 1,
@@ -69,7 +76,7 @@
         <span><small>Équilibre</small><strong>${formatMetric(outcome.balance_penalty)}</strong></span>
       </div>
       <details>
-        <summary>Principe et niveau de maturité</summary>
+        <summary>Détails du modèle</summary>
         <p>${escapeHtml(outcome.description || '')}</p>
         <p class="opx-model-note">${escapeHtml(outcome.execution_note || '')}</p>
       </details>
@@ -92,26 +99,39 @@
       <div><span>Comparaison alignée</span><h3>Résultat des cinq modèles</h3></div>
       <strong id="ovr-success-count"></strong>
     </div>
-    <p class="opx-portfolio-intro">Les cinq modèles restent dans le premier bloc. Le second bloc contient cinq emplacements strictement alignés : une solution exploitable ou l’échec du modèle correspondant.</p>
+    <p class="opx-portfolio-intro">Les cinq modèles restent visibles. Le résultat de chaque modèle est affiché dans la même colonne et son classement est indiqué sans renumérotation des solutions.</p>
     <p class="opx-mobile-scroll-hint">Balayez horizontalement pour comparer les cinq colonnes.</p>
-    <div class="opx-comparison-scroll" role="region" aria-label="Comparaison des cinq modèles et de leurs solutions" tabindex="0">
+    <div class="opx-comparison-scroll" role="region" aria-label="Comparaison des cinq modèles et de leurs résultats" tabindex="0">
       <div class="opx-comparison-board">
         <div class="opx-row-label">Modèles d’optimisation</div>
         <div id="opx-model-row" class="opx-five-column-row opx-model-row"></div>
-        <div class="opx-row-label">Solutions correspondantes</div>
+        <div class="opx-row-label">Résultats classés</div>
         <div id="opx-solution-row" class="opx-five-column-row opx-solution-row"></div>
       </div>
     </div>`;
     return section;
   }
 
-  function buildSolutionCell(outcome, solution, card) {
-    const cell = document.createElement('article');
-    cell.className = 'opx-solution-cell has-solution';
-    cell.dataset.method = outcome.code || solution.method_code || '';
-    cell.innerHTML = `<div class="opx-solution-cell-label"><span>Modèle ${escapeHtml(outcome.index || '')}</span><strong>Solution ${escapeHtml(solution.rank || '')}</strong></div><div class="opx-solution-slot"></div>`;
-    card.dataset.method = solution.method_code || outcome.code || '';
+  function prepareSolutionCard(card, solution) {
+    card.dataset.method = solution.method_code || '';
     card.dataset.solutionRank = String(solution.rank || '');
+    const title = q('.solution-card-title', card);
+    if (title) title.textContent = 'Plan obtenu';
+    qa('.recommended-badge, .solution-recommended, [data-recommended-badge]', card).forEach(element => element.remove());
+  }
+
+  function buildSolutionCell(outcome, solution, card) {
+    const rank = Number(solution.rank || 0);
+    const rankClass = rank > 0 ? ` rank-${Math.min(rank, 5)}` : '';
+    const cell = document.createElement('article');
+    cell.className = `opx-solution-cell has-solution${rankClass}`;
+    cell.dataset.method = outcome.code || solution.method_code || '';
+    cell.dataset.solutionRank = String(rank || '');
+    const badge = rank > 0
+      ? `<strong class="opx-ranking-badge">${escapeHtml(rankingLabel(rank))}</strong>`
+      : '';
+    cell.innerHTML = `<div class="opx-solution-cell-label"><span>Modèle ${escapeHtml(outcome.index || '')}</span>${badge}</div><div class="opx-solution-slot"></div>`;
+    prepareSolutionCard(card, solution);
     q('.opx-solution-slot', cell).append(card);
     return cell;
   }
@@ -124,7 +144,7 @@
     const cell = document.createElement('article');
     cell.className = `opx-solution-cell without-solution status-${escapeHtml(status)}`;
     cell.dataset.method = outcome.code || '';
-    cell.innerHTML = `<div class="opx-solution-cell-label"><span>Modèle ${escapeHtml(outcome.index || '')}</span><strong>${escapeHtml(statusLabels[status] || status)}</strong></div><div class="opx-no-solution"><span class="opx-failure-icon">${icon(status)}</span><strong>Aucune solution disponible</strong><p>${escapeHtml(reason)}</p></div>`;
+    cell.innerHTML = `<div class="opx-solution-cell-label"><span>Modèle ${escapeHtml(outcome.index || '')}</span><strong>${escapeHtml(statusLabels[status] || status)}</strong></div><div class="opx-no-solution"><span class="opx-failure-icon">${icon(status)}</span><strong>Aucun plan disponible</strong><p>${escapeHtml(reason)}</p></div>`;
     return cell;
   }
 
@@ -164,7 +184,7 @@
       ordered.forEach(outcome => {
         let entry = entriesByMethod.get(outcome.code);
         if (!entry && outcome.status === 'success') {
-          entry = entries.find(candidate => !usedEntries.has(candidate));
+          entry = entries.find(candidate => !usedEntries.has(candidate) && candidate.solution.method_code === outcome.code);
         }
         if (entry && entry.card) {
           usedEntries.add(entry);

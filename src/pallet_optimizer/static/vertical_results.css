@@ -96,6 +96,22 @@
   background: color-mix(in srgb, var(--opx-blue) 2.5%, var(--paper));
 }
 
+.opx-solution-cell.rank-1 {
+  border-color: #e8b13f;
+  background: color-mix(in srgb, #f5b400 7%, var(--paper));
+  box-shadow: 0 8px 22px rgba(132, 88, 0, .08);
+}
+
+.opx-solution-cell.rank-2 {
+  border-color: #b9c7d3;
+  background: color-mix(in srgb, #b9c7d3 7%, var(--paper));
+}
+
+.opx-solution-cell.rank-3 {
+  border-color: #d49a73;
+  background: color-mix(in srgb, #c77a45 6%, var(--paper));
+}
+
 .opx-solution-cell.without-solution {
   border-style: dashed;
   border-color: color-mix(in srgb, var(--opx-danger) 34%, var(--line));
@@ -119,6 +135,43 @@
   text-align: right;
 }
 
+.opx-ranking-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 25px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.rank-1 .opx-ranking-badge {
+  color: #7a5100;
+  background: #fff2c9;
+  border: 1px solid #efc762;
+}
+
+.rank-2 .opx-ranking-badge {
+  color: #455b6b;
+  background: #eef3f6;
+  border: 1px solid #cad5dd;
+}
+
+.rank-3 .opx-ranking-badge {
+  color: #8a4c27;
+  background: #fae6d8;
+  border: 1px solid #dfae8c;
+}
+
+.rank-4 .opx-ranking-badge,
+.rank-5 .opx-ranking-badge {
+  color: var(--opx-blue);
+  background: color-mix(in srgb, var(--opx-blue) 7%, var(--paper));
+  border: 1px solid color-mix(in srgb, var(--opx-blue) 22%, var(--line));
+}
+
 .opx-solution-cell.without-solution .opx-solution-cell-label strong {
   color: var(--opx-danger);
 }
@@ -134,6 +187,9 @@
 .opx-solution-slot .solution-card {
   display: flex;
   flex-direction: column;
+  border: 0;
+  box-shadow: none;
+  background: transparent;
 }
 
 .opx-source-solution-cards {

@@ -27,6 +27,22 @@
     q('[data-workspace="documents"]')?.classList.add('workspace-documents');
   }
 
+  function normalizeTotalOptimizationLabels() {
+    const toggle = q('#total-optimization-enabled')?.closest('.total-mode-toggle');
+    const title = toggle?.querySelector('strong');
+    if (title && title.textContent !== 'Optimisation complète') title.textContent = 'Optimisation complète';
+
+    const routeTitle = q('#total-route-inputs-title');
+    if (routeTitle && routeTitle.textContent.includes('optimisation totale')) {
+      routeTitle.textContent = routeTitle.textContent.replace('optimisation totale', 'optimisation complète');
+    }
+
+    const totalTab = q('nav.tabs [data-tab="total"]');
+    if (totalTab && totalTab.textContent.includes('Optimisation totale')) {
+      totalTab.textContent = totalTab.textContent.replace('Optimisation totale', 'Optimisation complète');
+    }
+  }
+
   function removeLockedLabels(root = document) {
     qa('.vehicle-origin-badge, .global-lock-badge, [data-global-lock]', root).forEach(element => element.remove());
     qa('span, small, em, strong', root).forEach(element => {
@@ -136,11 +152,12 @@
       <header><span class="opx-model-number">${outcome.index}</span><span class="opx-model-heading"><strong>${escapeHtml(outcome.name)}</strong><small>${escapeHtml(outcome.short_label || '')}</small></span><span class="opx-model-status">${icon(iconName)}${escapeHtml(statusLabels[status] || status)}</span></header>
       <p>${escapeHtml(reason)}</p>
       <div class="opx-model-metrics"><span><small>Temps</small><strong>${formatMetric(outcome.elapsed_seconds, ' s')}</strong></span><span><small>Véhicules</small><strong>${formatMetric(outcome.vehicle_count)}</strong></span><span><small>Longueur</small><strong>${formatMetric(outcome.occupied_length_m, ' m')}</strong></span><span><small>Équilibre</small><strong>${formatMetric(outcome.balance_penalty)}</strong></span></div>
-      <details><summary>Principe et niveau de maturité</summary><p>${escapeHtml(outcome.description || '')}</p><p class="opx-model-note">${escapeHtml(outcome.execution_note || '')}</p></details>
+      <details><summary>Détails du modèle</summary><p>${escapeHtml(outcome.description || '')}</p><p class="opx-model-note">${escapeHtml(outcome.execution_note || '')}</p></details>
     </article>`;
   }
 
   function renderMethodOutcomes(data) {
+    if (window.AxioVerticalResults) return;
     const outcomes = Array.isArray(data?.method_outcomes) ? data.method_outcomes : [];
     if (!outcomes.length) return;
     const content = q('#results-content');
@@ -197,6 +214,7 @@
 
   function applyStatic() {
     distinguishWorkspaces();
+    normalizeTotalOptimizationLabels();
     polishImportActions();
     arrangeLoadingActions();
     bindClientGrouping();

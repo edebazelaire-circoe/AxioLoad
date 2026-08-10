@@ -78,6 +78,14 @@
     return 'optimization';
   }
 
+  function rememberedTargetForWorkspace(workspace) {
+    if (workspace === 'database') return state.database || WORKSPACE_DEFAULTS.database;
+    if (workspace === 'optimization') return state.optimization || WORKSPACE_DEFAULTS.optimization;
+    if (workspace === 'documents') return state.documents || WORKSPACE_DEFAULTS.documents;
+    if (workspace === 'facturx') return state.facturx || WORKSPACE_DEFAULTS.facturx;
+    return null;
+  }
+
   function setWorkspaceVisual(name) {
     const switcher = q('#workspace-switcher');
     const nav = q('nav.tabs');
@@ -92,13 +100,25 @@
     });
 
     qa('[data-workspace-group]', nav).forEach(button => {
+      const tabName = button.dataset.tab;
       const belongs = button.dataset.workspaceGroup === name;
       button.classList.toggle('workspace-group-hidden', !belongs);
+
+      if (tabName === 'facturx') {
+        button.hidden = true;
+        button.setAttribute('aria-hidden', 'true');
+        button.setAttribute('tabindex', '-1');
+        return;
+      }
+
       if (belongs) {
-        const tabName = button.dataset.tab;
         const syntheticName = button.dataset.workspaceTab;
         const allowed = tabName ? tabAllowed(tabName) : syntheticName?.startsWith('document-') ? workspaceAllowed('documents') : true;
-        if (allowed) button.hidden = false;
+        button.hidden = !allowed;
+        button.removeAttribute('aria-hidden');
+        button.removeAttribute('tabindex');
+      } else {
+        button.hidden = true;
       }
     });
   }
@@ -131,7 +151,7 @@
     const panel = q(`#tab-${CSS.escape(name)}`);
     const button = q(`nav.tabs .tab[data-tab="${CSS.escape(name)}"]`);
     if (!panel || !tabAllowed(name)) return false;
-    if (button) button.hidden = false;
+    if (button && name !== 'facturx') button.hidden = false;
 
     if (typeof window.switchTab === 'function') {
       window.switchTab(name);
@@ -144,6 +164,11 @@
     }
 
     if (button) setSubnavActive(button);
+    if (name === 'facturx' && button) {
+      button.hidden = true;
+      button.setAttribute('aria-hidden', 'true');
+      button.setAttribute('tabindex', '-1');
+    }
     syncPanelAccessibility();
     const workspace = workspaceForTab(name);
     state.workspace = workspace;
@@ -156,7 +181,9 @@
   }
 
   function allowedOptimizationTarget(preferred) {
-    const order = [preferred, 'data', 'results', 'route', 'total', 'history'];
+    const allowedNames = new Set(['data', 'results', 'route', 'total', 'history']);
+    const safePreferred = allowedNames.has(preferred) ? preferred : null;
+    const order = [safePreferred, 'data', 'results', 'route', 'total', 'history'];
     return order.find(name => name && tabAllowed(name) && q(`#tab-${CSS.escape(name)}`)) || null;
   }
 
@@ -224,14 +251,14 @@
 
     setWorkspaceVisual(workspace);
     if (workspace === 'database') {
-      const target = requestedTarget || state.database || WORKSPACE_DEFAULTS.database;
+      const target = requestedTarget || rememberedTargetForWorkspace('database');
       if (target === 'prompts' && openPromptCenter()) return;
       if (target === 'invoice-parties' && directSwitchTab('invoice-parties')) return;
       directSwitchTab('vehicles');
       return;
     }
     if (workspace === 'documents') {
-      openDocumentWorkspace(requestedTarget || state.documents || WORKSPACE_DEFAULTS.documents);
+      openDocumentWorkspace(requestedTarget || rememberedTargetForWorkspace('documents'));
       return;
     }
     if (workspace === 'facturx') {
@@ -239,7 +266,7 @@
       return;
     }
 
-    const target = allowedOptimizationTarget(requestedTarget || state.optimization || WORKSPACE_DEFAULTS.optimization);
+    const target = allowedOptimizationTarget(requestedTarget || rememberedTargetForWorkspace('optimization'));
     if (target) directSwitchTab(target);
   }
 
@@ -271,7 +298,7 @@
     }
 
     const tab = event.target.closest?.('nav.tabs .tab[data-tab]');
-    if (!tab || tab.dataset.tab === 'document-control') return;
+    if (!tab || tab.dataset.tab === 'document-control' || tab.dataset.tab === 'facturx') return;
     if (tab.disabled || tab.getAttribute('aria-disabled') === 'true' || !tabAllowed(tab.dataset.tab)) return;
     stopLegacyNavigation(event);
     setWorkspaceVisual(workspaceForTab(tab.dataset.tab));
@@ -292,14 +319,7 @@
     await permissionsReady;
     deriveInitialState();
     const workspace = state.workspace || 'database';
-    const target = workspace === 'database'
-      ? state.database
-      : workspace === 'optimization'
-        ? state.optimization
-        : workspace === 'facturx'
-          ? state.facturx
-          : state.documents;
-    await openWorkspace(workspace, target);
+    await openWorkspace(workspace, rememberedTargetForWorkspace(workspace));
   }
 
   function install() {
@@ -308,7 +328,9 @@
     installed = true;
     window.addEventListener('click', handleNavigation, true);
     window.addEventListener('axioload:workspace:registered', event => {
-      if (event.detail?.workspace === state.workspace) void openWorkspace(state.workspace, state.facturx);
+      if (event.detail?.workspace === state.workspace) {
+        void openWorkspace(state.workspace, rememberedTargetForWorkspace(state.workspace));
+      }
     });
     void restoreNavigation();
     return true;

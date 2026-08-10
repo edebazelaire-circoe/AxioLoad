@@ -28,7 +28,7 @@ def test_logipilot_and_vehicle_viewer_assets_are_injected_once(tmp_path: Path) -
         assert response.text.count(asset) == 1
 
 
-def test_viewer_uses_a_fixed_perspective_opaque_cargo_and_cutaway_vehicle() -> None:
+def test_viewer_uses_fixed_perspective_and_full_length_rectangular_vehicle() -> None:
     script = (STATIC / "viewer_vehicle_enhancements.js").read_text(encoding="utf-8")
     stylesheet = (STATIC / "viewer_vehicle_enhancements.css").read_text(encoding="utf-8")
 
@@ -36,24 +36,28 @@ def test_viewer_uses_a_fixed_perspective_opaque_cargo_and_cutaway_vehicle() -> N
         "FIXED_TILT = 0.52",
         "state.tilt = FIXED_TILT",
         "event.stopImmediatePropagation()",
-        "drawCutawayTrailer",
+        "drawRectangularTrailer",
         "drawVehicleOverview",
-        "drawContinuation",
-        "focusLength",
-        "sceneLayout",
-        "Zone de chargement affichée",
-        "Espace libre restant",
+        "displayedVehicleLength",
+        "Longueur totale",
+        "Longueur occupée",
+        "Espace libre",
+        "Occupation de la longueur",
         "Number(alpha) >= 0.2 ? 1 : alpha",
         "Glisser horizontalement pour tourner",
     ):
         assert token in script
 
+    assert "drawContinuation" not in script
+    assert "focusLength" not in script
+    assert "Zone de chargement affichée" not in script
     assert "drawCab" not in script
     assert "aspect-ratio: 16 / 9" in stylesheet
     assert "min-height: 440px" in stylesheet
     assert "max-height: 640px" in stylesheet
     assert "resize: none" in stylesheet
     assert "touch-action: none" in stylesheet
+    assert "background: #ffffff" in stylesheet
 
 
 def test_logipilot_branding_uses_the_validated_name_tagline_and_circoe_colors() -> None:

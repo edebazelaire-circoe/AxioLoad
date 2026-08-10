@@ -113,6 +113,7 @@ def test_real_browser_navigation_loads_the_requested_pages_and_survives_reload(l
             assert max(workspace_y) - min(workspace_y) < 3
 
             _assert_only_panel(page, "database", "#tab-vehicles", settle_ms=1800)
+            assert not page.locator('nav.tabs [data-tab="facturx"]').is_visible()
 
             _click_tile_edge(page, "optimization")
             _assert_only_panel(page, "optimization", "#tab-data", settle_ms=1800)
@@ -123,6 +124,7 @@ def test_real_browser_navigation_loads_the_requested_pages_and_survives_reload(l
             page.reload(wait_until="networkidle")
             page.locator("#workspace-switcher").wait_for(state="visible")
             _assert_only_panel(page, "optimization", "#tab-route", settle_ms=1800)
+            assert not page.locator('nav.tabs [data-tab="facturx"]').is_visible()
 
             _click_tile_edge(page, "documents")
             _assert_only_panel(page, "documents", "#tab-document-control", settle_ms=1800)
@@ -143,13 +145,15 @@ def test_real_browser_navigation_loads_the_requested_pages_and_survives_reload(l
             _assert_only_panel(page, "database", "#tab-invoice-parties", settle_ms=800)
             assert page.locator('#facturx-party-form').is_visible()
             assert page.get_by_text('Clients et fournisseurs', exact=True).is_visible()
+            assert not page.locator('nav.tabs [data-tab="facturx"]').is_visible()
 
             _click_tile_edge(page, "facturx")
             _assert_only_panel(page, "facturx", "#tab-facturx", settle_ms=1200)
             transform_tab = page.locator('nav.tabs [data-tab="facturx"]')
             history_tab = page.locator('nav.tabs [data-facturx-view="history"]')
-            assert transform_tab.inner_text() == "Transformation des factures"
+            assert not transform_tab.is_visible()
             assert history_tab.inner_text() == "Historique"
+            assert history_tab.is_visible()
             assert page.locator('#facturx-form').is_visible()
             assert page.locator('#facturx-source-file').is_visible()
             assert page.locator('#facturx-extract').is_visible()
@@ -163,19 +167,22 @@ def test_real_browser_navigation_loads_the_requested_pages_and_survives_reload(l
             assert page.locator('#facturx-list').is_visible()
             assert history_tab.get_attribute('aria-selected') == 'true'
 
-            transform_tab.click()
+            # The workspace card itself is the entry point for transformation.
+            # Clicking it again replaces the removed redundant transform sub-tab.
+            _click_tile_edge(page, "facturx")
             page.wait_for_function(
                 "() => document.querySelector('#tab-facturx')?.classList.contains('facturx-transform-mode')"
             )
             assert page.locator('#facturx-form').is_visible()
             assert not page.locator('#facturx-list').is_visible()
+            assert not transform_tab.is_visible()
 
             page.reload(wait_until="networkidle")
             page.locator("#workspace-switcher").wait_for(state="visible")
             page.locator('#tab-facturx').wait_for(state="attached")
             _assert_only_panel(page, "facturx", "#tab-facturx", settle_ms=1200)
             assert page.locator('#facturx-form').is_visible()
-            assert page.locator('nav.tabs [data-tab="facturx"]').inner_text() == "Transformation des factures"
+            assert not page.locator('nav.tabs [data-tab="facturx"]').is_visible()
             assert page.locator('nav.tabs [data-facturx-view="history"]').is_visible()
             assert 'active' not in (page.locator('#tab-data').get_attribute('class') or '').split()
 

@@ -151,7 +151,9 @@ def test_real_browser_navigation_loads_the_requested_pages_and_survives_reload(l
             _assert_only_panel(page, "facturx", "#tab-facturx", settle_ms=1200)
             transform_tab = page.locator('nav.tabs [data-tab="facturx"]')
             history_tab = page.locator('nav.tabs [data-facturx-view="history"]')
-            assert not transform_tab.is_visible()
+            assert transform_tab.inner_text() == "Nouvelle facture"
+            assert transform_tab.is_visible()
+            assert transform_tab.get_attribute('aria-selected') == 'true'
             assert history_tab.inner_text() == "Historique"
             assert history_tab.is_visible()
             assert page.locator('#facturx-form').is_visible()
@@ -166,23 +168,24 @@ def test_real_browser_navigation_loads_the_requested_pages_and_survives_reload(l
             assert not page.locator('#facturx-form').is_visible()
             assert page.locator('#facturx-list').is_visible()
             assert history_tab.get_attribute('aria-selected') == 'true'
+            assert transform_tab.get_attribute('aria-selected') == 'false'
 
-            # The workspace card itself is the entry point for transformation.
-            # Clicking it again replaces the removed redundant transform sub-tab.
-            _click_tile_edge(page, "facturx")
+            transform_tab.click()
             page.wait_for_function(
                 "() => document.querySelector('#tab-facturx')?.classList.contains('facturx-transform-mode')"
             )
             assert page.locator('#facturx-form').is_visible()
             assert not page.locator('#facturx-list').is_visible()
-            assert not transform_tab.is_visible()
+            assert transform_tab.is_visible()
+            assert transform_tab.get_attribute('aria-selected') == 'true'
 
             page.reload(wait_until="networkidle")
             page.locator("#workspace-switcher").wait_for(state="visible")
             page.locator('#tab-facturx').wait_for(state="attached")
             _assert_only_panel(page, "facturx", "#tab-facturx", settle_ms=1200)
             assert page.locator('#facturx-form').is_visible()
-            assert not page.locator('nav.tabs [data-tab="facturx"]').is_visible()
+            assert page.locator('nav.tabs [data-tab="facturx"]').is_visible()
+            assert page.locator('nav.tabs [data-tab="facturx"]').inner_text() == "Nouvelle facture"
             assert page.locator('nav.tabs [data-facturx-view="history"]').is_visible()
             assert 'active' not in (page.locator('#tab-data').get_attribute('class') or '').split()
 

@@ -115,9 +115,10 @@
   function prepareSolutionCard(card, solution) {
     card.dataset.method = solution.method_code || '';
     card.dataset.solutionRank = String(solution.rank || '');
+    card.classList.remove('recommended');
     const title = q('.solution-card-title', card);
     if (title) title.textContent = 'Plan obtenu';
-    qa('.recommended-badge, .solution-recommended, [data-recommended-badge]', card).forEach(element => element.remove());
+    qa('.recommended-badge, .solution-recommended, [data-recommended-badge], .inline-badge', card).forEach(element => element.remove());
   }
 
   function buildSolutionCell(outcome, solution, card) {
@@ -155,6 +156,15 @@
     return solutions.map(normalizedOutcome);
   }
 
+  function cardForSolution(solution, cards, index) {
+    const methodCode = String(solution?.method_code || '');
+    if (methodCode) {
+      const matching = cards.find(card => card.dataset.method === methodCode);
+      if (matching) return matching;
+    }
+    return cards[index] || null;
+  }
+
   function arrangeSolutions() {
     if (arranging || !latestResult) return false;
     const source = q('#solution-cards');
@@ -174,20 +184,18 @@
       const modelRow = q('#opx-model-row', section);
       const solutionRow = q('#opx-solution-row', section);
       const ordered = orderedOutcomes(solutions, outcomes);
-      const entries = solutions.map((solution, index) => ({solution, card: cards[index]}));
+      const entries = solutions.map((solution, index) => ({
+        solution,
+        card: cardForSolution(solution, cards, index)
+      }));
       const entriesByMethod = new Map(entries.map(entry => [entry.solution.method_code, entry]));
-      const usedEntries = new Set();
 
       modelRow.innerHTML = ordered.map(outcomeCard).join('');
       solutionRow.innerHTML = '';
 
       ordered.forEach(outcome => {
-        let entry = entriesByMethod.get(outcome.code);
-        if (!entry && outcome.status === 'success') {
-          entry = entries.find(candidate => !usedEntries.has(candidate) && candidate.solution.method_code === outcome.code);
-        }
-        if (entry && entry.card) {
-          usedEntries.add(entry);
+        const entry = entriesByMethod.get(outcome.code);
+        if (entry?.card) {
           solutionRow.append(buildSolutionCell(outcome, entry.solution, entry.card));
         } else {
           solutionRow.append(buildFailureCell(outcome));

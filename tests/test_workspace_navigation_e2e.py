@@ -81,6 +81,10 @@ def _sidebar(page: Page, name: str):
     return page.locator(selector)
 
 
+def _nav_label(item) -> str:
+    return item.locator(":scope > span:not(.circoe-v3-icon)").inner_text().strip()
+
+
 def test_real_browser_navigation_uses_eight_workspaces_and_preserves_business_views(live_app: str) -> None:
     ARTIFACTS.mkdir(exist_ok=True)
     console_errors: list[str] = []
@@ -109,7 +113,7 @@ def test_real_browser_navigation_uses_eight_workspaces_and_preserves_business_vi
                 "7. Paramètres & IA",
                 "8. Super Admin",
             ]
-            assert [items.nth(index).inner_text().replace("Nouveau", "").strip() for index in range(8)] == expected
+            assert [_nav_label(items.nth(index)) for index in range(8)] == expected
 
             boxes = [items.nth(index).bounding_box() for index in range(8)]
             assert all(boxes)

@@ -45,6 +45,11 @@
   }
 
   async function load() {
+    // The management panel markup also exists on ordinary user pages, but the
+    // privileged admin entry point is exposed only for an authenticated Super Admin.
+    // Never probe the protected coherence endpoint from a normal user surface.
+    if (!document.querySelector('#open-admin')) return;
+
     const panel = document.querySelector('#admin-view-overview');
     if (!panel) {
       setTimeout(load, 120);

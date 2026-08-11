@@ -13,9 +13,9 @@ from .admin_base import AdminBaseMixin
 from .persistence import _connect, _hash_secret, _verify_secret, utc_now
 
 SUPER_ADMIN_USER_ID = "axioload-super-admin"
-DEFAULT_SUPER_ADMIN_EMAIL = "b.olivier@circoe.com"
-DEFAULT_SUPER_ADMIN_USERNAME = "superadmn"
-DEFAULT_SUPER_ADMIN_PASSWORD = "0123456789"
+DEFAULT_SUPER_ADMIN_EMAIL = "superadmin@axioload.invalid"
+DEFAULT_SUPER_ADMIN_USERNAME = "superadmin"
+DEFAULT_SUPER_ADMIN_PASSWORD = ""
 
 
 class AdminRepository(
@@ -36,12 +36,14 @@ class AdminRepository(
         return (
             email or DEFAULT_SUPER_ADMIN_EMAIL,
             username or DEFAULT_SUPER_ADMIN_USERNAME,
-            password or DEFAULT_SUPER_ADMIN_PASSWORD,
+            password,
         )
 
     def _ensure_super_admin_account(self) -> None:
-        """Create or refresh the bootstrap Super Admin account."""
+        """Create or refresh the bootstrap Super Admin account only when configured."""
         email, _username, password = self.super_admin_credentials()
+        if not password:
+            return
         salt, digest = _hash_secret(password)
         now = utc_now()
         with _connect(self.registry.registry_path) as db:
@@ -68,7 +70,9 @@ class AdminRepository(
                 )
 
     def authenticate_super_admin(self, identifier: str, password: str) -> dict[str, object]:
-        email, username, _configured_password = self.super_admin_credentials()
+        email, username, configured_password = self.super_admin_credentials()
+        if not configured_password:
+            raise ValueError("Compte super administrateur non configuré")
         normalized = identifier.strip().lower()
         if normalized not in {email.lower(), username.lower()}:
             raise ValueError("Identifiants super administrateur invalides")

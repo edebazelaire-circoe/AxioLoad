@@ -16,6 +16,7 @@ from .document_control_permissions import install_document_control_permission_mi
 install_document_control_permission_migration()
 
 from . import prompt_center_system as _prompt_center_system
+from .admin_coherence import install_admin_coherence
 from .admin_panel import install_admin_panel_injection
 from .auth_experience_panel import install_auth_experience_injection
 from .circoe_workspace_v3 import install_circoe_workspace_v3
@@ -54,6 +55,7 @@ install_partial_model_success_policy()
 install_client_split_policy()
 install_unlimited_item_count()
 install_admin_panel_injection()
+install_admin_coherence()
 install_document_control_panel_injection()
 install_document_control_experience_injection()
 install_optimization_experience_injection()
@@ -71,6 +73,7 @@ install_company_ai_dual_mode()
 install_company_ai_privacy()
 install_company_ai_user_surface()
 install_security_hardening()
-# Install the visual shell last so it composes all existing business panels
-# instead of replacing their handlers, routes or model/result rendering.
+# Install the visual shell last so it composes all existing business panels,
+# including the Super Admin coherence surface, without replacing handlers,
+# routes or optimization model/result rendering.
 install_circoe_workspace_v3()

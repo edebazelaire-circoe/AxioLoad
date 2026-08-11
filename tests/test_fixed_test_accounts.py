@@ -259,11 +259,13 @@ def test_fixed_mode_is_not_injected_when_disabled(tmp_path, monkeypatch) -> None
     assert client.get("/api/auth/test-accounts").status_code == 404
 
 
-def test_docker_compose_contains_only_the_requested_test_credentials() -> None:
+def test_docker_compose_uses_secure_externalized_defaults() -> None:
     compose = (ROOT / "docker-compose.yml").read_text(encoding="utf-8")
-    assert 'PLO_TEST_ACCOUNTS_ONLY: "1"' in compose
-    assert "PLO_SUPER_ADMIN_EMAIL: b.olivier@circoe.com" in compose
-    assert 'PLO_SUPER_ADMIN_PASSWORD: "0123456789"' in compose
-    assert "PLO_TEST_USER_EMAIL: olivierbaptiste6@gmail.com" in compose
-    assert 'PLO_TEST_USER_PASSWORD: "0123456789"' in compose
-    assert 'PLO_SUPER_ADMIN_PASSWORD: "1234"' not in compose
+    assert 'PLO_TEST_ACCOUNTS_ONLY: "${PLO_TEST_ACCOUNTS_ONLY:-0}"' in compose
+    assert 'PLO_SUPER_ADMIN_PASSWORD: "${PLO_SUPER_ADMIN_PASSWORD:-}"' in compose
+    assert 'PLO_TEST_USER_PASSWORD: "${PLO_TEST_USER_PASSWORD:-}"' in compose
+    assert 'PLO_COOKIE_SECURE: "${PLO_COOKIE_SECURE:-1}"' in compose
+    assert 'PLO_DOCUMENT_SECRET_KEY: "${PLO_DOCUMENT_SECRET_KEY:-}"' in compose
+    assert 'PLO_SUPER_ADMIN_PASSWORD: "0123456789"' not in compose
+    assert 'PLO_TEST_USER_PASSWORD: "0123456789"' not in compose
+    assert 'PLO_TEST_ACCOUNTS_ONLY: "1"' not in compose

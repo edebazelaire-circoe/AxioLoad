@@ -18,6 +18,7 @@ install_document_control_permission_migration()
 from . import prompt_center_system as _prompt_center_system
 from .admin_panel import install_admin_panel_injection
 from .auth_experience_panel import install_auth_experience_injection
+from .circoe_workspace_v3 import install_circoe_workspace_v3
 from .client_grouping import install_client_grouping
 from .client_split_policy import install_client_split_policy
 from .company_ai_dual_mode import install_company_ai_dual_mode
@@ -70,3 +71,6 @@ install_company_ai_dual_mode()
 install_company_ai_privacy()
 install_company_ai_user_surface()
 install_security_hardening()
+# Install the visual shell last so it composes all existing business panels
+# instead of replacing their handlers, routes or model/result rendering.
+install_circoe_workspace_v3()

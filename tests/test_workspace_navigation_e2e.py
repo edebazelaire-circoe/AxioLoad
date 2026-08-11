@@ -141,6 +141,7 @@ def test_real_browser_navigation_uses_eight_workspaces_and_preserves_business_vi
             _assert_only_panel(page, "#tab-document-control", settle_ms=1000)
             assert page.locator("#dc-new").is_visible()
             page.locator('nav.tabs [data-workspace-tab="document-history"]').click()
+            page.locator("#dc-history").wait_for(state="visible", timeout=10_000)
             assert page.locator("#dc-history").is_visible()
 
             _sidebar(page, "regulatory").click()

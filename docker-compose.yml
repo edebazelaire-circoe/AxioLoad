@@ -5,12 +5,17 @@ services:
       - "8000:8000"
     environment:
       PLO_DATA_DIR: /app/data
-      PLO_TEST_ACCOUNTS_ONLY: "1"
-      PLO_SUPER_ADMIN_EMAIL: b.olivier@circoe.com
-      PLO_SUPER_ADMIN_USERNAME: superadmn
-      PLO_SUPER_ADMIN_PASSWORD: "0123456789"
-      PLO_TEST_USER_EMAIL: olivierbaptiste6@gmail.com
-      PLO_TEST_USER_PASSWORD: "0123456789"
+      PLO_TEST_ACCOUNTS_ONLY: "${PLO_TEST_ACCOUNTS_ONLY:-0}"
+      PLO_SUPER_ADMIN_EMAIL: "${PLO_SUPER_ADMIN_EMAIL:-superadmin@example.invalid}"
+      PLO_SUPER_ADMIN_USERNAME: "${PLO_SUPER_ADMIN_USERNAME:-superadmin}"
+      PLO_SUPER_ADMIN_PASSWORD: "${PLO_SUPER_ADMIN_PASSWORD:-}"
+      PLO_TEST_USER_EMAIL: "${PLO_TEST_USER_EMAIL:-test-user@example.invalid}"
+      PLO_TEST_USER_PASSWORD: "${PLO_TEST_USER_PASSWORD:-}"
+      PLO_DOCUMENT_SECRET_KEY: "${PLO_DOCUMENT_SECRET_KEY:-}"
+      PLO_COOKIE_SECURE: "${PLO_COOKIE_SECURE:-1}"
+      AXIOLOAD_OSRM_URL: "${AXIOLOAD_OSRM_URL:-https://router.project-osrm.org}"
+      AXIOLOAD_NOMINATIM_URL: "${AXIOLOAD_NOMINATIM_URL:-https://nominatim.openstreetmap.org}"
+      AXIOLOAD_GEOCODE_COUNTRIES: "${AXIOLOAD_GEOCODE_COUNTRIES:-fr,be,nl,de,es,it,lu,ch}"
     volumes:
       - plo_data:/app/data
     restart: unless-stopped

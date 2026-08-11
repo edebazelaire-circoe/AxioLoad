@@ -1,0 +1,250 @@
+:root{
+  --circoe-blue:#005696;
+  --circoe-blue-dark:#052e46;
+  --circoe-blue-deep:#031f36;
+  --circoe-orange:#f8af44;
+  --circoe-red:#e73147;
+  --circoe-green:#40b1a1;
+  --circoe-soft:#ece9e9;
+  --circoe-sidebar:248px;
+}
+
+body:has(#workspace-switcher.circoe-v3-sidebar){
+  padding-left:var(--circoe-sidebar);
+  background:#f7f9fc;
+}
+
+#workspace-switcher.circoe-v3-sidebar{
+  position:fixed;
+  inset:0 auto 0 0;
+  z-index:180;
+  width:var(--circoe-sidebar);
+  max-width:100vw;
+  min-width:0;
+  display:flex!important;
+  flex-direction:column;
+  gap:0!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:linear-gradient(180deg,var(--circoe-blue-deep),#062b4a 55%,#041e35);
+  box-shadow:12px 0 34px rgba(3,31,54,.12);
+  overflow-y:auto;
+  overflow-x:hidden;
+}
+
+.circoe-v3-legacy-workspace{display:none!important}
+
+.circoe-v3-brand{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+  padding:28px 24px 24px;
+  border-bottom:1px solid rgba(255,255,255,.12);
+  color:#fff;
+}
+.circoe-v3-brand strong{font-size:27px;letter-spacing:.02em;line-height:1}
+.circoe-v3-brand span{font-size:18px;color:#2c9bd4;font-weight:650}
+
+.circoe-v3-nav{display:flex;flex-direction:column;gap:5px;padding:18px 10px 24px;min-width:0}
+.circoe-v3-nav-item{
+  display:grid;
+  grid-template-columns:28px minmax(0,1fr) auto;
+  align-items:center;
+  gap:10px;
+  min-height:52px;
+  min-width:0;
+  width:100%;
+  border:0;
+  border-radius:10px;
+  padding:9px 12px;
+  background:transparent;
+  color:#f4f8fb;
+  text-align:left;
+  font-weight:720;
+  font-size:13px;
+  cursor:pointer;
+  transition:background .15s ease,transform .15s ease,color .15s ease;
+}
+.circoe-v3-nav-item:hover{background:rgba(255,255,255,.08);transform:translateX(1px)}
+.circoe-v3-nav-item.active{background:linear-gradient(135deg,#075db7,#064a9a);box-shadow:0 8px 20px rgba(0,0,0,.18)}
+.circoe-v3-nav-item:disabled{opacity:.42;cursor:not-allowed;transform:none}
+.circoe-v3-nav-item small{padding:3px 6px;border-radius:999px;background:rgba(248,175,68,.17);color:#ffd28b;font-size:9px;text-transform:uppercase;letter-spacing:.06em}
+.circoe-v3-icon{display:inline-flex;width:24px;height:24px;align-items:center;justify-content:center;flex:none}
+.circoe-v3-icon svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+
+body:has(#workspace-switcher.circoe-v3-sidebar) .topbar{
+  min-height:72px;
+  min-width:0;
+  max-width:100%;
+  padding:14px 30px;
+  background:#fff;
+  color:var(--ink);
+  border-bottom:1px solid var(--line);
+  box-shadow:none;
+}
+body:has(#workspace-switcher.circoe-v3-sidebar) .topbar .brand-lockup{display:none}
+body:has(#workspace-switcher.circoe-v3-sidebar) .settings-access{
+  margin-left:auto;
+  background:#fff;
+  color:var(--circoe-blue-dark);
+  border:1px solid #cfdde8;
+  box-shadow:none;
+}
+body:has(#workspace-switcher.circoe-v3-sidebar) .settings-access:hover,
+body:has(#workspace-switcher.circoe-v3-sidebar) .settings-access.active{background:#f2f7fb;border-color:#8fb7d5;transform:none}
+
+body:has(#workspace-switcher.circoe-v3-sidebar) nav.tabs{
+  min-width:0;
+  max-width:100%;
+  margin:0;
+  padding:12px 30px 0;
+  background:#fff;
+  border-bottom:1px solid #e7edf2;
+  overflow-x:auto;
+  overflow-y:hidden;
+}
+body:has(#workspace-switcher.circoe-v3-sidebar) nav.tabs:empty{display:none}
+body:has(#workspace-switcher.circoe-v3-sidebar) main{
+  min-width:0;
+  max-width:100%;
+  margin:0;
+  padding:22px 30px 38px;
+}
+body:has(#workspace-switcher.circoe-v3-sidebar) main > .tab-panel,
+body:has(#workspace-switcher.circoe-v3-sidebar) #tab-settings.settings-page{
+  min-width:0!important;
+  width:100%!important;
+  max-width:100%!important;
+}
+body:has(#workspace-switcher.circoe-v3-sidebar) #tab-settings .settings-sections,
+body:has(#workspace-switcher.circoe-v3-sidebar) #tab-settings .settings-form,
+body:has(#workspace-switcher.circoe-v3-sidebar) #tab-settings .company-ai-mode-selector,
+body:has(#workspace-switcher.circoe-v3-sidebar) #tab-settings .company-endpoint-contract,
+body:has(#workspace-switcher.circoe-v3-sidebar) .viewer-grid,
+body:has(#workspace-switcher.circoe-v3-sidebar) .opx-comparison-scroll,
+body:has(#workspace-switcher.circoe-v3-sidebar) .table-wrap,
+body:has(#workspace-switcher.circoe-v3-sidebar) .facturx-table-wrap{
+  min-width:0;
+  max-width:100%;
+}
+body:has(#workspace-switcher.circoe-v3-sidebar) .panel{
+  min-width:0;
+  max-width:100%;
+  border:1px solid #dfe7ed;
+  border-radius:14px;
+  box-shadow:0 5px 20px rgba(5,46,70,.055);
+}
+
+.circoe-model-integrity-note{
+  display:flex;
+  gap:12px;
+  align-items:flex-start;
+  margin:0 0 16px;
+  padding:12px 14px;
+  border:1px solid #b9ddd8;
+  border-left:4px solid var(--circoe-green);
+  border-radius:10px;
+  background:#f0faf8;
+  color:#24424d;
+}
+.circoe-model-integrity-note strong{white-space:nowrap;color:#075f54}
+.circoe-model-integrity-note span{font-size:13px}
+.circoe-model-integrity-note code{font-weight:800;color:var(--circoe-blue)}
+
+.circoe-v3-heading{align-items:center}
+.circoe-v3-status{display:inline-flex;padding:7px 10px;border-radius:999px;font-size:12px;font-weight:800}
+.circoe-v3-status.planned{background:#fff4e6;color:#9a5b00;border:1px solid #ffd49a}
+.circoe-regulatory-panel{min-height:680px}
+.circoe-regulatory-grid{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(320px,.85fr);gap:16px}
+.circoe-v3-card{min-width:0;border:1px solid #dfe7ed;border-radius:12px;background:#fff;padding:20px;min-height:210px}
+.circoe-v3-card h3{margin:0 0 8px;font-size:17px;color:#0c3150}
+.circoe-v3-card p,.circoe-v3-card li{color:#62798a;font-size:13px}
+.circoe-v3-empty{margin-top:18px;padding:28px 18px;border:1px dashed #b8cad7;border-radius:10px;background:#f9fbfc;text-align:center;color:#6e8291;font-weight:650}
+.circoe-v3-calendar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin-top:22px}
+.circoe-v3-calendar span{min-width:0;padding:10px 4px;border-radius:8px;background:#f4f8fb;text-align:center;color:#526b7b;font-size:11px;font-weight:800}
+.circoe-v3-flow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;list-style:none;padding:0;margin:22px 0 14px;counter-reset:step}
+.circoe-v3-flow li{position:relative;min-width:0;padding:38px 8px 10px;border:1px solid #dbe6ed;border-radius:10px;text-align:center;font-weight:750;color:#24445b;background:#fbfdfe;counter-increment:step}
+.circoe-v3-flow li::before{content:counter(step);position:absolute;top:10px;left:50%;transform:translateX(-50%);display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--circoe-blue);color:#fff;font-size:11px}
+
+html[data-theme="dark"] body:has(#workspace-switcher.circoe-v3-sidebar){background:var(--wash)}
+html[data-theme="dark"] body:has(#workspace-switcher.circoe-v3-sidebar) .topbar,
+html[data-theme="dark"] body:has(#workspace-switcher.circoe-v3-sidebar) nav.tabs,
+html[data-theme="dark"] .circoe-v3-card{background:var(--paper);color:var(--ink)}
+html[data-theme="dark"] .circoe-v3-card h3{color:var(--ink)}
+html[data-theme="dark"] .circoe-v3-empty,
+html[data-theme="dark"] .circoe-v3-calendar span{background:var(--surface-2);border-color:var(--line);color:var(--muted)}
+html[data-theme="dark"] .circoe-model-integrity-note{background:#153d39;border-color:#2f746d;color:#d8f5ef}
+html[data-theme="dark"] .circoe-model-integrity-note strong{color:#8ae3d6}
+
+@media (max-width:1180px){
+  body:has(#workspace-switcher.circoe-v3-sidebar){
+    padding-left:0;
+  }
+  #workspace-switcher.circoe-v3-sidebar{
+    position:relative;
+    inset:auto;
+    z-index:20;
+    width:100%;
+    max-width:100%;
+    height:auto;
+    display:block!important;
+    overflow:hidden;
+    box-shadow:none;
+    background:linear-gradient(90deg,var(--circoe-blue-deep),#062b4a 65%,#041e35);
+  }
+  .circoe-v3-brand{display:none}
+  .circoe-v3-nav{
+    width:100%;
+    max-width:100%;
+    min-width:0;
+    flex-direction:row;
+    gap:6px;
+    padding:8px 10px;
+    overflow-x:auto;
+    overflow-y:hidden;
+    overscroll-behavior-x:contain;
+    scrollbar-width:thin;
+  }
+  .circoe-v3-nav-item{
+    flex:0 0 auto;
+    display:inline-flex;
+    width:auto;
+    min-width:max-content;
+    min-height:44px;
+    padding:8px 11px;
+    white-space:nowrap;
+  }
+  .circoe-v3-nav-item:hover{transform:none}
+  body:has(#workspace-switcher.circoe-v3-sidebar) .topbar{padding:12px 16px}
+  body:has(#workspace-switcher.circoe-v3-sidebar) nav.tabs{padding:10px 16px 0}
+  body:has(#workspace-switcher.circoe-v3-sidebar) main{padding:16px 16px 30px}
+  .circoe-regulatory-grid{grid-template-columns:1fr}
+}
+
+@media (max-width:650px){
+  .circoe-v3-nav{padding:7px 8px}
+  .circoe-v3-nav-item{font-size:12px;min-height:42px;padding:7px 9px}
+  .circoe-v3-nav-item small{font-size:8px}
+  .circoe-v3-icon{width:20px;height:20px}
+  .circoe-v3-icon svg{width:19px;height:19px}
+  body:has(#workspace-switcher.circoe-v3-sidebar) .topbar{min-height:60px;padding:10px 12px}
+  body:has(#workspace-switcher.circoe-v3-sidebar) nav.tabs{padding:8px 12px 0}
+  body:has(#workspace-switcher.circoe-v3-sidebar) main{padding:12px 10px 24px}
+  body:has(#workspace-switcher.circoe-v3-sidebar) #tab-settings .settings-sections,
+  body:has(#workspace-switcher.circoe-v3-sidebar) #tab-settings .settings-form,
+  body:has(#workspace-switcher.circoe-v3-sidebar) #tab-settings .theme-options,
+  body:has(#workspace-switcher.circoe-v3-sidebar) #tab-settings .company-ai-mode-selector{
+    grid-template-columns:minmax(0,1fr)!important;
+  }
+  body:has(#workspace-switcher.circoe-v3-sidebar) #tab-settings .company-endpoint-actions,
+  body:has(#workspace-switcher.circoe-v3-sidebar) #tab-settings .company-endpoint-contract{
+    flex-wrap:wrap!important;
+  }
+  body:has(#workspace-switcher.circoe-v3-sidebar) .viewer-grid{
+    grid-template-columns:minmax(0,1fr)!important;
+  }
+  .circoe-model-integrity-note{flex-direction:column;gap:4px}
+  .circoe-model-integrity-note strong{white-space:normal}
+  .circoe-v3-flow{grid-template-columns:repeat(2,minmax(0,1fr))}
+}

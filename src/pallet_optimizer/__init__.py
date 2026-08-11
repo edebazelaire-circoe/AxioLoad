@@ -16,8 +16,10 @@ from .document_control_permissions import install_document_control_permission_mi
 install_document_control_permission_migration()
 
 from . import prompt_center_system as _prompt_center_system
+from .admin_coherence import install_admin_coherence
 from .admin_panel import install_admin_panel_injection
 from .auth_experience_panel import install_auth_experience_injection
+from .circoe_workspace_v3 import install_circoe_workspace_v3
 from .client_grouping import install_client_grouping
 from .client_split_policy import install_client_split_policy
 from .company_ai_dual_mode import install_company_ai_dual_mode
@@ -70,3 +72,10 @@ install_company_ai_dual_mode()
 install_company_ai_privacy()
 install_company_ai_user_surface()
 install_security_hardening()
+# Install coherence after all FastAPI.__init__ wrappers so its admin route cannot
+# be shadowed by a later compatibility installer.
+install_admin_coherence()
+# Install the visual shell last so it composes all existing business panels,
+# including the Super Admin coherence surface, without replacing handlers,
+# routes or optimization model/result rendering.
+install_circoe_workspace_v3()

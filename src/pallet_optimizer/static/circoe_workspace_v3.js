@@ -81,12 +81,31 @@
   }
 
   function openOptimization(target = 'data') {
-    if (!openCoreWorkspace('optimization')) {
-      clickVisible(`nav.tabs [data-tab="${target}"]`);
-    } else if (target !== 'data') {
-      window.setTimeout(() => clickVisible(`nav.tabs [data-tab="${target}"]`), 0);
+    const openedCore = openCoreWorkspace('optimization');
+    const selectTarget = () => {
+      const selected = clickVisible(`nav.tabs [data-tab="${target}"]`);
+      const panel = q(`#tab-${target}`);
+      if (!selected && panel) activePanelOnly(panel);
+      if (selected || panel) selectNav(target === 'history' ? 'history' : 'optimization');
+      return selected || Boolean(panel);
+    };
+
+    if (!openedCore) {
+      selectTarget();
+      return;
     }
-    selectNav(target === 'history' ? 'history' : 'optimization');
+    if (target === 'data') {
+      selectNav('optimization');
+      return;
+    }
+
+    // The legacy workspace handler can rebuild tab visibility asynchronously.
+    // Retry after it settles, then use the existing panel only as a final UI fallback.
+    window.setTimeout(selectTarget, 80);
+    window.setTimeout(() => {
+      const panel = q(`#tab-${target}`);
+      if (panel && !panel.classList.contains('active')) selectTarget();
+    }, 260);
   }
 
   function openDocuments() {

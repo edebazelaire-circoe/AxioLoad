@@ -4,6 +4,7 @@
   const q = (selector, root = document) => root.querySelector(selector);
   const qa = (selector, root = document) => [...root.querySelectorAll(selector)];
   const STORAGE_KEY = 'axioload.circoe.workspace.v3';
+  const CORE_WORKSPACES = new Set(['database', 'optimization', 'documents', 'facturx']);
 
   const icons = {
     database: '<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>',
@@ -28,6 +29,7 @@
   ];
 
   const icon = name => `<span class="circoe-v3-icon"><svg viewBox="0 0 24 24" aria-hidden="true">${icons[name]}</svg></span>`;
+  const navSelector = '#workspace-switcher .circoe-v3-nav-item';
 
   function activePanelOnly(panel) {
     qa('main > .tab-panel').forEach(item => {
@@ -42,9 +44,13 @@
     try { sessionStorage.setItem(STORAGE_KEY, name); } catch (_) {}
   }
 
+  function buttonWorkspace(button) {
+    return button?.dataset.workspace || button?.dataset.circoeWorkspace || '';
+  }
+
   function selectNav(name) {
-    qa('#workspace-switcher [data-workspace]').forEach(button => {
-      const active = button.dataset.workspace === name;
+    qa(navSelector).forEach(button => {
+      const active = buttonWorkspace(button) === name;
       button.classList.toggle('active', active);
       button.setAttribute('aria-current', active ? 'page' : 'false');
     });
@@ -162,14 +168,14 @@
 
     const nav = document.createElement('nav');
     nav.className = 'circoe-v3-nav';
-    nav.innerHTML = entries.map(([name, label]) => `
-      <button type="button" data-workspace="${name}" class="circoe-v3-nav-item">
-        ${icon(name)}<span>${label}</span>${name === 'regulatory' ? '<small>Nouveau</small>' : ''}
-      </button>`).join('');
+    nav.innerHTML = entries.map(([name, label]) => {
+      const attribute = CORE_WORKSPACES.has(name) ? `data-workspace="${name}"` : `data-circoe-workspace="${name}"`;
+      return `<button type="button" ${attribute} class="circoe-v3-nav-item">${icon(name)}<span>${label}</span>${name === 'regulatory' ? '<small>Nouveau</small>' : ''}</button>`;
+    }).join('');
     switcher.append(nav);
 
-    qa('[data-workspace]', nav).forEach(button => button.addEventListener('click', () => route(button.dataset.workspace)));
-    const adminButton = q('[data-workspace="admin"]', nav);
+    qa('.circoe-v3-nav-item', nav).forEach(button => button.addEventListener('click', () => route(buttonWorkspace(button))));
+    const adminButton = q('[data-circoe-workspace="admin"]', nav);
     if (adminButton && !q('#open-admin')) {
       adminButton.disabled = true;
       adminButton.title = 'Disponible uniquement pour le Super Admin';

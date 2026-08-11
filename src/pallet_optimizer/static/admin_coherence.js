@@ -44,11 +44,22 @@
       ${warnings.length ? `<section class="admin-card coherence-card"><h3>Alertes</h3><div class="coherence-alerts">${warnings.map(item => `<div class="admin-notice ${item.severity === 'critical' ? 'warning' : ''}"><strong>${escapeHtml(item.code)}</strong><span>${escapeHtml(item.message)}</span></div>`).join('')}</div></section>` : ''}`;
   }
 
+  async function isSuperAdminContext() {
+    try {
+      const response = await fetch('/api/company/context', {credentials: 'same-origin'});
+      if (!response.ok) return false;
+      const context = await response.json();
+      return context?.mode === 'assistance' && context?.company?.id === 'local';
+    } catch (_) {
+      return false;
+    }
+  }
+
   async function load() {
-    // The management panel markup also exists on ordinary user pages, but the
-    // privileged admin entry point is exposed only for an authenticated Super Admin.
-    // Never probe the protected coherence endpoint from a normal user surface.
-    if (!document.querySelector('#open-admin')) return;
+    // The admin markup is injected on the application shell before the asynchronous
+    // company context has hidden it for ordinary users. Authorize the coherence
+    // fetch from the resolved session context, never from DOM presence alone.
+    if (!(await isSuperAdminContext())) return;
 
     const panel = document.querySelector('#admin-view-overview');
     if (!panel) {

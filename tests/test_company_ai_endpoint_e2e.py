@@ -120,10 +120,7 @@ def test_primary_manager_can_choose_endpoint_or_api_key(
         body_metrics = page.evaluate(
             "() => ({bodyWidth: document.documentElement.scrollWidth, viewportWidth: window.innerWidth})"
         )
-        if width <= 650:
-            assert body_metrics['bodyWidth'] > body_metrics['viewportWidth']
-        else:
-            assert body_metrics['bodyWidth'] <= body_metrics['viewportWidth'] + 1
+        assert body_metrics['bodyWidth'] <= body_metrics['viewportWidth'] + 1
 
         if width <= 650:
             card_box = card.bounding_box()
@@ -133,15 +130,14 @@ def test_primary_manager_can_choose_endpoint_or_api_key(
             test_box = card.locator('#company-ai-connection-test').bounding_box()
             delete_box = card.locator('#company-ai-connection-delete').bounding_box()
             assert card_box and mode_one and mode_two and save_box and test_box and delete_box
-            assert abs(mode_one['y'] - mode_two['y']) < 2
-            assert mode_two['x'] > mode_one['x'] + mode_one['width']
+            assert mode_two['y'] > mode_one['y'] + mode_one['height'] - 2
+            card_right = card_box['x'] + card_box['width'] + 1
+            for box in (mode_one, mode_two, save_box, test_box, delete_box):
+                assert box['x'] >= card_box['x'] - 1
+                assert box['x'] + box['width'] <= card_right
             assert save_box['height'] >= 43
             assert test_box['height'] >= 43
             assert delete_box['height'] >= 43
-            assert abs(save_box['y'] - test_box['y']) <= 3
-            assert abs(test_box['y'] - delete_box['y']) <= 3
-            assert save_box['width'] < card_box['width'] / 2
-            assert test_box['width'] < card_box['width'] / 2
 
         browser.close()
 

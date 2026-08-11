@@ -7,10 +7,19 @@ from fastapi.testclient import TestClient
 from pallet_optimizer.api import create_app
 
 
+SUPER_ADMIN_USERNAME = "superadmn"
+SUPER_ADMIN_PASSWORD = "test-super-admin-password-2026"
+
+
+def _configure_super_admin(monkeypatch) -> None:
+    monkeypatch.setenv("PLO_SUPER_ADMIN_USERNAME", SUPER_ADMIN_USERNAME)
+    monkeypatch.setenv("PLO_SUPER_ADMIN_PASSWORD", SUPER_ADMIN_PASSWORD)
+
+
 def _login_super_admin(client: TestClient) -> None:
     response = client.post(
         "/api/auth/super-admin-login",
-        json={"identifier": "superadmn", "password": "0123456789"},
+        json={"identifier": SUPER_ADMIN_USERNAME, "password": SUPER_ADMIN_PASSWORD},
     )
     assert response.status_code == 200, response.text
 
@@ -69,7 +78,8 @@ def _create_and_activate_company(
     return tenant_id, user_id, password
 
 
-def test_company_created_by_superadmin_can_log_in_without_technical_tenant_id(tmp_path):
+def test_company_created_by_superadmin_can_log_in_without_technical_tenant_id(tmp_path, monkeypatch):
+    _configure_super_admin(monkeypatch)
     app = create_app(tmp_path)
     admin_client = TestClient(app)
     user_client = TestClient(app)
@@ -97,7 +107,8 @@ def test_company_created_by_superadmin_can_log_in_without_technical_tenant_id(tm
     assert context.json()["user"]["email"] == "portail@example.test"
 
 
-def test_forgot_password_and_superadmin_reset_without_reset_token(tmp_path):
+def test_forgot_password_and_superadmin_reset_without_reset_token(tmp_path, monkeypatch):
+    _configure_super_admin(monkeypatch)
     app = create_app(tmp_path)
     admin_client = TestClient(app)
     user_client = TestClient(app)

@@ -16,6 +16,7 @@ from .document_control_permissions import install_document_control_permission_mi
 install_document_control_permission_migration()
 
 from . import prompt_center_system as _prompt_center_system
+from .admin_coherence import install_admin_coherence
 from .admin_panel import install_admin_panel_injection
 from .auth_experience_panel import install_auth_experience_injection
 from .client_grouping import install_client_grouping
@@ -53,6 +54,7 @@ install_partial_model_success_policy()
 install_client_split_policy()
 install_unlimited_item_count()
 install_admin_panel_injection()
+install_admin_coherence()
 install_document_control_panel_injection()
 install_document_control_experience_injection()
 install_optimization_experience_injection()

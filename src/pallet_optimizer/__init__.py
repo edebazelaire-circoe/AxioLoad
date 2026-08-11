@@ -55,7 +55,6 @@ install_partial_model_success_policy()
 install_client_split_policy()
 install_unlimited_item_count()
 install_admin_panel_injection()
-install_admin_coherence()
 install_document_control_panel_injection()
 install_document_control_experience_injection()
 install_optimization_experience_injection()
@@ -73,6 +72,9 @@ install_company_ai_dual_mode()
 install_company_ai_privacy()
 install_company_ai_user_surface()
 install_security_hardening()
+# Install coherence after all FastAPI.__init__ wrappers so its admin route cannot
+# be shadowed by a later compatibility installer.
+install_admin_coherence()
 # Install the visual shell last so it composes all existing business panels,
 # including the Super Admin coherence surface, without replacing handlers,
 # routes or optimization model/result rendering.

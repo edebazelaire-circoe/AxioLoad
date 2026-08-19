@@ -16,6 +16,7 @@ dependencies = [
   "reportlab>=4.4,<5",
   "python-multipart>=0.0.29,<1",
   "cryptography>=46,<47",
+  "argon2-cffi>=23.1,<26",
   "pillow>=12,<13",
   "pypdf>=5,<6",
 ]

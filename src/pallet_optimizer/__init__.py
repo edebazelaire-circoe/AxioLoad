@@ -41,6 +41,7 @@ from .prompt_center_experience_panel import install_prompt_center_experience_inj
 from .prompt_center_system import install_prompt_center_system
 from .scaling import install_unlimited_item_count
 from .security_hardening import install_security_hardening
+from .security_upgrade import install_security_upgrade
 from .super_admin_routes import install_super_admin_routes
 
 __version__ = "0.20.0"
@@ -79,3 +80,6 @@ install_admin_coherence()
 # including the Super Admin coherence surface, without replacing handlers,
 # routes or optimization model/result rendering.
 install_circoe_workspace_v3()
+# Security is installed last so every route and compatibility layer is covered by
+# the same fail-closed authentication, session and CSRF policy.
+install_security_upgrade()

@@ -27,6 +27,7 @@ _PUBLIC_PATHS = frozenset({
     "/api/auth/logout",
     "/api/auth/super-admin-login",
     "/api/auth/forgot-password",
+    "/api/auth/test-accounts",
     "/api/invitations/preview",
     "/api/invitations/activate",
     "/docs",
@@ -241,8 +242,7 @@ def _harden_cookies(response: Response) -> None:
         filtered.append(b"SameSite=Strict")
         if secure_required:
             filtered.append(b"Secure")
-        value = b"; ".join(filtered)
-        output.append((name, value))
+        output.append((name, b"; ".join(filtered)))
     response.raw_headers = output
 
 
@@ -269,7 +269,8 @@ class SaaSSecurityBoundaryMiddleware(BaseHTTPMiddleware):
 
         response = await call_next(request)
         _harden_cookies(response)
-        response.headers.setdefault("Cache-Control", "no-store" if has_browser_session else response.headers.get("Cache-Control", "no-store"))
+        if has_browser_session:
+            response.headers.setdefault("Cache-Control", "no-store")
         return response
 
 

@@ -27,7 +27,7 @@ def _item(index: int) -> CargoItem:
     return CargoItem(
         id=f"QA-PAL-{index}",
         source_id=f"QA-PAL-{index}",
-        source_index=index,
+        input_index=index,
         shape=Shape.PALLET,
         length_mm=1200,
         width_mm=1200,

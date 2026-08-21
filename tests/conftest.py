@@ -10,15 +10,22 @@ from pallet_optimizer.domain import AxleSpec, VehicleVersion
 
 @pytest.fixture(autouse=True)
 def legacy_super_admin_test_compatibility(request, monkeypatch):
-    """Preserve only the historical tests that predate authenticated sessions."""
+    """Preserve historical local-mode tests while security tests exercise SaaS defaults."""
     monkeypatch.setenv("PLO_TEST_ACCOUNTS_ONLY", "0")
+    monkeypatch.setenv("PLO_COOKIE_SECURE", "0")
     authenticated_test_modules = {
         "test_super_admin_auth.py",
         "test_company_login_and_password_reset.py",
         "test_fixed_test_accounts.py",
+        "test_saas_security_hardening.py",
     }
     if request.node.path.name in authenticated_test_modules:
+        monkeypatch.setenv("PLO_LOCAL_MODE", "0")
         return
+
+    # Older unit/UI tests intentionally exercise the historical local desktop
+    # edition. Production and SaaS deployments are fail-closed by default.
+    monkeypatch.setenv("PLO_LOCAL_MODE", "1")
 
     def resolve_test_actor(self: AdminRepository, session_id: str | None = None) -> str:
         del self, session_id

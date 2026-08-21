@@ -6,6 +6,7 @@ services:
     environment:
       PLO_DATA_DIR: /app/data
       PLO_TEST_ACCOUNTS_ONLY: "${PLO_TEST_ACCOUNTS_ONLY:-0}"
+      PLO_LOCAL_MODE: "${PLO_LOCAL_MODE:-0}"
       PLO_SUPER_ADMIN_EMAIL: "${PLO_SUPER_ADMIN_EMAIL:-superadmin@example.invalid}"
       PLO_SUPER_ADMIN_USERNAME: "${PLO_SUPER_ADMIN_USERNAME:-superadmin}"
       PLO_SUPER_ADMIN_PASSWORD: "${PLO_SUPER_ADMIN_PASSWORD:-}"

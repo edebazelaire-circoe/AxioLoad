@@ -1,0 +1,36 @@
+name: QA Request Bridge
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  qa:
+    if: >-
+      startsWith(github.event.issue.title, '[QA RUN]') &&
+      contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.issue.author_association)
+    uses: ./.github/workflows/ci.yml
+
+  finalize:
+    needs: qa
+    if: >-
+      always() &&
+      startsWith(github.event.issue.title, '[QA RUN]') &&
+      contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.issue.author_association)
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Publish QA result and close request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          QA_RESULT: ${{ needs.qa.result }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          gh issue comment "$ISSUE_NUMBER" --repo "$REPOSITORY" --body "QA Control request completed with result: **$QA_RESULT**. The application CI was executed on the current default branch."
+          gh issue close "$ISSUE_NUMBER" --repo "$REPOSITORY" --reason completed

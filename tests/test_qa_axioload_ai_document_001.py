@@ -141,7 +141,7 @@ def test_axioload_ai_document_001_transcribes_only_supported_facts_and_persists_
     assert history.status_code == 200
     persisted = history.json()
     assert persisted["id"] == control["id"]
-    assert persisted["summary"] == control["summary"]
+    assert persisted["ai_summary"] == control["ai_summary"]
     assert {item["field_name"] for item in persisted["items"]} == EXPECTED_FIELDS
     assert "qa-transport-order.png" not in str(persisted)
     assert "qa-cmr.png" not in str(persisted)

@@ -272,9 +272,19 @@ def test_axioload_ai_document_001_visible_form_matches_analysis_and_reload(tmp_p
                 "() => document.querySelector('#dc-message')?.textContent.includes('Corrections et exclusions enregistrées')"
             )
 
-            # Reload through the visible history workflow and compare the same
-            # form values again. This catches API/UI mapping drift as well as
-            # persistence regressions.
+            # Start a fresh browser page state before verifying persistence. A
+            # browser legitimately keeps the locally selected filename in the
+            # file input until navigation/reload; that is not server persistence.
+            # Reloading clears the local File objects, then the history workflow
+            # must reconstruct the visible analysis entirely from persisted data.
+            page.reload(wait_until="networkidle")
+            documents_workspace = page.locator('[data-workspace="documents"]')
+            documents_workspace.wait_for(state="visible")
+            documents_workspace.click()
+            page.locator("#dc-form").wait_for(state="visible")
+            assert page.locator('input[name="left_file"]').input_value() == ""
+            assert page.locator('input[name="right_file"]').input_value() == ""
+
             page.locator("#dc-history-view").click()
             page.wait_for_function(
                 f"() => document.querySelector('#dc-history-list')?.textContent.includes('{FIXTURE_ID}')"

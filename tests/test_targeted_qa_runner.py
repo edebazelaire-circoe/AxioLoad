@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from scripts.run_targeted_qa import (
+from pallet_optimizer.qa_targeted_runner import (
     MAX_REPETITIONS,
     ROOT,
     SCENARIOS,

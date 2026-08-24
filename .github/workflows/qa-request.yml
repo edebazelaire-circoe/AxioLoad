@@ -32,14 +32,14 @@ jobs:
       - name: Install Chromium for targeted UI scenarios
         run: python -m playwright install --with-deps chromium
       - name: Compile QA runner and application
-        run: python -m compileall -q src scripts
+        run: python -m compileall -q src
       - name: Execute targeted scenario and collect evidence
         id: targeted_run
         continue-on-error: true
         env:
           QA_REQUEST_TITLE: ${{ github.event.issue.title }}
           QA_REQUEST_BODY: ${{ github.event.issue.body }}
-        run: python scripts/run_targeted_qa.py --output-dir qa-results
+        run: python -m pallet_optimizer.qa_targeted_runner --output-dir qa-results
       - name: Upload targeted QA evidence
         if: always()
         uses: actions/upload-artifact@v4

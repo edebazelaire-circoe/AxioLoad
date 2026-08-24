@@ -8,10 +8,82 @@ permissions:
   contents: read
   issues: write
 
+concurrency:
+  group: qa-request-${{ github.event.issue.number || github.run_id }}
+  cancel-in-progress: false
+
 jobs:
+  targeted:
+    if: >-
+      startsWith(github.event.issue.title, '[QA RUN] CIBLE') &&
+      contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.issue.author_association)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install AxioLoad QA dependencies
+        run: python -m pip install -e '.[dev]'
+      - name: Install Chromium for targeted UI scenarios
+        run: python -m playwright install --with-deps chromium
+      - name: Compile QA runner and application
+        run: python -m compileall -q src
+      - name: Execute targeted scenario and collect evidence
+        id: targeted_run
+        continue-on-error: true
+        env:
+          QA_REQUEST_TITLE: ${{ github.event.issue.title }}
+          QA_REQUEST_BODY: ${{ github.event.issue.body }}
+        run: python -m pallet_optimizer.qa_targeted_runner --output-dir qa-results
+      - name: Upload targeted QA evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-targeted-evidence-issue-${{ github.event.issue.number }}
+          path: qa-results
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Publish targeted proof and close request
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          REPOSITORY: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          STEP_OUTCOME: ${{ steps.targeted_run.outcome }}
+        run: |
+          if [ -f qa-results/summary.md ]; then
+            cp qa-results/summary.md qa-comment.md
+          else
+            {
+              echo "## QA targeted evidence"
+              echo "- Conclusion technique : **INFRA_FAILURE**"
+              echo "- GitHub Actions : $RUN_URL"
+              echo "- Motif : le runner ciblé n'a produit aucun rapport exploitable."
+            } > qa-comment.md
+          fi
+          echo >> qa-comment.md
+          echo "- Étape d'exécution GitHub : **$STEP_OUTCOME**" >> qa-comment.md
+          gh issue comment "$ISSUE_NUMBER" --repo "$REPOSITORY" --body-file qa-comment.md
+          gh issue close "$ISSUE_NUMBER" --repo "$REPOSITORY" --reason completed
+      - name: Enforce targeted result
+        if: always()
+        env:
+          STEP_OUTCOME: ${{ steps.targeted_run.outcome }}
+        run: |
+          if [ "$STEP_OUTCOME" != "success" ]; then
+            exit 1
+          fi
+
   qa:
     if: >-
       startsWith(github.event.issue.title, '[QA RUN]') &&
+      !startsWith(github.event.issue.title, '[QA RUN] CIBLE') &&
       contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.issue.author_association)
     uses: ./.github/workflows/ci.yml
 
@@ -20,6 +92,7 @@ jobs:
     if: >-
       always() &&
       startsWith(github.event.issue.title, '[QA RUN]') &&
+      !startsWith(github.event.issue.title, '[QA RUN] CIBLE') &&
       contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.issue.author_association)
     runs-on: ubuntu-latest
     permissions:
@@ -31,6 +104,19 @@ jobs:
           QA_RESULT: ${{ needs.qa.result }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           REPOSITORY: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          REF_NAME: ${{ github.ref_name }}
+          COMMIT_SHA: ${{ github.sha }}
         run: |
-          gh issue comment "$ISSUE_NUMBER" --repo "$REPOSITORY" --body "QA Control request completed with result: **$QA_RESULT**. The application CI was executed on the current default branch."
+          {
+            echo "## QA execution evidence"
+            echo "- Conclusion technique : **$QA_RESULT**"
+            echo "- Recette : CI applicative complète (compileall, pytest, build Docker)"
+            echo "- Branche/ref : $REF_NAME"
+            echo "- Commit testé : $COMMIT_SHA"
+            echo "- GitHub Actions : $RUN_URL"
+            echo
+            echo "Cette recette est globale. Elle ne doit pas être présentée comme la preuve d'un scénario CIBLÉ précis."
+          } > qa-comment.md
+          gh issue comment "$ISSUE_NUMBER" --repo "$REPOSITORY" --body-file qa-comment.md
           gh issue close "$ISSUE_NUMBER" --repo "$REPOSITORY" --reason completed

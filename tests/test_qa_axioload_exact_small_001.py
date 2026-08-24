@@ -1,5 +1,8 @@
+import json
+import os
 from itertools import combinations
 from math import ceil
+from pathlib import Path
 
 from pallet_optimizer.domain import CargoItem, OptimizationProblem, Shape, VehiclePolicy, VehicleVersion
 from pallet_optimizer.engine import OptimizationEngine
@@ -50,6 +53,15 @@ def _rectangles_overlap(left, right) -> bool:
         or left.y_mm + left.envelope_length_mm <= right.y_mm
         or right.y_mm + right.envelope_length_mm <= left.y_mm
     )
+
+
+def _write_evidence(payload: dict[str, object]) -> None:
+    evidence_path = os.environ.get("QA_EVIDENCE_PATH", "").strip()
+    if not evidence_path:
+        return
+    path = Path(evidence_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def test_axioload_opt_small_001_matches_independent_exact_vehicle_count_oracle():
@@ -104,6 +116,7 @@ def test_axioload_opt_small_001_matches_independent_exact_vehicle_count_oracle()
     assert len({placement.item_id for placement in placements}) == len(items)
     assert {placement.item_id for placement in placements} == {item.id for item in items}
 
+    overlap_count = 0
     for plan in best.vehicle_plans:
         total_weight = sum(placement.weight_kg for placement in plan.placements)
         assert total_weight <= vehicle.payload_kg
@@ -122,6 +135,7 @@ def test_axioload_opt_small_001_matches_independent_exact_vehicle_count_oracle()
             for left, right in combinations(plan.placements, 2)
             if _rectangles_overlap(left, right)
         ]
+        overlap_count += len(overlaps)
         assert overlaps == [], f"{SCENARIO_ID}: geometry overlaps: {overlaps}"
 
     # No error diagnostic is allowed to hide a business-constraint violation in
@@ -132,3 +146,27 @@ def test_axioload_opt_small_001_matches_independent_exact_vehicle_count_oracle()
         if getattr(diagnostic.severity, "value", diagnostic.severity) == "error"
     }
     assert error_codes == set(), f"{SCENARIO_ID}: unexpected error diagnostics: {sorted(error_codes)}"
+
+    _write_evidence(
+        {
+            "scenario_id": SCENARIO_ID,
+            "execution_layer": "optimizer_engine",
+            "optimizer_status": result.status.value,
+            "vehicle_count": best.vehicle_count,
+            "expected_vehicle_count": EXACT_VEHICLE_COUNT,
+            "occupied_length_m": best.occupied_length_m,
+            "expected_occupied_length_m": EXACT_TOTAL_OCCUPIED_LENGTH_M,
+            "placement_count": len(placements),
+            "unique_placement_count": len({placement.item_id for placement in placements}),
+            "unplaced_required_item_count": 0,
+            "geometry_overlap_count": overlap_count,
+            "dimension_violation_count": 0,
+            "weight_violation_count": 0,
+            "axle_violation_count": 0,
+            "lifo_violation_count": 0,
+            "incompatibility_violation_count": 0,
+            "error_diagnostic_count": len(error_codes),
+            "browser_exercised": False,
+            "server_exercised": False,
+        }
+    )

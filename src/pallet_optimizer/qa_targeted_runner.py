@@ -57,6 +57,16 @@ SCENARIOS: dict[str, Scenario] = {
             "incompatibility cases produce the expected deterministic diagnostics."
         ),
     ),
+    "AXIO-MULTI-SIM-001": Scenario(
+        test_path="tests/test_qa_axioload_multi_sim_ui_001.py",
+        oracle=(
+            "Five distinct deterministic simulations are executed through the real AxioLoad browser UI: "
+            "8/15/24/36/50 pallets for 1/2/3/4/5 clients. Every case must place every pallet, expose every "
+            "client in the result UI, return no geometry overlap or error diagnostic, clean its QA history, "
+            "and capture both input and result screenshots. Vehicle counts and occupied lengths are observed "
+            "business outputs, not hard-coded optimum claims."
+        ),
+    ),
 }
 
 
@@ -104,6 +114,29 @@ def _read_evidence(path: Path) -> dict[str, object]:
 def _format_evidence(evidence: dict[str, object]) -> str:
     if not evidence:
         return "no scenario-specific metric file emitted; pytest assertions are the available proof"
+
+    simulations = evidence.get("simulations")
+    if isinstance(simulations, list) and simulations:
+        header = (
+            f"execution_layer={evidence.get('execution_layer')}, simulation_count={evidence.get('simulation_count')}, "
+            f"all_cases_distinct={evidence.get('all_cases_distinct')}, total_pallets_tested={evidence.get('total_pallets_tested')}, "
+            f"total_clients_tested={evidence.get('total_clients_tested')}, screenshot_count={evidence.get('screenshot_count')}, "
+            f"report_file={evidence.get('report_file')}"
+        )
+        details = []
+        for simulation in simulations:
+            if not isinstance(simulation, dict):
+                continue
+            details.append(
+                "    - "
+                f"{simulation.get('case_id')}: pallets={simulation.get('pallet_count')}, "
+                f"clients={simulation.get('client_count')}, vehicles={simulation.get('vehicle_count')}, "
+                f"occupied_length_m={simulation.get('occupied_length_m')}, placements={simulation.get('placement_count')}, "
+                f"overlaps={simulation.get('geometry_overlap_count')}, errors={simulation.get('error_diagnostic_count')}, "
+                f"input_capture={simulation.get('input_screenshot')}, result_capture={simulation.get('result_screenshot')}"
+            )
+        return header + "\n" + "\n".join(details)
+
     preferred = [
         "execution_layer",
         "optimizer_status",
@@ -191,7 +224,8 @@ def _write_summary(
                 f"errors={counts.get('errors', 0)}, skipped={counts.get('skipped', 0)}, "
                 f"time={counts.get('time_s', 0.0)}s"
             )
-            lines.append(f"  - {_format_evidence(run.get('evidence', {}))}")
+            formatted = _format_evidence(run.get("evidence", {}))
+            lines.append("  - " + formatted.replace("\n", "\n"))
     if reason:
         lines.extend(["", "### Motif", reason])
     lines.extend(

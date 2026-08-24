@@ -1,3 +1,4 @@
+from itertools import combinations
 from math import ceil
 
 from pallet_optimizer.domain import CargoItem, OptimizationProblem, Shape, VehiclePolicy, VehicleVersion
@@ -5,6 +6,9 @@ from pallet_optimizer.engine import OptimizationEngine
 
 
 SCENARIO_ID = "AXIO-OPT-SMALL-001"
+PALLET_SIDE_MM = 1200
+EXACT_VEHICLE_COUNT = 2
+EXACT_TOTAL_OCCUPIED_LENGTH_M = 3.6
 
 
 def _vehicle() -> VehicleVersion:
@@ -29,8 +33,8 @@ def _item(index: int) -> CargoItem:
         source_id=f"QA-PAL-{index}",
         input_index=index,
         shape=Shape.PALLET,
-        length_mm=1200,
-        width_mm=1200,
+        length_mm=PALLET_SIDE_MM,
+        width_mm=PALLET_SIDE_MM,
         height_mm=1000,
         weight_kg=500,
         destination="QA Client",
@@ -39,22 +43,48 @@ def _item(index: int) -> CargoItem:
     )
 
 
+def _rectangles_overlap(left, right) -> bool:
+    return not (
+        left.x_mm + left.envelope_width_mm <= right.x_mm
+        or right.x_mm + right.envelope_width_mm <= left.x_mm
+        or left.y_mm + left.envelope_length_mm <= right.y_mm
+        or right.y_mm + right.envelope_length_mm <= left.y_mm
+    )
+
+
 def test_axioload_opt_small_001_matches_independent_exact_vehicle_count_oracle():
     vehicle = _vehicle()
     items = tuple(_item(index) for index in range(5))
 
-    # Independent lower bound: a 2400 x 2400 floor can contain at most four
-    # non-rotated 1200 x 1200 pallets. Five pallets therefore require >= 2 vehicles.
+    # Independent vehicle-count oracle. A 2400 x 2400 floor can contain at most
+    # four non-rotated 1200 x 1200 pallets. Five pallets therefore require at
+    # least two vehicles, and a constructive 4 + 1 split proves two feasible.
     floor_area = vehicle.interior_length_mm * vehicle.interior_width_mm
     item_area = items[0].length_mm * items[0].width_mm
     max_items_per_vehicle_by_area = floor_area // item_area
     exact_lower_bound = ceil(len(items) / max_items_per_vehicle_by_area)
-    assert exact_lower_bound == 2
+    assert exact_lower_bound == EXACT_VEHICLE_COUNT
+
+    # Independent occupied-length oracle. In one 1200-mm longitudinal row, a
+    # 2400-mm-wide vehicle can hold at most two pallets. With five pallets and
+    # exactly two non-empty vehicles, one vehicle therefore needs two rows
+    # (2400 mm) while the other needs at least one row (1200 mm): 3.6 m total.
+    rows_required = ceil(len(items) / 2)
+    assert rows_required == 3
+    exact_occupied_length_m = rows_required * PALLET_SIDE_MM / 1000.0
+    assert exact_occupied_length_m == EXACT_TOTAL_OCCUPIED_LENGTH_M
+
+    # The crafted fixture intentionally has no axle model, no incompatibility
+    # tags and one common delivery stop/order. Therefore axle, incompatibility
+    # and LIFO violation counts have an independently known value of zero.
+    assert vehicle.axles == ()
+    assert all(not item.compatibility_tags and not item.incompatible_tags for item in items)
+    assert len({(item.destination, item.delivery_order) for item in items}) == 1
 
     problem = OptimizationProblem(
         items=items,
         vehicles=(vehicle,),
-        vehicle_policy=VehiclePolicy("forced", vehicle.model_id, 2),
+        vehicle_policy=VehiclePolicy("forced", vehicle.model_id, EXACT_VEHICLE_COUNT),
         seed=7,
         budget_seconds=3,
         requested_solutions=5,
@@ -67,14 +97,18 @@ def test_axioload_opt_small_001_matches_independent_exact_vehicle_count_oracle()
     best = result.solutions[0]
     assert best.vehicle_count == exact_lower_bound
     assert all(solution.vehicle_count == exact_lower_bound for solution in result.solutions)
+    assert abs(best.occupied_length_m - exact_occupied_length_m) < 1e-9
 
     placements = [placement for plan in best.vehicle_plans for placement in plan.placements]
     assert len(placements) == len(items)
     assert len({placement.item_id for placement in placements}) == len(items)
+    assert {placement.item_id for placement in placements} == {item.id for item in items}
 
     for plan in best.vehicle_plans:
         total_weight = sum(placement.weight_kg for placement in plan.placements)
         assert total_weight <= vehicle.payload_kg
+        assert plan.weight.axle_loads_kg == ()
+
         for placement in plan.placements:
             assert placement.x_mm >= 0
             assert placement.y_mm >= 0
@@ -83,5 +117,18 @@ def test_axioload_opt_small_001_matches_independent_exact_vehicle_count_oracle()
             assert placement.y_mm + placement.envelope_length_mm <= vehicle.interior_length_mm
             assert placement.z_mm + placement.actual_height_mm <= vehicle.interior_height_mm
 
-    # Constructive upper bound from the optimizer is also 2, so lower == upper.
-    assert best.vehicle_count == 2
+        overlaps = [
+            (left.item_id, right.item_id)
+            for left, right in combinations(plan.placements, 2)
+            if _rectangles_overlap(left, right)
+        ]
+        assert overlaps == [], f"{SCENARIO_ID}: geometry overlaps: {overlaps}"
+
+    # No error diagnostic is allowed to hide a business-constraint violation in
+    # an otherwise returned solution.
+    error_codes = {
+        diagnostic.code
+        for diagnostic in (*result.diagnostics, *best.diagnostics)
+        if getattr(diagnostic.severity, "value", diagnostic.severity) == "error"
+    }
+    assert error_codes == set(), f"{SCENARIO_ID}: unexpected error diagnostics: {sorted(error_codes)}"

@@ -232,7 +232,7 @@ def test_axioload_ai_document_001_visible_form_matches_analysis_and_reload(tmp_p
 
             # Use the visible workspace switcher installed by AxioLoad's normal
             # UI scripts rather than opening an internal API-only view.
-            documents_workspace = page.locator('[data-workspace="documents"]')
+            documents_workspace = page.get_by_role("button", name="Contrôle documentaire")
             documents_workspace.wait_for(state="visible")
             documents_workspace.click()
             page.locator("#dc-form").wait_for(state="visible")
@@ -278,7 +278,7 @@ def test_axioload_ai_document_001_visible_form_matches_analysis_and_reload(tmp_p
             # Reloading clears the local File objects, then the history workflow
             # must reconstruct the visible analysis entirely from persisted data.
             page.reload(wait_until="networkidle")
-            documents_workspace = page.locator('[data-workspace="documents"]')
+            documents_workspace = page.get_by_role("button", name="Contrôle documentaire")
             documents_workspace.wait_for(state="visible")
             documents_workspace.click()
             page.locator("#dc-form").wait_for(state="visible")

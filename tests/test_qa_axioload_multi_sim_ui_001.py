@@ -257,9 +257,18 @@ def test_axioload_multi_sim_001_executes_five_distinct_ui_simulations_with_scree
         page.locator('#workspace-switcher [data-workspace="optimization"]').click()
         page.locator('[data-tab="data"]').click()
         page.locator("#tab-data.active").wait_for(state="visible")
-        page.locator("#vehicle-id").select_option("semi_trailer")
-        page.locator("#max-vehicles").fill("10")
-        page.locator("#budget-seconds").fill("3")
+
+        # Use the same visible fleet controls as a real user. The current UI
+        # intentionally hides #vehicle-id/#max-vehicles as legacy sync fields.
+        fleet_row = page.locator("#fleet-lines .fleet-line").first
+        fleet_row.wait_for(state="visible")
+        fleet_row.locator("select").select_option("semi_trailer")
+        fleet_quantity = fleet_row.locator('input[type="number"]')
+        fleet_quantity.fill("10")
+        fleet_quantity.press("Tab")
+        page.locator("#calculation-toolbar #budget-seconds").fill("3")
+        assert page.locator("#vehicle-id").input_value() == "semi_trailer"
+        assert page.locator("#max-vehicles").input_value() == "10"
 
         for case in CASES:
             page.locator('[data-tab="data"]').click()

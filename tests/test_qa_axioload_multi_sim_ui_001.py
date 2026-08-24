@@ -266,9 +266,10 @@ def test_axioload_multi_sim_001_executes_five_distinct_ui_simulations_with_scree
         fleet_quantity = fleet_row.locator('input[type="number"]')
         fleet_quantity.fill("10")
         fleet_quantity.press("Tab")
-        page.locator("#calculation-toolbar #budget-seconds").fill("3")
+        page.locator("#budget-seconds").select_option("5")
         assert page.locator("#vehicle-id").input_value() == "semi_trailer"
         assert page.locator("#max-vehicles").input_value() == "10"
+        assert page.locator("#budget-seconds").input_value() == "5"
 
         for case in CASES:
             page.locator('[data-tab="data"]').click()

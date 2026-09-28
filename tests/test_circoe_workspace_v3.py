@@ -18,17 +18,17 @@ def _read(name: str) -> str:
     return (STATIC / name).read_text(encoding="utf-8")
 
 
-def test_eight_circoe_workspaces_are_declared_without_fake_regulatory_data() -> None:
+def test_eight_portal_modules_are_declared_without_fake_regulatory_data() -> None:
     script = _read("circoe_workspace_v3.js")
     for label in (
-        "1. Base de données",
-        "2. Optimisation",
-        "3. Contrôle documentaire",
-        "4. Contrôle réglementaire",
-        "5. Facturation électronique / Factur-X",
-        "6. Historique & traçabilité",
-        "7. Paramètres & IA",
-        "8. Super Admin",
+        "Base de données",
+        "Optimisation de chargement",
+        "Contrôle documentaire",
+        "Contrôle réglementaire",
+        "Facturation électronique / Factur-X",
+        "Historique & traçabilité",
+        "Paramètres & IA",
+        "Super Admin",
     ):
         assert label in script
     assert "Préparé · non actif" in script
@@ -36,12 +36,14 @@ def test_eight_circoe_workspaces_are_declared_without_fake_regulatory_data() -> 
     assert "conformité supposée" in script
 
 
-def test_circoe_palette_and_sidebar_are_explicit() -> None:
+def test_circoe_palette_and_portal_are_explicit() -> None:
     css = _read("circoe_workspace_v3.css").lower()
     for color in ("#005696", "#f8af44", "#e73147", "#40b1a1", "#ece9e9"):
         assert color in css
-    assert "circoe-v3-sidebar" in css
-    assert "--circoe-sidebar" in css
+    assert "circoe-v3-portal" in css
+    assert "circoe-v3-grid" in css
+    assert "grid-template-columns:repeat(3" in css
+    assert "@media(max-width:680px)" in css
 
 
 def test_ui_shell_does_not_reimplement_optimization_algorithms() -> None:

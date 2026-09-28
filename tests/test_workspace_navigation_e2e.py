@@ -73,7 +73,7 @@ def _assert_only_panel(page: Page, panel_id: str, *, settle_ms: int = 0) -> None
     assert page.locator(panel_id).is_visible()
 
 
-def _sidebar(page: Page, name: str):
+def _portal_module(page: Page, name: str):
     selector = (
         f'#workspace-switcher .circoe-v3-nav-item[data-workspace="{name}"], '
         f'#workspace-switcher .circoe-v3-nav-item[data-circoe-workspace="{name}"]'
@@ -85,7 +85,7 @@ def _nav_label(item) -> str:
     return item.locator(":scope > span:not(.circoe-v3-icon)").inner_text().strip()
 
 
-def test_real_browser_navigation_uses_eight_workspaces_and_preserves_business_views(live_app: str) -> None:
+def test_real_browser_portal_uses_eight_modules_and_preserves_business_views(live_app: str) -> None:
     ARTIFACTS.mkdir(exist_ok=True)
     console_errors: list[str] = []
     page_errors: list[str] = []
@@ -100,29 +100,30 @@ def test_real_browser_navigation_uses_eight_workspaces_and_preserves_business_vi
 
         try:
             page.goto(live_app, wait_until="networkidle")
-            page.locator("#workspace-switcher.circoe-v3-sidebar").wait_for(state="visible")
+            page.locator("#workspace-switcher.circoe-v3-portal").wait_for(state="visible")
             items = page.locator("#workspace-switcher .circoe-v3-nav-item")
             assert items.count() == 8
             expected = [
-                "1. Base de données",
-                "2. Optimisation",
-                "3. Contrôle documentaire",
-                "4. Contrôle réglementaire",
-                "5. Facturation électronique / Factur-X",
-                "6. Historique & traçabilité",
-                "7. Paramètres & IA",
-                "8. Super Admin",
+                "Base de données",
+                "Optimisation de chargement",
+                "Contrôle documentaire",
+                "Contrôle réglementaire",
+                "Facturation électronique / Factur-X",
+                "Historique & traçabilité",
+                "Paramètres & IA",
+                "Super Admin",
             ]
             assert [_nav_label(items.nth(index)) for index in range(8)] == expected
 
             boxes = [items.nth(index).bounding_box() for index in range(8)]
             assert all(boxes)
-            assert all(boxes[index + 1]["y"] > boxes[index]["y"] for index in range(7))
-            assert max(abs(box["x"] - boxes[0]["x"]) for box in boxes if box) < 2
+            assert len({round(box["x"]) for box in boxes[:3] if box}) == 3
+            assert abs(boxes[0]["y"] - boxes[1]["y"]) < 2
+            assert boxes[3]["y"] > boxes[0]["y"]
 
             _assert_only_panel(page, "#tab-vehicles", settle_ms=1200)
 
-            _sidebar(page, "optimization").click()
+            _portal_module(page, "optimization").click()
             _assert_only_panel(page, "#tab-data", settle_ms=1200)
             assert page.locator("#optimize").is_visible()
             assert page.locator("#cargo-table").is_visible()
@@ -134,22 +135,22 @@ def test_real_browser_navigation_uses_eight_workspaces_and_preserves_business_vi
             page.locator('nav.tabs [data-tab="route"]').click()
             _assert_only_panel(page, "#tab-route", settle_ms=500)
             page.reload(wait_until="networkidle")
-            page.locator("#workspace-switcher.circoe-v3-sidebar").wait_for(state="visible")
+            page.locator("#workspace-switcher.circoe-v3-portal").wait_for(state="visible")
             _assert_only_panel(page, "#tab-route", settle_ms=1000)
 
-            _sidebar(page, "documents").click()
+            _portal_module(page, "documents").click()
             _assert_only_panel(page, "#tab-document-control", settle_ms=1000)
             assert page.locator("#dc-new").is_visible()
             page.locator('nav.tabs [data-workspace-tab="document-history"]').click()
             page.locator("#dc-history").wait_for(state="visible", timeout=10_000)
             assert page.locator("#dc-history").is_visible()
 
-            _sidebar(page, "regulatory").click()
+            _portal_module(page, "regulatory").click()
             _assert_only_panel(page, "#tab-regulatory", settle_ms=200)
             assert page.get_by_text("Préparé · non actif", exact=True).is_visible()
             assert page.get_by_text("Aucune règle réglementaire n’est activée dans cette version.", exact=True).is_visible()
 
-            _sidebar(page, "database").click()
+            _portal_module(page, "database").click()
             _assert_only_panel(page, "#tab-vehicles", settle_ms=700)
             page.locator('nav.tabs [data-workspace-tab="prompts"]').click()
             _assert_only_panel(page, "#tab-prompt-center", settle_ms=500)
@@ -157,7 +158,7 @@ def test_real_browser_navigation_uses_eight_workspaces_and_preserves_business_vi
             _assert_only_panel(page, "#tab-invoice-parties", settle_ms=400)
             assert page.locator('#facturx-party-form').is_visible()
 
-            _sidebar(page, "facturx").click()
+            _portal_module(page, "facturx").click()
             _assert_only_panel(page, "#tab-facturx", settle_ms=700)
             transform_tab = page.locator('nav.tabs [data-tab="facturx"]')
             history_tab = page.locator('nav.tabs [data-facturx-view="history"]')
@@ -171,18 +172,18 @@ def test_real_browser_navigation_uses_eight_workspaces_and_preserves_business_vi
             transform_tab.click()
             assert page.locator('#facturx-form').is_visible()
 
-            _sidebar(page, "history").click()
+            _portal_module(page, "history").click()
             _assert_only_panel(page, "#tab-history", settle_ms=600)
-            assert _sidebar(page, "history").get_attribute("aria-current") == "page"
+            assert _portal_module(page, "history").get_attribute("aria-current") == "page"
 
-            _sidebar(page, "settings").click()
+            _portal_module(page, "settings").click()
             page.locator("#tab-settings.active").wait_for(state="visible")
-            assert _sidebar(page, "settings").get_attribute("aria-current") == "page"
+            assert _portal_module(page, "settings").get_attribute("aria-current") == "page"
             dark_choice = page.locator('label.theme-choice:has(input[value="dark"])')
             dark_choice.click()
             page.wait_for_function("document.documentElement.dataset.theme === 'dark'")
 
-            admin = _sidebar(page, "admin")
+            admin = _portal_module(page, "admin")
             if page.locator("#open-admin").count() == 0:
                 assert admin.is_disabled()
 

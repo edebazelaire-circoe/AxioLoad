@@ -82,7 +82,7 @@ def _portal_module(page: Page, name: str):
 
 
 def _nav_label(item) -> str:
-    return item.locator(":scope > span:not(.circoe-v3-icon)").inner_text().strip()
+    return item.locator(":scope > .circoe-card-copy > strong").inner_text().strip()
 
 
 def test_real_browser_portal_uses_eight_modules_and_preserves_business_views(live_app: str) -> None:

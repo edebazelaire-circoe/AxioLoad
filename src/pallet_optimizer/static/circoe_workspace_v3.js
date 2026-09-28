@@ -18,14 +18,14 @@
   };
 
   const entries = [
-    ['database', '1. Base de données'],
-    ['optimization', '2. Optimisation'],
-    ['documents', '3. Contrôle documentaire'],
-    ['regulatory', '4. Contrôle réglementaire'],
-    ['facturx', '5. Facturation électronique / Factur-X'],
-    ['history', '6. Historique & traçabilité'],
-    ['settings', '7. Paramètres & IA'],
-    ['admin', '8. Super Admin']
+    ['database', 'Base de données', 'Flotte, référentiels et prompts', 'Flotte'],
+    ['optimization', 'Optimisation de chargement', 'Palettes, conteneurs, itinéraires et résultats', 'Chargement'],
+    ['documents', 'Contrôle documentaire', 'Comparer, contrôler, corriger et exporter', 'Documents'],
+    ['regulatory', 'Contrôle réglementaire', 'Espace préparé pour les futures règles validées', 'Préparé'],
+    ['facturx', 'Facturation électronique / Factur-X', 'Créer, contrôler et exporter les flux Factur-X', 'Factur-X'],
+    ['history', 'Historique & traçabilité', 'Retrouver les calculs, décisions et opérations', 'Historique'],
+    ['settings', 'Paramètres & IA', 'Préférences, configuration et services IA', 'Réglages'],
+    ['admin', 'Super Admin', 'Administration sécurisée des utilisateurs et services', 'Super User']
   ];
 
   const icon = name => `<span class="circoe-v3-icon"><svg viewBox="0 0 24 24" aria-hidden="true">${icons[name]}</svg></span>`;
@@ -172,24 +172,25 @@
     });
   }
 
-  function buildSidebar() {
+  function buildPortal() {
     const switcher = q('#workspace-switcher');
     if (!switcher || switcher.dataset.circoeV3 === '1') return false;
     switcher.dataset.circoeV3 = '1';
     captureLegacyButtons(switcher);
-    switcher.classList.add('circoe-v3-sidebar');
-    switcher.setAttribute('aria-label', 'Navigation principale AxioLoad');
+    switcher.classList.add('circoe-v3-portal');
+    switcher.setAttribute('aria-label', 'Portail des modules AxioLoad');
 
-    const brand = document.createElement('div');
-    brand.className = 'circoe-v3-brand';
-    brand.innerHTML = '<strong>CIRCOE</strong><span>AxioLoad</span>';
-    switcher.prepend(brand);
+    const hero = document.createElement('section');
+    hero.className = 'circoe-v3-hero';
+    hero.innerHTML = '<div><div class="eyebrow">Portail AxioLoad</div><h1>Bonjour,</h1><p>Accédez à vos modules AxioLoad pour optimiser et contrôler vos opérations de transport.</p></div><div class="circoe-v3-hero-art" aria-hidden="true"><span>AXIOLOAD</span></div>';
+    switcher.append(hero);
 
     const nav = document.createElement('nav');
-    nav.className = 'circoe-v3-nav';
-    nav.innerHTML = entries.map(([name, label]) => {
+    nav.className = 'circoe-v3-grid';
+    nav.innerHTML = entries.map(([name, label, description, kicker]) => {
       const attribute = CORE_WORKSPACES.has(name) ? `data-workspace="${name}"` : `data-circoe-workspace="${name}"`;
-      return `<button type="button" ${attribute} class="circoe-v3-nav-item">${icon(name)}<span>${label}</span>${name === 'regulatory' ? '<small>Nouveau</small>' : ''}</button>`;
+      const badge = name === 'regulatory' ? '<span class="circoe-card-badge">À venir</span>' : (name === 'admin' ? '<span class="circoe-card-badge">Réservé Super User</span>' : '');
+      return `<button type="button" ${attribute} class="circoe-v3-nav-item circoe-card-${name}">${icon(name)}<span class="circoe-card-copy"><small>${kicker}</small><strong>${label}</strong><em>${description}</em></span><span class="circoe-card-arrow" aria-hidden="true">→</span>${badge}</button>`;
     }).join('');
     switcher.append(nav);
 
@@ -243,7 +244,7 @@
   function init() {
     const attempts = [0, 50, 200, 700, 1600];
     attempts.forEach(delay => window.setTimeout(() => {
-      if (buildSidebar()) {
+      if (buildPortal()) {
         synchronizeExistingNavigation();
         restoreSelection();
       }

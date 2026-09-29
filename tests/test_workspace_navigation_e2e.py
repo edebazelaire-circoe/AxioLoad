@@ -141,8 +141,7 @@ def test_real_browser_portal_uses_eight_modules_and_preserves_business_views(liv
             page.locator("#workspace-switcher.circoe-v3-portal").wait_for(state="visible")
             _assert_only_panel(page, "#tab-route", settle_ms=1000)
 
-            page.locator(".circoe-v3-home").click()
-            assert page.locator("#workspace-switcher.circoe-v3-portal").is_visible()
+            assert not page.locator(".circoe-v3-home").is_visible()
             _portal_module(page, "documents").click()
             page.wait_for_function("() => document.body.dataset.circoeOpenModule === 'documents'")
             assert not page.locator("#workspace-switcher.circoe-v3-portal").is_visible()

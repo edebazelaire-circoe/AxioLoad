@@ -171,15 +171,22 @@
     }
   }
 
-  function route(name) {
+  async function route(name) {
+    if (name === 'regulatory') { openRegulatory(); return; }
+    if (name === 'settings') { openSettings(); return; }
+    if (name === 'admin') { openAdmin(); return; }
+
+    const target = name === 'history' ? 'history' : (name === 'optimization' ? 'data' : null);
+    if (typeof window.axioloadOpenWorkspace === 'function') {
+      await window.axioloadOpenWorkspace(name === 'history' ? 'optimization' : name, target);
+      return;
+    }
+
     if (name === 'database') openDatabase();
     else if (name === 'optimization') openOptimization('data');
     else if (name === 'documents') openDocuments();
-    else if (name === 'regulatory') openRegulatory();
     else if (name === 'facturx') openFacturx();
     else if (name === 'history') openOptimization('history');
-    else if (name === 'settings') openSettings();
-    else if (name === 'admin') openAdmin();
   }
 
   function captureLegacyButtons(switcher) {
@@ -220,9 +227,9 @@
     homeButton.addEventListener('click', showPortal);
     q('main')?.before(homeButton);
 
-    qa('.circoe-v3-nav-item', nav).forEach(button => button.addEventListener('click', () => {
+    qa('.circoe-v3-nav-item', nav).forEach(button => button.addEventListener('click', async () => {
       const name = buttonWorkspace(button);
-      route(name);
+      await route(name);
       showModule(name);
     }));
     const adminButton = q('[data-circoe-workspace="admin"]', nav);

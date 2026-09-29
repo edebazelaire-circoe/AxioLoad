@@ -48,6 +48,18 @@
     return button?.dataset.workspace || button?.dataset.circoeWorkspace || '';
   }
 
+  function showModule(name) {
+    document.body.classList.add('circoe-v3-module-open');
+    document.body.dataset.circoeOpenModule = name;
+    q('main')?.scrollIntoView({block: 'start'});
+  }
+
+  function showPortal() {
+    document.body.classList.remove('circoe-v3-module-open');
+    delete document.body.dataset.circoeOpenModule;
+    q('#workspace-switcher')?.scrollIntoView({block: 'start'});
+  }
+
   function selectNav(name) {
     qa(navSelector).forEach(button => {
       const active = buttonWorkspace(button) === name;
@@ -142,14 +154,21 @@
     const panel = ensureRegulatoryPanel();
     activePanelOnly(panel);
     selectNav('regulatory');
+    showModule('regulatory');
   }
 
   function openSettings() {
-    if (clickVisible('#open-settings')) selectNav('settings');
+    if (clickVisible('#open-settings')) {
+      selectNav('settings');
+      showModule('settings');
+    }
   }
 
   function openAdmin() {
-    if (clickVisible('#open-admin')) selectNav('admin');
+    if (clickVisible('#open-admin')) {
+      selectNav('admin');
+      showModule('admin');
+    }
   }
 
   function route(name) {
@@ -194,6 +213,13 @@
     }).join('');
     switcher.append(nav);
 
+    const homeButton = document.createElement('button');
+    homeButton.type = 'button';
+    homeButton.className = 'circoe-v3-home';
+    homeButton.textContent = '← Retour au portail';
+    homeButton.addEventListener('click', showPortal);
+    q('main')?.before(homeButton);
+
     qa('.circoe-v3-nav-item', nav).forEach(button => button.addEventListener('click', () => route(buttonWorkspace(button))));
     const adminButton = q('[data-circoe-workspace="admin"]', nav);
     if (adminButton && !q('#open-admin')) {
@@ -207,13 +233,17 @@
   function synchronizeExistingNavigation() {
     window.addEventListener('axioload:navigation:changed', event => {
       const detail = event.detail || {};
-      if (detail.workspace === 'database') selectNav('database');
-      else if (detail.workspace === 'documents') selectNav('documents');
-      else if (detail.workspace === 'facturx') selectNav('facturx');
-      else if (detail.workspace === 'optimization') selectNav(detail.tab === 'history' ? 'history' : 'optimization');
+      if (detail.workspace === 'database') { selectNav('database'); showModule('database'); }
+      else if (detail.workspace === 'documents') { selectNav('documents'); showModule('documents'); }
+      else if (detail.workspace === 'facturx') { selectNav('facturx'); showModule('facturx'); }
+      else if (detail.workspace === 'optimization') {
+        const name = detail.tab === 'history' ? 'history' : 'optimization';
+        selectNav(name);
+        showModule(name);
+      }
     });
-    q('#open-settings')?.addEventListener('click', () => selectNav('settings'));
-    q('#open-admin')?.addEventListener('click', () => selectNav('admin'));
+    q('#open-settings')?.addEventListener('click', () => { selectNav('settings'); showModule('settings'); });
+    q('#open-admin')?.addEventListener('click', () => { selectNav('admin'); showModule('admin'); });
   }
 
   function markOptimizationIntegrity() {

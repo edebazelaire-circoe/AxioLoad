@@ -46,7 +46,8 @@
       section = document.createElement('section');
       section.id = 'method-status-panel';
       section.className = 'method-status-panel';
-      host.insertBefore(section, host.querySelector('.decision-panel') || host.firstChild);
+      const directDecision = host.querySelector(':scope > .decision-panel');
+      host.insertBefore(section, directDecision || host.firstChild);
     }
     const successes = [...new Set((state.result.solutions || []).map(solution => solution.method_name || solution.method_code || 'Méthode historique'))];
     const failures = (state.result.diagnostics || []).filter(diagnostic => String(diagnostic.code || '').includes('METHOD_NO_SOLUTION'));

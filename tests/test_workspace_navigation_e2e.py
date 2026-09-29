@@ -85,6 +85,13 @@ def _nav_label(item) -> str:
     return item.locator(":scope > .circoe-card-copy > strong").inner_text().strip()
 
 
+def _return_to_portal(page: Page) -> None:
+    home = page.locator(".circoe-v3-home")
+    home.wait_for(state="visible", timeout=10_000)
+    home.click()
+    page.locator("#workspace-switcher.circoe-v3-portal").wait_for(state="visible", timeout=10_000)
+
+
 def test_real_browser_portal_uses_eight_modules_and_preserves_business_views(live_app: str) -> None:
     ARTIFACTS.mkdir(exist_ok=True)
     console_errors: list[str] = []
@@ -124,6 +131,9 @@ def test_real_browser_portal_uses_eight_modules_and_preserves_business_views(liv
             _assert_only_panel(page, "#tab-vehicles", settle_ms=1200)
 
             _portal_module(page, "optimization").click()
+            page.wait_for_function("() => document.body.classList.contains('circoe-v3-module-open')")
+            assert not page.locator("#workspace-switcher.circoe-v3-portal").is_visible()
+            assert page.locator(".circoe-v3-home").is_visible()
             _assert_only_panel(page, "#tab-data", settle_ms=1200)
             assert page.locator("#optimize").is_visible()
             assert page.locator("#cargo-table").is_visible()
@@ -138,18 +148,23 @@ def test_real_browser_portal_uses_eight_modules_and_preserves_business_views(liv
             page.locator("#workspace-switcher.circoe-v3-portal").wait_for(state="visible")
             _assert_only_panel(page, "#tab-route", settle_ms=1000)
 
+            assert not page.locator(".circoe-v3-home").is_visible()
             _portal_module(page, "documents").click()
+            page.wait_for_function("() => document.body.dataset.circoeOpenModule === 'documents'")
+            assert not page.locator("#workspace-switcher.circoe-v3-portal").is_visible()
             _assert_only_panel(page, "#tab-document-control", settle_ms=1000)
             assert page.locator("#dc-new").is_visible()
             page.locator('nav.tabs [data-workspace-tab="document-history"]').click()
             page.locator("#dc-history").wait_for(state="visible", timeout=10_000)
             assert page.locator("#dc-history").is_visible()
 
+            _return_to_portal(page)
             _portal_module(page, "regulatory").click()
             _assert_only_panel(page, "#tab-regulatory", settle_ms=200)
             assert page.get_by_text("Préparé · non actif", exact=True).is_visible()
             assert page.get_by_text("Aucune règle réglementaire n’est activée dans cette version.", exact=True).is_visible()
 
+            _return_to_portal(page)
             _portal_module(page, "database").click()
             _assert_only_panel(page, "#tab-vehicles", settle_ms=700)
             page.locator('nav.tabs [data-workspace-tab="prompts"]').click()
@@ -158,6 +173,7 @@ def test_real_browser_portal_uses_eight_modules_and_preserves_business_views(liv
             _assert_only_panel(page, "#tab-invoice-parties", settle_ms=400)
             assert page.locator('#facturx-party-form').is_visible()
 
+            _return_to_portal(page)
             _portal_module(page, "facturx").click()
             _assert_only_panel(page, "#tab-facturx", settle_ms=700)
             transform_tab = page.locator('nav.tabs [data-tab="facturx"]')
@@ -172,10 +188,12 @@ def test_real_browser_portal_uses_eight_modules_and_preserves_business_views(liv
             transform_tab.click()
             assert page.locator('#facturx-form').is_visible()
 
+            _return_to_portal(page)
             _portal_module(page, "history").click()
             _assert_only_panel(page, "#tab-history", settle_ms=600)
             assert _portal_module(page, "history").get_attribute("aria-current") == "page"
 
+            _return_to_portal(page)
             _portal_module(page, "settings").click()
             page.locator("#tab-settings.active").wait_for(state="visible")
             assert _portal_module(page, "settings").get_attribute("aria-current") == "page"
@@ -183,6 +201,7 @@ def test_real_browser_portal_uses_eight_modules_and_preserves_business_views(liv
             dark_choice.click()
             page.wait_for_function("document.documentElement.dataset.theme === 'dark'")
 
+            _return_to_portal(page)
             admin = _portal_module(page, "admin")
             if page.locator("#open-admin").count() == 0:
                 assert admin.is_disabled()

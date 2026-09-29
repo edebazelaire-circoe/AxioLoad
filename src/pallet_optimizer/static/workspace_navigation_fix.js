@@ -282,6 +282,9 @@
     const workspaceCard = event.target.closest?.('#workspace-switcher [data-workspace]');
     if (workspaceCard) {
       if (workspaceCard.disabled || workspaceCard.hidden || workspaceCard.getAttribute('aria-disabled') === 'true') return;
+      // The portal owns its visible tile clicks. Legacy workspace buttons continue
+      // through this handler, but portal tiles must reach their own click listener.
+      if (workspaceCard.classList.contains('circoe-v3-nav-item')) return;
       stopLegacyNavigation(event);
       void openWorkspace(workspaceCard.dataset.workspace);
       return;
@@ -335,6 +338,8 @@
     void restoreNavigation();
     return true;
   }
+
+  window.axioloadOpenWorkspace = openWorkspace;
 
   function init() {
     [0, 50, 200, 700, 1600].forEach(delay => window.setTimeout(install, delay));

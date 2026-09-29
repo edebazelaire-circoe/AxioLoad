@@ -48,6 +48,18 @@
     return button?.dataset.workspace || button?.dataset.circoeWorkspace || '';
   }
 
+  function showModule(name) {
+    document.body.classList.add('circoe-v3-module-open');
+    document.body.dataset.circoeOpenModule = name;
+    q('main')?.scrollIntoView({block: 'start'});
+  }
+
+  function showPortal() {
+    document.body.classList.remove('circoe-v3-module-open');
+    delete document.body.dataset.circoeOpenModule;
+    q('#workspace-switcher')?.scrollIntoView({block: 'start'});
+  }
+
   function selectNav(name) {
     qa(navSelector).forEach(button => {
       const active = buttonWorkspace(button) === name;
@@ -142,25 +154,39 @@
     const panel = ensureRegulatoryPanel();
     activePanelOnly(panel);
     selectNav('regulatory');
+    showModule('regulatory');
   }
 
   function openSettings() {
-    if (clickVisible('#open-settings')) selectNav('settings');
+    if (clickVisible('#open-settings')) {
+      selectNav('settings');
+      showModule('settings');
+    }
   }
 
   function openAdmin() {
-    if (clickVisible('#open-admin')) selectNav('admin');
+    if (clickVisible('#open-admin')) {
+      selectNav('admin');
+      showModule('admin');
+    }
   }
 
-  function route(name) {
+  async function route(name) {
+    if (name === 'regulatory') { openRegulatory(); return; }
+    if (name === 'settings') { openSettings(); return; }
+    if (name === 'admin') { openAdmin(); return; }
+
+    const target = name === 'history' ? 'history' : (name === 'optimization' ? 'data' : null);
+    if (typeof window.axioloadOpenWorkspace === 'function') {
+      await window.axioloadOpenWorkspace(name === 'history' ? 'optimization' : name, target);
+      return;
+    }
+
     if (name === 'database') openDatabase();
     else if (name === 'optimization') openOptimization('data');
     else if (name === 'documents') openDocuments();
-    else if (name === 'regulatory') openRegulatory();
     else if (name === 'facturx') openFacturx();
     else if (name === 'history') openOptimization('history');
-    else if (name === 'settings') openSettings();
-    else if (name === 'admin') openAdmin();
   }
 
   function captureLegacyButtons(switcher) {
@@ -194,7 +220,18 @@
     }).join('');
     switcher.append(nav);
 
-    qa('.circoe-v3-nav-item', nav).forEach(button => button.addEventListener('click', () => route(buttonWorkspace(button))));
+    const homeButton = document.createElement('button');
+    homeButton.type = 'button';
+    homeButton.className = 'circoe-v3-home';
+    homeButton.textContent = '← Retour au portail';
+    homeButton.addEventListener('click', showPortal);
+    q('main')?.before(homeButton);
+
+    qa('.circoe-v3-nav-item', nav).forEach(button => button.addEventListener('click', async () => {
+      const name = buttonWorkspace(button);
+      await route(name);
+      showModule(name);
+    }));
     const adminButton = q('[data-circoe-workspace="admin"]', nav);
     if (adminButton && !q('#open-admin')) {
       adminButton.disabled = true;

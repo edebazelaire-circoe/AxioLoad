@@ -220,7 +220,11 @@
     homeButton.addEventListener('click', showPortal);
     q('main')?.before(homeButton);
 
-    qa('.circoe-v3-nav-item', nav).forEach(button => button.addEventListener('click', () => route(buttonWorkspace(button))));
+    qa('.circoe-v3-nav-item', nav).forEach(button => button.addEventListener('click', () => {
+      const name = buttonWorkspace(button);
+      route(name);
+      showModule(name);
+    }));
     const adminButton = q('[data-circoe-workspace="admin"]', nav);
     if (adminButton && !q('#open-admin')) {
       adminButton.disabled = true;
@@ -233,17 +237,13 @@
   function synchronizeExistingNavigation() {
     window.addEventListener('axioload:navigation:changed', event => {
       const detail = event.detail || {};
-      if (detail.workspace === 'database') { selectNav('database'); showModule('database'); }
-      else if (detail.workspace === 'documents') { selectNav('documents'); showModule('documents'); }
-      else if (detail.workspace === 'facturx') { selectNav('facturx'); showModule('facturx'); }
-      else if (detail.workspace === 'optimization') {
-        const name = detail.tab === 'history' ? 'history' : 'optimization';
-        selectNav(name);
-        showModule(name);
-      }
+      if (detail.workspace === 'database') selectNav('database');
+      else if (detail.workspace === 'documents') selectNav('documents');
+      else if (detail.workspace === 'facturx') selectNav('facturx');
+      else if (detail.workspace === 'optimization') selectNav(detail.tab === 'history' ? 'history' : 'optimization');
     });
-    q('#open-settings')?.addEventListener('click', () => { selectNav('settings'); showModule('settings'); });
-    q('#open-admin')?.addEventListener('click', () => { selectNav('admin'); showModule('admin'); });
+    q('#open-settings')?.addEventListener('click', () => selectNav('settings'));
+    q('#open-admin')?.addEventListener('click', () => selectNav('admin'));
   }
 
   function markOptimizationIntegrity() {

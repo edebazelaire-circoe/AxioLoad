@@ -339,6 +339,8 @@
     return true;
   }
 
+  window.axioloadOpenWorkspace = openWorkspace;
+
   function init() {
     [0, 50, 200, 700, 1600].forEach(delay => window.setTimeout(install, delay));
   }

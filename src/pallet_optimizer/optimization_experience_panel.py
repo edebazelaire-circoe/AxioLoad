@@ -62,7 +62,6 @@ def install_optimization_experience_injection() -> None:
                 + _COMPACT_STYLE
                 + _VIEWER_STYLE
                 + _BRAND_STYLE
-                + _COCKPIT_STYLE
                 + b"</head>",
             )
             body = body.replace(
@@ -73,7 +72,6 @@ def install_optimization_experience_injection() -> None:
                 + _COMPACT_SCRIPT
                 + _VIEWER_SCRIPT
                 + _BRAND_SCRIPT
-                + _COCKPIT_SCRIPT
                 + b"</body>",
             )
             response.body = body

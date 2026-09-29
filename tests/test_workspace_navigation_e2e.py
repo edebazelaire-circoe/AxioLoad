@@ -124,6 +124,9 @@ def test_real_browser_portal_uses_eight_modules_and_preserves_business_views(liv
             _assert_only_panel(page, "#tab-vehicles", settle_ms=1200)
 
             _portal_module(page, "optimization").click()
+            page.wait_for_function("() => document.body.classList.contains('circoe-v3-module-open')")
+            assert not page.locator("#workspace-switcher.circoe-v3-portal").is_visible()
+            assert page.locator(".circoe-v3-home").is_visible()
             _assert_only_panel(page, "#tab-data", settle_ms=1200)
             assert page.locator("#optimize").is_visible()
             assert page.locator("#cargo-table").is_visible()
@@ -138,7 +141,11 @@ def test_real_browser_portal_uses_eight_modules_and_preserves_business_views(liv
             page.locator("#workspace-switcher.circoe-v3-portal").wait_for(state="visible")
             _assert_only_panel(page, "#tab-route", settle_ms=1000)
 
+            page.locator(".circoe-v3-home").click()
+            assert page.locator("#workspace-switcher.circoe-v3-portal").is_visible()
             _portal_module(page, "documents").click()
+            page.wait_for_function("() => document.body.dataset.circoeOpenModule === 'documents'")
+            assert not page.locator("#workspace-switcher.circoe-v3-portal").is_visible()
             _assert_only_panel(page, "#tab-document-control", settle_ms=1000)
             assert page.locator("#dc-new").is_visible()
             page.locator('nav.tabs [data-workspace-tab="document-history"]').click()
